@@ -101,23 +101,41 @@ RowLayout {
         return Colors.textDim
     }
 
-    // ── Componente reutilizable: etiqueta + valor ────────────────
-    component Stat: RowLayout {
+    // ── Componente reutilizable: etiqueta + valor en cajita ──────
+    component Stat: Item {
         property string label: ""
         property string value: ""
         property color  labelColor: Colors.muted
         property color  valueColor: Colors.textDim
-        spacing: 4
 
-        Text {
-            text: label
-            color: parent.labelColor
-            font { family: "CaskaydiaMono Nerd Font"; pixelSize: 10 }
+        implicitWidth: inner.implicitWidth + 18
+        implicitHeight: 26
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 6
+            color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.33)
+            border {
+                width: 1
+                color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.3)
+            }
         }
-        Text {
-            text: value
-            color: parent.valueColor
-            font { family: "CaskaydiaMono Nerd Font"; pixelSize: 11 }
+
+        RowLayout {
+            id: inner
+            anchors.centerIn: parent
+            spacing: 5
+
+            Text {
+                text: parent.parent.label
+                color: parent.parent.labelColor
+                font { family: "CaskaydiaMono Nerd Font"; pixelSize: 11 }
+            }
+            Text {
+                text: parent.parent.value
+                color: parent.parent.valueColor
+                font { family: "CaskaydiaMono Nerd Font"; pixelSize: 12 }
+            }
         }
     }
 
@@ -169,32 +187,40 @@ RowLayout {
         valueColor: state.muted ? Colors.muted : Colors.textDim
     }
 
-    // ── Separador ────────────────────────────────────────────────
-    Text {
-        text: "|"
-        color: Colors.muted
-        font.pixelSize: 10
-        opacity: 0.3
-    }
+    // ── Reloj en cajita ──────────────────────────────────────────
+    Item {
+        implicitWidth: timeText.implicitWidth + 18
+        implicitHeight: 26
 
-    // ── Reloj ────────────────────────────────────────────────────
-    Text {
-        id: timeText
-
-        Timer {
-            interval: 1000
-            running: true
-            repeat: true
-            triggeredOnStart: true
-            onTriggered: {
-                const now = new Date()
-                const days = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"]
-                const months = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
-                timeText.text = `${days[now.getDay()]} ${String(now.getDate()).padStart(2,"0")} ${months[now.getMonth()]}  ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`
+        Rectangle {
+            anchors.fill: parent
+            radius: 6
+            color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.33)
+            border {
+                width: 1
+                color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.3)
             }
         }
 
-        color: Colors.text
-        font { family: "CaskaydiaMono Nerd Font"; pixelSize: 12 }
+        Text {
+            id: timeText
+            anchors.centerIn: parent
+
+            Timer {
+                interval: 1000
+                running: true
+                repeat: true
+                triggeredOnStart: true
+                onTriggered: {
+                    const now = new Date()
+                    const days = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"]
+                    const months = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
+                    timeText.text = `${days[now.getDay()]} ${String(now.getDate()).padStart(2,"0")} ${months[now.getMonth()]}  ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`
+                }
+            }
+
+            color: Colors.text
+            font { family: "CaskaydiaMono Nerd Font"; pixelSize: 13 }
+        }
     }
 }

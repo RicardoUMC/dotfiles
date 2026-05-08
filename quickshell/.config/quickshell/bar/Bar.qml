@@ -18,7 +18,7 @@ PanelWindow {
     exclusionMode: ExclusionMode.Auto
 
     // Zona total reservada arriba (barra + margen flotante)
-    implicitHeight: 48
+    implicitHeight: 37
 
     // Sin márgenes en el PanelWindow — el efecto flotante lo da el padding interno
     margins {
@@ -30,52 +30,25 @@ PanelWindow {
     // Fondo de la barra
     color: "transparent"
 
-    Rectangle {
-        // Márgenes internos para el efecto flotante
+    RowLayout {
         anchors {
             fill: parent
-            topMargin: 8
             leftMargin: 12
             rightMargin: 12
+            topMargin: 10
             bottomMargin: 0
         }
-        radius: 10
-        color: Qt.rgba(
-            Colors.base01.r,
-            Colors.base01.g,
-            Colors.base01.b,
-            0.33  // Ligera transparencia
-        )
+        spacing: 0
 
-        // Borde sutil
-        border {
-            width: 1
-            color: Qt.rgba(
-                Colors.base03.r,
-                Colors.base03.g,
-                Colors.base03.b,
-                0.33
-            )
+        // --- IZQUIERDA: Workspaces ---
+        Workspaces {
+            Layout.alignment: Qt.AlignVCenter
         }
+        // --- DERECHA: Stats + Reloj ---
+        Item { Layout.fillWidth: true }
 
-        RowLayout {
-            anchors {
-                fill: parent
-                leftMargin: 12
-                rightMargin: 12
-            }
-            spacing: 0
-
-            // --- IZQUIERDA: Workspaces ---
-            Workspaces {
-                Layout.alignment: Qt.AlignVCenter
-            }
-            // --- DERECHA: Stats + Reloj ---
-            Item { Layout.fillWidth: true }
-
-            SystemStats {
-                Layout.alignment: Qt.AlignVCenter
-            }
+        SystemStats {
+            Layout.alignment: Qt.AlignVCenter
         }
     }
 }

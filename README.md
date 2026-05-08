@@ -10,14 +10,26 @@ Personal dotfiles for Arch Linux + Hyprland, managed with [stow](https://www.gnu
 | `hyprland` | Hyprland compositor config |
 | `wezterm` | WezTerm terminal config |
 
+## Dependencies
+
+```bash
+sudo pacman -S stow quickshell-git wezterm hyprland \
+               gnome-keyring \
+               noto-fonts noto-fonts-emoji noto-fonts-cjk \
+               ttf-cascadia-mono-nerd ttf-firacode-nerd
+```
+
 ## Install
 
 ```bash
-git clone https://github.com/unseen/dotfiles ~/dotfiles
+git clone https://github.com/RicardoUMC/dotfiles ~/dotfiles
 cd ~/dotfiles
 stow quickshell hyprland wezterm
 ```
 
+> Stow creates symlinks from `~/dotfiles` into `$HOME`.
+> Make sure to remove or back up any existing configs before running stow.
+
 ## Theme
 
-[Tokyo City Terminal Dark](https://github.com/your-theme) — Base16 palette
+Tokyo City Terminal Dark — Base16 palette

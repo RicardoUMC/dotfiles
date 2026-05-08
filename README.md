@@ -12,12 +12,7 @@ Personal dotfiles for Arch Linux + Hyprland, managed with [stow](https://www.gnu
 
 ## Dependencies
 
-```bash
-sudo pacman -S stow quickshell-git wezterm hyprland \
-               gnome-keyring \
-               noto-fonts noto-fonts-emoji noto-fonts-cjk \
-               ttf-cascadia-mono-nerd ttf-firacode-nerd
-```
+See `setup.sh` for the full list of dependencies and configuration steps.
 
 ## Install
 

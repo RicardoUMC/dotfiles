@@ -1,0 +1,6 @@
+# Arch cache
+*.pyc
+__pycache__/
+
+# Quickshell logs/cache
+*.qslog

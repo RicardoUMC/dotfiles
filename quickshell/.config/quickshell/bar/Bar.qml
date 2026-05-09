@@ -7,28 +7,18 @@ import "../theme"
 PanelWindow {
     id: root
 
-    // Anclaje — arriba, izquierda a derecha
-    anchors {
-        top: true
-        left: true
-        right: true
-    }
-
-    // Reserva espacio en el compositor — las ventanas no se enciman
+    anchors { top: true; left: true; right: true }
     exclusionMode: ExclusionMode.Auto
-
-    // Zona total reservada arriba (barra + margen flotante)
     implicitHeight: 37
-
-    // Sin márgenes en el PanelWindow — el efecto flotante lo da el padding interno
-    margins {
-        top: 0
-        left: 0
-        right: 0
-    }
-
-    // Fondo de la barra
+    margins { top: 0; left: 0; right: 0 }
     color: "transparent"
+
+    signal powerMenuOpened()
+    function closePowerMenu() { powerMenu.close() }
+    function openPowerMenu() { powerMenu.open() }
+    readonly property bool powerMenuVisible: powerMenu.isOpen
+    // Used by the backdrop to detect clicks on the power button
+    readonly property real powerBtnGlobalX: root.width - powerMenu.width - 12
 
     RowLayout {
         anchors {
@@ -40,15 +30,18 @@ PanelWindow {
         }
         spacing: 0
 
-        // --- IZQUIERDA: Workspaces ---
-        Workspaces {
-            Layout.alignment: Qt.AlignVCenter
-        }
-        // --- DERECHA: Stats + Reloj ---
+        Workspaces { Layout.alignment: Qt.AlignVCenter }
+
         Item { Layout.fillWidth: true }
 
-        SystemStats {
+        SystemStats { Layout.alignment: Qt.AlignVCenter }
+
+        Item { width: 8 }
+
+        PowerMenu {
+            id: powerMenu
             Layout.alignment: Qt.AlignVCenter
+            onOnOpened: bar.powerMenuOpened()
         }
     }
 }

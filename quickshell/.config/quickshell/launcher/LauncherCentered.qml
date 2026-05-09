@@ -1,16 +1,38 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Wayland
 import "../theme"
 
-FloatingWindow {
+PanelWindow {
     id: root
-    title: "qs-launcher-centered"
     color: "transparent"
 
-    property string mode: "search"       // "search" | "navigate"
+    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.keyboardFocus: visible
+        ? WlrKeyboardFocus.OnDemand
+        : WlrKeyboardFocus.None
+    exclusionMode: ExclusionMode.Ignore
+
+    property string mode: "search"
     property string filterText: ""
-    property int selectedRow: 0          // índice dentro de filteredModel
+    property int selectedRow: 0
+
+    readonly property int popupW: 560
+    readonly property int popupH: 480
+
+    // Sin anclas laterales → centrado horizontal automático por zwlr_layer_shell
+    // Ancla top con margen → centrado en el área de trabajo (bajo la barra de 37px)
+    anchors {
+        top: true
+        bottom: false
+        left: false
+        right: false
+    }
+    margins.top: Math.round((screen.height - 37 - popupH) / 2 + 37)
+
+    implicitWidth: popupW
+    implicitHeight: popupH
 
     visible: false
 
@@ -28,7 +50,6 @@ FloatingWindow {
     onVisibleChanged: {
         if (visible) keyHandler.forceActiveFocus()
     }
-
     // ── Modelo filtrado ───────────────────────────────────────────────
     // Copia solo las entradas que coinciden con filterText.
     // selectedRow es un índice REAL dentro de este modelo — sin conversión.
@@ -65,7 +86,7 @@ FloatingWindow {
     Rectangle {
         anchors.fill: parent
         radius: 12
-        color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.96)
+        color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.975)
         border {
             width: 1
             color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.4)

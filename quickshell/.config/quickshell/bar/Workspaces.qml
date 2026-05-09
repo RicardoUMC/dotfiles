@@ -8,10 +8,9 @@ RowLayout {
     id: root
     spacing: 4
 
-    // Nombre del special workspace activo ("" si ninguno está visible)
     property string activeSpecial: ""
 
-    // Refresh al arranque (espera a que Hyprland reporte todo)
+    // Initial refresh — Hyprland may not report toplevels immediately on startup
     Timer {
         interval: 2000
         running: true
@@ -19,18 +18,14 @@ RowLayout {
         onTriggered: Hyprland.refreshToplevels()
     }
 
-    // Refresh cada vez que abre o cierra una ventana
     Connections {
         target: Hyprland
         function onRawEvent(event) {
-            if (event.name === "openwindow" || event.name === "closewindow" || event.name === "movewindow") {
+            if (event.name === "openwindow" || event.name === "closewindow" || event.name === "movewindow")
                 Hyprland.refreshToplevels()
-            }
-            // activespecial>>name,monitor — vacío cuando se cierra
-            if (event.name === "activespecial") {
-                const parts = event.data.split(",")
-                root.activeSpecial = parts[0] ?? ""
-            }
+
+            if (event.name === "activespecial")
+                root.activeSpecial = event.data.split(",")[0] ?? ""
         }
     }
 
@@ -39,37 +34,28 @@ RowLayout {
 
         delegate: Item {
             id: wsItem
-
             required property var modelData
 
             readonly property bool isActive: {
                 const name = modelData.name
-                if (name === "special:magic" || name.startsWith("special:"))
-                    return root.activeSpecial === name
+                if (name.startsWith("special:")) return root.activeSpecial === name
                 return modelData.id === Hyprland.focusedMonitor?.activeWorkspace?.id
             }
 
-            // true cuando este workspace normal está debajo de un special activo
+            // True when this normal workspace is visible but overlaid by an active special
             readonly property bool isUnderSpecial: {
-                const name = modelData.name
-                if (name.startsWith("special:")) return false
+                if (modelData.name.startsWith("special:")) return false
                 return root.activeSpecial !== "" &&
                        modelData.id === Hyprland.focusedMonitor?.activeWorkspace?.id
             }
 
-            readonly property color activeColor: {
-                const name = modelData.name
-                if (name.startsWith("special:")) return Colors.cyan
-                if (isUnderSpecial) return Colors.accent
-                return Colors.accent
-            }
+            readonly property color activeColor:
+                modelData.name.startsWith("special:") ? Colors.cyan : Colors.accent
 
             Layout.alignment: Qt.AlignVCenter
-
             implicitWidth: wsRow.implicitWidth + 16
             implicitHeight: 26
 
-            // Cajita — activo: accent / inactivo: surface
             Rectangle {
                 anchors.fill: parent
                 radius: 6
@@ -89,7 +75,6 @@ RowLayout {
                 anchors.centerIn: parent
                 spacing: 4
 
-                // Número del workspace
                 Text {
                     text: {
                         const name = modelData.name
@@ -105,7 +90,6 @@ RowLayout {
                     }
                 }
 
-                // Separador entre número y apps — solo si hay apps
                 Text {
                     text: "•"
                     color: Colors.muted
@@ -114,19 +98,17 @@ RowLayout {
                     visible: wsItem.modelData.toplevels.values.length > 0
                 }
 
-                // Apps del workspace — via workspace.toplevels (bindable, reactivo)
                 Repeater {
                     model: wsItem.modelData.toplevels
 
                     delegate: RowLayout {
                         required property var modelData
                         required property int index
-
                         spacing: 4
 
                         readonly property string appName: {
                             const raw = modelData.lastIpcObject["class"] ?? ""
-                            let name = raw
+                            const name = raw
                                 .replace(/^org\.\w+\./, "")
                                 .replace(/-browser$/, "")
                                 .replace(/-desktop$/, "")
@@ -144,10 +126,7 @@ RowLayout {
                         Text {
                             text: parent.appName
                             color: wsItem.isActive ? Colors.textDim : Colors.muted
-                            font {
-                                family: "CaskaydiaMono Nerd Font"
-                                pixelSize: 11
-                            }
+                            font { family: "CaskaydiaMono Nerd Font"; pixelSize: 11 }
                         }
                     }
                 }

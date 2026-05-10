@@ -1,11 +1,11 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 
+// sddm is a SDDM context global — accessed directly.
 Item {
     id: root
 
     property var colors
-    property var sddm
 
     implicitWidth: row.implicitWidth
     implicitHeight: row.implicitHeight
@@ -19,14 +19,14 @@ Item {
             icon: "󰜉"
             label: "Reiniciar"
             colors: root.colors
-            onClicked: root.sddm.reboot()
+            onClicked: sddm.reboot()
         }
 
         PowerButton {
             icon: "󰐥"
             label: "Apagar"
             colors: root.colors
-            onClicked: root.sddm.powerOff()
+            onClicked: sddm.powerOff()
         }
     }
 

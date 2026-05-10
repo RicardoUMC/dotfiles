@@ -7,16 +7,11 @@ import "theme"
 Item {
     id: root
 
-    // SDDM-injected globals
-    property var sddm
-    property var userModel
-    property var sessionModel
-    property var config
+    // sddm, userModel, sessionModel, config are injected by SDDM into the QML context — do NOT redeclare them.
 
     readonly property string wallpaper: config.stringValue("Wallpaper") ?? ""
     property bool loggingIn: false
 
-    // Palette instance — passed down to all components
     Colors { id: colors }
 
     // ── Background ──────────────────────────────────────────────────────
@@ -56,7 +51,6 @@ Item {
         UserCard {
             id: userCard
             Layout.alignment: Qt.AlignHCenter
-            userModel: root.userModel
             colors: colors
         }
 
@@ -65,10 +59,7 @@ Item {
             Layout.alignment: Qt.AlignHCenter
             colors: colors
 
-            property bool _attempted: false
-
             onAccepted: password => {
-                _attempted = true
                 root.loggingIn = true
                 sddm.login(userCard.currentName, password, sessionSelector.currentIndex)
             }
@@ -86,7 +77,6 @@ Item {
             bottomMargin: 28
             leftMargin: 32
         }
-        sessionModel: root.sessionModel
         colors: colors
     }
 
@@ -98,7 +88,6 @@ Item {
             bottomMargin: 24
             rightMargin: 32
         }
-        sddm: root.sddm
         colors: colors
     }
 

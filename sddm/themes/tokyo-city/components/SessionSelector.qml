@@ -1,12 +1,14 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 
+// sessionModel is a SDDM context global — accessed directly.
 Item {
     id: root
 
     property var colors
-    property var sessionModel
-    property int currentIndex: 0
+
+    // currentIndex is read by Main.qml to pass to sddm.login()
+    property int currentIndex: sessionModel.lastIndex
 
     readonly property string currentName: sessionModel.data(sessionModel.index(currentIndex, 0), Qt.DisplayRole) ?? "Hyprland"
 
@@ -38,12 +40,12 @@ Item {
             font.pixelSize: 11
             color: root.colors.muted
             opacity: 0.7
-            visible: root.sessionModel.count > 1
+            visible: sessionModel.count > 1
 
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                onClicked: root.currentIndex = (root.currentIndex + 1) % root.sessionModel.count
+                onClicked: root.currentIndex = (root.currentIndex + 1) % sessionModel.count
             }
         }
     }

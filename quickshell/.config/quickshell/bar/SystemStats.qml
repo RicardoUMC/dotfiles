@@ -34,17 +34,14 @@ RowLayout {
                 "  printf \"%.0f\", (dt-di)/dt*100}');",
                 "disk=$(awk '$3==\"nvme0n1\"{print ($6+$10)}' /proc/diskstats);",
                 "net=$(ip route | grep -c '^default' || echo 0);",
-                "vol=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{",
-                "  muted=($3==\"[MUTED]\") ? 1 : 0;",
-                "  printf \"%d %d\", $2*100, muted}');",
-                "echo \"$ram|$gpu|$cpu|$disk|$net|$vol\""
+                "echo \"$ram|$gpu|$cpu|$disk|$net\""
             ].join(" ")
         ]
 
         stdout: SplitParser {
             onRead: data => {
                 const parts = data.trim().split("|")
-                if (parts.length < 6) return
+                if (parts.length < 5) return
 
                 state.ram = parseFloat(parts[0]) || 0
                 state.gpu = parseFloat(parts[1]) || 0
@@ -58,10 +55,6 @@ RowLayout {
 
                 state.netUp = parseInt(parts[4]) > 0
 
-                const volParts = parts[5].trim().split(" ")
-                state.volume = parseInt(volParts[0]) || 0
-                state.muted = volParts[1] === "1"
-
                 poller.running = false
             }
         }
@@ -73,6 +66,28 @@ RowLayout {
         repeat: true
         triggeredOnStart: true
         onTriggered: poller.running = true
+    }
+
+    Process {
+        id: volPoller
+        command: ["bash", "-c", "wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{muted=($3==\"[MUTED]\") ? 1 : 0; printf \"%d %d\", $2*100, muted}'"]
+
+        stdout: SplitParser {
+            onRead: data => {
+                const parts = data.trim().split(" ")
+                state.volume = parseInt(parts[0]) || 0
+                state.muted = parts[1] === "1"
+                volPoller.running = false
+            }
+        }
+    }
+
+    Timer {
+        interval: 200
+        running: true
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: volPoller.running = true
     }
 
     function statColor(val) {

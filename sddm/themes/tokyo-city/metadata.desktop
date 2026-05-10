@@ -1,0 +1,11 @@
+[SddmGreeterTheme]
+Name=tokyo-city
+Description=Tokyo City Terminal Dark — custom SDDM theme
+Author=RicardoUMC
+License=MIT
+Type=sddm-theme
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=tokyo-city
+Theme-API=2.0

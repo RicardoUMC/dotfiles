@@ -68,6 +68,7 @@ config.window_padding = {
 -- config.font = wezterm.font("Iosevka NF")
 config.font = wezterm.font_with_fallback({
     { family = "VictorMono Nerd Font", weight = "Regular" },
+    { family = "JetBrains Mono", weight = "Regular" },
     { family = "FiraCode Nerd Font", weight = "Regular" },
 })
 

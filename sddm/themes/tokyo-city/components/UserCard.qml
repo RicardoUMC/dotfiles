@@ -42,9 +42,9 @@ Item {
         Text {
             Layout.alignment: Qt.AlignHCenter
             text: root.currentName
-            font.family: root.colors.monoFont
-            font.pixelSize: 16
-            font.bold: true
+            font.family: root.colors.uiFont
+            font.pixelSize: 17
+            font.weight: Font.DemiBold
             color: root.colors.text
         }
     }

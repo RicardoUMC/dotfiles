@@ -49,7 +49,7 @@ Item {
                     echoMode: TextInput.Password
                     passwordCharacter: "●"
                     color: root.colors.text
-                    font.family: root.colors.monoFont
+                    font.family: root.colors.uiFont
                     font.pixelSize: 14
                     selectionColor: Qt.rgba(root.colors.accent.r, root.colors.accent.g, root.colors.accent.b, 0.3)
                     focus: true
@@ -63,7 +63,8 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         text: "Contraseña"
                         color: root.colors.muted
-                        font: input.font
+                        font.family: root.colors.uiFont
+                        font.pixelSize: 14
                         opacity: 0.5
                         visible: input.text.length === 0
                     }
@@ -90,7 +91,7 @@ Item {
             Layout.alignment: Qt.AlignHCenter
             text: "Contraseña incorrecta"
             color: root.colors.red
-            font.family: root.colors.monoFont
+            font.family: root.colors.uiFont
             font.pixelSize: 12
             opacity: root.failed ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: 150 } }
@@ -111,9 +112,9 @@ Item {
             Text {
                 anchors.centerIn: parent
                 text: "Iniciar sesión"
-                font.family: root.colors.monoFont
+                font.family: root.colors.uiFont
                 font.pixelSize: 14
-                font.bold: true
+                font.weight: Font.Medium
                 color: root.colors.accent
             }
 

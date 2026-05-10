@@ -29,7 +29,7 @@ Item {
 
         Text {
             text: root.currentName
-            font.family: root.colors.monoFont
+            font.family: root.colors.uiFont
             font.pixelSize: 12
             color: root.colors.muted
         }

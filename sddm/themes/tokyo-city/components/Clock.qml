@@ -18,8 +18,8 @@ Item {
         Text {
             id: timeText
             Layout.alignment: Qt.AlignRight
-            font.family: root.colors.monoFont
-            font.pixelSize: 52
+            font.family: root.colors.displayFont
+            font.pixelSize: 56
             font.bold: true
             color: root.colors.text
 
@@ -30,7 +30,7 @@ Item {
         Text {
             id: dateText
             Layout.alignment: Qt.AlignRight
-            font.family: root.colors.monoFont
+            font.family: root.colors.uiFont
             font.pixelSize: 13
             color: root.colors.muted
 

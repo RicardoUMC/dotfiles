@@ -68,7 +68,7 @@ Item {
 
             Text {
                 text: btn.label
-                font.family: btn.colors.monoFont
+                font.family: btn.colors.uiFont
                 font.pixelSize: 12
                 color: btn.colors.muted
             }

@@ -29,7 +29,7 @@ Rectangle {
         Text {
             text: root.icon
             color: root.danger ? Colors.red : Colors.muted
-            font { family: "CaskaydiaMono Nerd Font"; pixelSize: 14 }
+            font { family: Colors.monoFont; pixelSize: 14 }
         }
 
         Text {
@@ -37,7 +37,7 @@ Rectangle {
             color: (ma.containsMouse || root.selected)
                 ? (root.danger ? Colors.red : Colors.text)
                 : Colors.textDim
-            font { family: "CaskaydiaMono Nerd Font"; pixelSize: 12 }
+            font { family: Colors.monoFont; pixelSize: 12 }
             Layout.fillWidth: true
         }
     }

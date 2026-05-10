@@ -41,4 +41,6 @@ QtObject {
     readonly property color brown:   base0F
 
     readonly property color accent: base0D
+
+    readonly property string monoFont: "VictorMono Nerd Font"
 }

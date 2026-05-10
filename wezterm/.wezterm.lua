@@ -67,8 +67,7 @@ config.window_padding = {
 -- config.font = wezterm.font("Liga SFMono Nerd Font")
 -- config.font = wezterm.font("Iosevka NF")
 config.font = wezterm.font_with_fallback({
-    { family = "JetBrains Mono", weight = "Regular" },
-    { family = "CaskaydiaMono Nerd Font", weight = "Regular" },
+    { family = "VictorMono Nerd Font", weight = "Regular" },
     { family = "FiraCode Nerd Font", weight = "Regular" },
 })
 

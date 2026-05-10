@@ -84,7 +84,7 @@ RowLayout {
                     }
                     color: wsItem.isActive ? wsItem.activeColor : Colors.muted
                     font {
-                        family: "CaskaydiaMono Nerd Font"
+                        family: Colors.monoFont
                         pixelSize: 12
                         bold: wsItem.isActive
                     }
@@ -126,7 +126,7 @@ RowLayout {
                         Text {
                             text: parent.appName
                             color: wsItem.isActive ? Colors.textDim : Colors.muted
-                            font { family: "CaskaydiaMono Nerd Font"; pixelSize: 11 }
+                            font { family: Colors.monoFont; pixelSize: 11 }
                         }
                     }
                 }

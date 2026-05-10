@@ -108,12 +108,12 @@ RowLayout {
             Text {
                 text: parent.parent.label
                 color: parent.parent.labelColor
-                font { family: "CaskaydiaMono Nerd Font"; pixelSize: 11 }
+                font { family: Colors.monoFont; pixelSize: 11 }
             }
             Text {
                 text: parent.parent.value
                 color: parent.parent.valueColor
-                font { family: "CaskaydiaMono Nerd Font"; pixelSize: 12 }
+                font { family: Colors.monoFont; pixelSize: 12 }
             }
         }
     }
@@ -143,7 +143,7 @@ RowLayout {
             id: timeText
             anchors.centerIn: parent
             color: Colors.text
-            font { family: "CaskaydiaMono Nerd Font"; pixelSize: 13 }
+            font { family: Colors.monoFont; pixelSize: 13 }
 
             Timer {
                 interval: 1000

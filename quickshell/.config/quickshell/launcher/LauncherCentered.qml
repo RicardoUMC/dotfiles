@@ -116,7 +116,7 @@ PanelWindow {
                     Text {
                         text: root.mode === "search" ? "" : ""
                         color: root.mode === "search" ? Colors.accent : Colors.muted
-                        font { family: "CaskaydiaMono Nerd Font"; pixelSize: 14 }
+                        font { family: Colors.monoFont; pixelSize: 14 }
                     }
 
                     Item {
@@ -129,7 +129,7 @@ PanelWindow {
                                 ? root.filterText
                                 : (root.mode === "search" ? "Buscar apps..." : "Pulsa 'i' para buscar")
                             color: root.filterText.length > 0 ? Colors.text : Colors.muted
-                            font { family: "CaskaydiaMono Nerd Font"; pixelSize: 13 }
+                            font { family: Colors.monoFont; pixelSize: 13 }
                             opacity: root.filterText.length > 0 ? 1.0 : 0.5
                         }
                     }
@@ -176,7 +176,7 @@ PanelWindow {
                             text: delegateItem.name
                             color: delegateItem.isSelected ? Colors.text : Colors.textDim
                             font {
-                                family: "CaskaydiaMono Nerd Font"
+                                family: Colors.monoFont
                                 pixelSize: 13
                                 bold: delegateItem.isSelected
                             }
@@ -187,7 +187,7 @@ PanelWindow {
                         Text {
                             text: delegateItem.comment
                             color: Colors.muted
-                            font { family: "CaskaydiaMono Nerd Font"; pixelSize: 11 }
+                            font { family: Colors.monoFont; pixelSize: 11 }
                             elide: Text.ElideRight
                             Layout.maximumWidth: 180
                         }
@@ -210,7 +210,7 @@ PanelWindow {
                     ? "↵ abrir · ↑↓ mover · Esc navegar"
                     : "↵ abrir · j/k ↑↓ mover · Esc cerrar"
                 color: Colors.muted
-                font { family: "CaskaydiaMono Nerd Font"; pixelSize: 10 }
+                font { family: Colors.monoFont; pixelSize: 10 }
                 opacity: 0.5
             }
         }

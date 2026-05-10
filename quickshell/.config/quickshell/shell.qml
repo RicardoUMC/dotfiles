@@ -5,6 +5,7 @@ import Quickshell.Wayland
 import Quickshell.Hyprland
 import "bar"
 import "launcher"
+import "notifications"
 import "theme"
 
 ShellRoot {
@@ -91,4 +92,5 @@ ShellRoot {
     }
 
     LauncherCentered { id: launcher }
+    Notifications {}
 }

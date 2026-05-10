@@ -34,7 +34,7 @@ Item {
             anchors.centerIn: parent
             text: "⏻"
             color: mouseBtn.containsMouse ? Colors.red : Colors.muted
-            font { family: "CaskaydiaMono Nerd Font"; pixelSize: 13 }
+            font { family: Colors.monoFont; pixelSize: 13 }
         }
 
         MouseArea {

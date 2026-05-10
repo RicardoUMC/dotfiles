@@ -39,7 +39,7 @@ ShellRoot {
 
     Timer {
         id: powerMenuOpenTimer
-        interval: 150
+        interval: 50
         repeat: false
         onTriggered: bar.openPowerMenu()
     }
@@ -66,32 +66,13 @@ ShellRoot {
         }
     }
 
-    // Full-screen transparent backdrop — intercepts clicks outside open popups.
-    // Covers the bar too; power button zone is handled by coordinates.
-    PanelWindow {
-        id: backdrop
-        color: "transparent"
-        visible: launcher.visible || bar.powerMenuVisible
-        exclusionMode: ExclusionMode.Ignore
-        WlrLayershell.layer: WlrLayer.Top
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-        anchors { top: true; bottom: true; left: true; right: true }
-
-        MouseArea {
-            anchors.fill: parent
-            onClicked: mouse => {
-                const inPowerBtn = mouse.y < 37 && mouse.x >= bar.powerBtnGlobalX
-
-                launcher.visible = false
-                bar.closePowerMenu()
-
-                // Re-open only if click was on the power button while PowerMenu was open.
-                // (If PowerMenu was closed, the backdrop wasn't visible — this branch never runs.)
-                if (inPowerBtn) powerMenuOpenTimer.start()
-            }
+    LauncherCentered {
+        id: launcher
+        onOutsideClicked: (x, y) => {
+            const inPowerBtn = y < 37 && x >= bar.powerBtnGlobalX
+            if (inPowerBtn) powerMenuOpenTimer.start()
         }
     }
 
-    LauncherCentered { id: launcher }
     Notifications {}
 }

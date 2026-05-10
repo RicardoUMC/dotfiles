@@ -15,6 +15,7 @@ Item {
     function close() { popup.visible = false }
     function open() { popup.selectedIndex = 0; popup.visible = true; onOpened() }
     readonly property bool isOpen: popup.visible
+
     Rectangle {
         id: btn
         width: 28
@@ -45,7 +46,8 @@ Item {
         }
     }
 
-    // PanelWindow (layer surface) instead of PopupWindow — no input serial required
+    // Fullscreen PanelWindow in Overlay — manages its own outside-click dismissal.
+    // No external backdrop needed for the PowerMenu.
     PanelWindow {
         id: popup
         visible: false
@@ -53,15 +55,18 @@ Item {
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.keyboardFocus: visible ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
-        anchors { top: true; right: true }
-        margins { top: 37 + 11; right: 11 }
-        implicitWidth: 160
-        implicitHeight: col.implicitHeight + 16
+        anchors { top: true; bottom: true; left: true; right: true }
 
         onVisibleChanged: if (visible) keyHandler.forceActiveFocus()
 
         property int selectedIndex: 0
         readonly property int itemCount: 3
+
+        // Click anywhere outside the menu content closes the popup
+        MouseArea {
+            anchors.fill: parent
+            onClicked: popup.visible = false
+        }
 
         Item {
             id: keyHandler
@@ -93,13 +98,23 @@ Item {
             ]
         }
 
+        // Menu content anchored to top-right corner
         Rectangle {
-            anchors.fill: parent
+            anchors { top: parent.top; right: parent.right }
+            anchors { topMargin: 37 + 11; rightMargin: 11 }
+            width: 160
+            height: col.implicitHeight + 16
             radius: 8
             color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.97)
             border {
                 width: 1
                 color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.35)
+            }
+
+            // Consume clicks so they don't propagate to the fullscreen dismiss MouseArea
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {}
             }
 
             ColumnLayout {

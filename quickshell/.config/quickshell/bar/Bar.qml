@@ -17,8 +17,7 @@ PanelWindow {
     function closePowerMenu() { powerMenu.close() }
     function openPowerMenu() { powerMenu.open() }
     readonly property bool powerMenuVisible: powerMenu.isOpen
-    // Used by the backdrop to detect clicks on the power button
-    readonly property real powerBtnGlobalX: root.width - powerMenu.width - 12
+    readonly property real powerBtnGlobalX: root.width - 28 - 12
 
     RowLayout {
         anchors {
@@ -41,7 +40,7 @@ PanelWindow {
         PowerMenu {
             id: powerMenu
             Layout.alignment: Qt.AlignVCenter
-            onOnOpened: bar.powerMenuOpened()
+            onOnOpened: root.powerMenuOpened()
         }
     }
 }

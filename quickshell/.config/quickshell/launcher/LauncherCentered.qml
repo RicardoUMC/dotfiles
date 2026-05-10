@@ -13,6 +13,9 @@ PanelWindow {
         ? WlrKeyboardFocus.OnDemand
         : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
+    anchors { top: true; bottom: true; left: true; right: true }
+
+    signal outsideClicked(real x, real y)
 
     property string mode: "search"
     property string filterText: ""
@@ -20,19 +23,6 @@ PanelWindow {
 
     readonly property int popupW: 560
     readonly property int popupH: 480
-
-    // Sin anclas laterales → centrado horizontal automático por zwlr_layer_shell
-    // Ancla top con margen → centrado en el área de trabajo (bajo la barra de 37px)
-    anchors {
-        top: true
-        bottom: false
-        left: false
-        right: false
-    }
-    margins.top: Math.round((screen.height - 37 - popupH) / 2 + 37)
-
-    implicitWidth: popupW
-    implicitHeight: popupH
 
     visible: false
 
@@ -50,9 +40,8 @@ PanelWindow {
     onVisibleChanged: {
         if (visible) keyHandler.forceActiveFocus()
     }
+
     // ── Modelo filtrado ───────────────────────────────────────────────
-    // Copia solo las entradas que coinciden con filterText.
-    // selectedRow es un índice REAL dentro de este modelo — sin conversión.
     ListModel {
         id: filteredModel
     }
@@ -62,7 +51,6 @@ PanelWindow {
         function onApplicationsChanged() { rebuildModel() }
     }
 
-    // Reconstruye filteredModel cuando cambia el texto o al abrir
     onFilterTextChanged: rebuildModel()
     Component.onCompleted: rebuildModel()
 
@@ -83,13 +71,34 @@ PanelWindow {
         }
     }
 
-    Rectangle {
+    // Fullscreen dismiss area — declared first so content Rectangle sits above it in z-order.
+    // Clicks on the content Rectangle are consumed there and never reach this MouseArea.
+    MouseArea {
         anchors.fill: parent
+        onClicked: mouse => {
+            root.visible = false
+            root.outsideClicked(mouse.x, mouse.y)
+        }
+    }
+
+    Rectangle {
+        width: popupW
+        height: popupH
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        anchors.topMargin: Math.round((parent.height - 37 - popupH) / 2 + 37)
+
         radius: 12
         color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.975)
         border {
             width: 1
             color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.4)
+        }
+
+        // Consume clicks so they don't propagate to the fullscreen dismiss MouseArea
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {}
         }
 
         ColumnLayout {
@@ -290,7 +299,6 @@ PanelWindow {
         }
     }
 
-    // Lanza una entrada por su índice en DesktopEntries.applications
     function launchAt(idx) {
         const entry = DesktopEntries.applications.values[idx]
         if (entry) {

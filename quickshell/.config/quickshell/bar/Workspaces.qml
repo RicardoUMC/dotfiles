@@ -108,10 +108,19 @@ RowLayout {
 
                         readonly property string appName: {
                             const raw = modelData.lastIpcObject["class"] ?? ""
-                            const name = raw
-                                .replace(/^org\.\w+\./, "")
-                                .replace(/-browser$/, "")
-                                .replace(/-desktop$/, "")
+                            // Prefer the desktop entry name (same source as the launcher)
+                            const apps = DesktopEntries.applications.values
+                            if (apps) {
+                                for (let i = 0; i < apps.length; i++) {
+                                    const e = apps[i]
+                                    if (e?.id?.toLowerCase() === raw.toLowerCase())
+                                        return e.name
+                                }
+                            }
+                            // Fallback: reverse-DNS → last segment; plain name → strip suffixes
+                            const name = raw.includes(".")
+                                ? raw.split(".").pop()
+                                : raw.replace(/-browser$/, "").replace(/-desktop$/, "")
                             return name.charAt(0).toUpperCase() + name.slice(1)
                         }
 

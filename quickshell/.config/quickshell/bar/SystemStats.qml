@@ -15,9 +15,9 @@ RowLayout {
         property real cpu: 0
         property real disk: 0
         property bool netUp: false
+        property real prevDiskSectors: 0
         property int  volume: 0
         property bool muted: false
-        property real prevDiskSectors: 0
     }
 
     Process {
@@ -70,13 +70,13 @@ RowLayout {
 
     Process {
         id: volPoller
-        command: ["bash", "-c", "wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{muted=($3==\"[MUTED]\") ? 1 : 0; printf \"%d %d\", $2*100, muted}'"]
-
+        command: ["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"]
         stdout: SplitParser {
             onRead: data => {
-                const parts = data.trim().split(" ")
-                state.volume = parseInt(parts[0]) || 0
-                state.muted = parts[1] === "1"
+                const m = data.trim().match(/Volume:\s*([\d.]+)(\s+\[MUTED\])?/)
+                if (!m) return
+                state.volume = Math.round(parseFloat(m[1]) * 100)
+                state.muted  = !!m[2]
                 volPoller.running = false
             }
         }

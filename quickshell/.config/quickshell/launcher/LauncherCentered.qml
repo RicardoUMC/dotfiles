@@ -86,10 +86,10 @@ PanelWindow {
         height: popupH
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
-        anchors.topMargin: Math.round((parent.height - 37 - popupH) / 2 + 37)
+        anchors.topMargin: Math.round((parent.height - Theme.barHeight - popupH) / 2 + Theme.barHeight)
 
-        radius: 12
-        color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.975)
+        radius: Theme.radiusLg
+        color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacitySurface)
         border {
             width: 1
             color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.4)
@@ -102,30 +102,30 @@ PanelWindow {
         }
 
         ColumnLayout {
-            anchors { fill: parent; margins: 16 }
-            spacing: 10
+            anchors { fill: parent; margins: Theme.spacingLg }
+            spacing: Theme.spacingSm + 2
 
             // ── Buscador ─────────────────────────────────────────
             Rectangle {
                 Layout.fillWidth: true
                 height: 38
-                radius: 8
+                radius: Theme.radiusSm + 2
                 color: Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b, 0.8)
                 border {
                     width: 1
                     color: root.mode === "search"
                         ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.6)
-                        : Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.3)
+                        : Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
                 }
 
                 RowLayout {
-                    anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
-                    spacing: 8
+                    anchors { fill: parent; leftMargin: Theme.spacingMd; rightMargin: Theme.spacingMd }
+                    spacing: Theme.spacingSm
 
                     Text {
                         text: root.mode === "search" ? "" : ""
                         color: root.mode === "search" ? Colors.accent : Colors.muted
-                        font { family: Colors.monoFont; pixelSize: 14 }
+                        font { family: Colors.monoFont; pixelSize: Theme.fontSizeBodyLg }
                     }
 
                     Item {
@@ -138,7 +138,7 @@ PanelWindow {
                                 ? root.filterText
                                 : (root.mode === "search" ? "Buscar apps..." : "Pulsa 'i' para buscar")
                             color: root.filterText.length > 0 ? Colors.text : Colors.muted
-                            font { family: Colors.uiFont; pixelSize: 13 }
+                            font { family: Colors.uiFont; pixelSize: Theme.fontSizeBody }
                             opacity: root.filterText.length > 0 ? 1.0 : 0.5
                         }
                     }
@@ -166,7 +166,7 @@ PanelWindow {
 
                     width: appList.width
                     height: 40
-                    radius: 6
+                    radius: Theme.radiusSm
                     color: isSelected
                         ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.2)
                         : mouseArea.containsMouse
@@ -178,15 +178,15 @@ PanelWindow {
                     }
 
                     RowLayout {
-                        anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
-                        spacing: 10
+                        anchors { fill: parent; leftMargin: Theme.spacingMd; rightMargin: Theme.spacingMd }
+                        spacing: Theme.spacingSm + 2
 
                         Text {
                             text: delegateItem.name
                             color: delegateItem.isSelected ? Colors.text : Colors.textDim
                             font {
                                 family: Colors.uiFont
-                                pixelSize: 13
+                                pixelSize: Theme.fontSizeBody
                                 bold: delegateItem.isSelected
                             }
                             elide: Text.ElideRight
@@ -196,7 +196,7 @@ PanelWindow {
                         Text {
                             text: delegateItem.comment
                             color: Colors.muted
-                            font { family: Colors.uiFont; pixelSize: 11 }
+                            font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
                             elide: Text.ElideRight
                             Layout.maximumWidth: 180
                         }
@@ -219,7 +219,7 @@ PanelWindow {
                     ? "↵ abrir · ↑↓ mover · Esc navegar"
                     : "↵ abrir · j/k ↑↓ mover · Esc cerrar"
                 color: Colors.muted
-                font { family: Colors.monoFont; pixelSize: 10 }
+                font { family: Colors.monoFont; pixelSize: Theme.fontSizeCaption }
                 opacity: 0.5
             }
         }

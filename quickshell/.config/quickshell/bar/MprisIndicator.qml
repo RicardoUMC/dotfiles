@@ -26,16 +26,16 @@ Item {
     implicitHeight: 26
 
     Behavior on implicitWidth {
-        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic }
     }
 
     Rectangle {
         anchors.fill: parent
-        radius: 6
-        color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.33)
+        radius: Theme.radiusSm
+        color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacityOverlay)
         border {
             width: 1
-            color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.3)
+            color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
         }
     }
 
@@ -47,7 +47,7 @@ Item {
         Text {
             text: root.player?.playbackState === MprisPlaybackState.Playing ? "󰎆" : "󰎇"
             color: Colors.accent
-            font { family: Colors.monoFont; pixelSize: 11 }
+            font { family: Colors.monoFont; pixelSize: Theme.fontSizeLabel }
         }
 
         Text {
@@ -57,7 +57,7 @@ Item {
                 return title.length > 28 ? title.slice(0, 28) + "…" : title
             }
             color: Colors.textDim
-            font { family: Colors.uiFont; pixelSize: 11 }
+            font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
         }
     }
 

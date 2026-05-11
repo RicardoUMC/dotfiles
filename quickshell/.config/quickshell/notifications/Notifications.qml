@@ -14,7 +14,7 @@ PanelWindow {
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
     anchors { top: true; right: true }
-    margins { top: 37 + 11; right: 11 }
+    margins { top: Theme.barHeight + Theme.spacingMd - 1; right: Theme.spacingMd - 1 }
 
     implicitWidth: 380
     implicitHeight: toastColumn.implicitHeight
@@ -73,7 +73,7 @@ PanelWindow {
     ColumnLayout {
         id: toastColumn
         width: parent.width
-        spacing: 8
+        spacing: Theme.spacingSm
 
         Repeater {
             model: toastModel

@@ -20,22 +20,22 @@ Item {
         id: btn
         width: 28
         height: 22
-        radius: 6
+        radius: Theme.radiusSm
         color: mouseBtn.containsMouse
-            ? Qt.rgba(Colors.red.r, Colors.red.g, Colors.red.b, 0.15)
-            : Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.33)
+            ? Qt.rgba(Colors.red.r, Colors.red.g, Colors.red.b, Theme.opacityDim)
+            : Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacityOverlay)
         border {
             width: 1
             color: mouseBtn.containsMouse
                 ? Qt.rgba(Colors.red.r, Colors.red.g, Colors.red.b, 0.5)
-                : Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.3)
+                : Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
         }
 
         Text {
             anchors.centerIn: parent
             text: "⏻"
             color: mouseBtn.containsMouse ? Colors.red : Colors.muted
-            font { family: Colors.monoFont; pixelSize: 13 }
+            font { family: Colors.monoFont; pixelSize: Theme.fontSizeBody }
         }
 
         MouseArea {
@@ -101,11 +101,11 @@ Item {
         // Menu content anchored to top-right corner
         Rectangle {
             anchors { top: parent.top; right: parent.right }
-            anchors { topMargin: 37 + 11; rightMargin: 11 }
+            anchors { topMargin: Theme.barHeight + Theme.spacingMd - 1; rightMargin: Theme.spacingMd - 1 }
             width: 160
-            height: col.implicitHeight + 16
-            radius: 8
-            color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.97)
+            height: col.implicitHeight + Theme.spacingLg
+            radius: Theme.radiusMd
+            color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacitySurface)
             border {
                 width: 1
                 color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.35)
@@ -119,8 +119,8 @@ Item {
 
             ColumnLayout {
                 id: col
-                anchors { fill: parent; margins: 8 }
-                spacing: 4
+                anchors { fill: parent; margins: Theme.spacingSm }
+                spacing: Theme.spacingXs
 
                 PowerMenuItem {
                     icon: "󰜉"

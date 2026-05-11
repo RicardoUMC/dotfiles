@@ -9,7 +9,7 @@ PanelWindow {
 
     anchors { top: true; left: true; right: true }
     exclusionMode: ExclusionMode.Auto
-    implicitHeight: 37
+    implicitHeight: Theme.barHeight
     margins { top: 0; left: 0; right: 0 }
     color: "transparent"
 
@@ -25,8 +25,8 @@ PanelWindow {
     RowLayout {
         anchors {
             fill: parent
-            leftMargin: 12
-            rightMargin: 12
+            leftMargin: Theme.spacingMd
+            rightMargin: Theme.spacingMd
             topMargin: 10
             bottomMargin: 0
         }
@@ -45,11 +45,11 @@ PanelWindow {
             }
         }
 
-        Item { width: 8 }
+        Item { width: Theme.spacingSm }
 
         SystemStats { Layout.alignment: Qt.AlignVCenter }
 
-        Item { width: 8 }
+        Item { width: Theme.spacingSm }
 
         PowerMenu {
             id: powerMenu

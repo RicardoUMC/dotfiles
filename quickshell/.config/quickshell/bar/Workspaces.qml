@@ -58,22 +58,22 @@ RowLayout {
 
             Rectangle {
                 anchors.fill: parent
-                radius: 6
+                radius: Theme.radiusSm
                 color: wsItem.isActive
-                    ? Qt.rgba(wsItem.activeColor.r, wsItem.activeColor.g, wsItem.activeColor.b, 0.15)
-                    : Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.33)
+                    ? Qt.rgba(wsItem.activeColor.r, wsItem.activeColor.g, wsItem.activeColor.b, Theme.opacityDim)
+                    : Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacityOverlay)
                 border {
                     width: 1
                     color: wsItem.isActive
                         ? Qt.rgba(wsItem.activeColor.r, wsItem.activeColor.g, wsItem.activeColor.b, 0.6)
-                        : Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.3)
+                        : Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
                 }
             }
 
             RowLayout {
                 id: wsRow
                 anchors.centerIn: parent
-                spacing: 4
+                spacing: Theme.spacingXs
 
                 Text {
                     text: {
@@ -85,7 +85,7 @@ RowLayout {
                     color: wsItem.isActive ? wsItem.activeColor : Colors.muted
                     font {
                         family: Colors.monoFont
-                        pixelSize: 12
+                        pixelSize: Theme.fontSizeLabel + 1
                         bold: wsItem.isActive
                     }
                 }
@@ -93,7 +93,7 @@ RowLayout {
                 Text {
                     text: "•"
                     color: Colors.muted
-                    font.pixelSize: 10
+                    font.pixelSize: Theme.fontSizeCaption
                     opacity: 0.8
                     visible: wsItem.modelData.toplevels.values.length > 0
                 }
@@ -104,7 +104,7 @@ RowLayout {
                     delegate: RowLayout {
                         required property var modelData
                         required property int index
-                        spacing: 4
+                        spacing: Theme.spacingXs
 
                         readonly property string appName: {
                             const raw = modelData.lastIpcObject["class"] ?? ""
@@ -127,7 +127,7 @@ RowLayout {
                         Text {
                             text: "|"
                             color: Colors.muted
-                            font.pixelSize: 10
+                            font.pixelSize: Theme.fontSizeCaption
                             opacity: 0.8
                             visible: index > 0
                         }
@@ -135,7 +135,7 @@ RowLayout {
                         Text {
                             text: parent.appName
                             color: wsItem.isActive ? Colors.textDim : Colors.muted
-                            font { family: Colors.uiFont; pixelSize: 11 }
+                            font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
                         }
                     }
                 }

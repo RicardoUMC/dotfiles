@@ -42,9 +42,9 @@ Item {
     Rectangle {
         id: card
         width: root.width
-        implicitHeight: content.implicitHeight + 24
-        radius: 10
-        color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.97)
+        implicitHeight: content.implicitHeight + Theme.spacingMd * 2
+        radius: Theme.radiusMd
+        color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacitySurface)
         border {
             width: 1
             color: Qt.rgba(root.urgencyColor.r, root.urgencyColor.g, root.urgencyColor.b, 0.5)
@@ -70,19 +70,19 @@ Item {
 
         ColumnLayout {
             id: content
-            anchors { left: parent.left; right: parent.right; top: parent.top; margins: 14 }
-            anchors.bottomMargin: 12
-            spacing: 4
+            anchors { left: parent.left; right: parent.right; top: parent.top; margins: Theme.spacingMd }
+            anchors.bottomMargin: Theme.spacingMd
+            spacing: Theme.spacingXs
 
             // Header: app name + close button
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 6
+                spacing: Theme.spacingSm - 2
 
                 Text {
                     text: root.appName
                     color: Colors.muted
-                    font { family: Colors.monoFont; pixelSize: 10 }
+                    font { family: Colors.monoFont; pixelSize: Theme.fontSizeCaption }
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
@@ -90,7 +90,7 @@ Item {
                 Text {
                     text: "✕"
                     color: Colors.muted
-                    font { family: Colors.monoFont; pixelSize: 10 }
+                    font { family: Colors.monoFont; pixelSize: Theme.fontSizeCaption }
 
                     MouseArea {
                         anchors.fill: parent
@@ -106,7 +106,7 @@ Item {
             Text {
                 text: root.summary
                 color: Colors.text
-                font { family: Colors.monoFont; pixelSize: 13; bold: true }
+                font { family: Colors.monoFont; pixelSize: Theme.fontSizeBody; bold: true }
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
                 visible: root.summary.length > 0
@@ -116,7 +116,7 @@ Item {
             Text {
                 text: root.body
                 color: Colors.textDim
-                font { family: Colors.monoFont; pixelSize: 12 }
+                font { family: Colors.monoFont; pixelSize: Theme.fontSizeBody - 1 }
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
                 visible: root.body.length > 0
@@ -124,7 +124,7 @@ Item {
 
             // Actions
             RowLayout {
-                spacing: 6
+                spacing: Theme.spacingSm - 2
                 Layout.fillWidth: true
                 visible: root.notif !== null && root.notif.actions.length > 0
 
@@ -136,7 +136,7 @@ Item {
 
                         implicitHeight: 26
                         implicitWidth: actionLabel.implicitWidth + 20
-                        radius: 6
+                        radius: Theme.radiusSm
                         color: actionMa.containsMouse
                             ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.2)
                             : Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b, 0.6)
@@ -150,7 +150,7 @@ Item {
                             anchors.centerIn: parent
                             text: modelData.text
                             color: Colors.text
-                            font { family: Colors.monoFont; pixelSize: 11 }
+                            font { family: Colors.monoFont; pixelSize: Theme.fontSizeLabel }
                         }
 
                         MouseArea {
@@ -182,7 +182,7 @@ Item {
     // Slide-in animation on appear
     NumberAnimation on opacity {
         from: 0; to: 1
-        duration: 180
+        duration: Theme.animNormal
         easing.type: Easing.OutCubic
     }
 }

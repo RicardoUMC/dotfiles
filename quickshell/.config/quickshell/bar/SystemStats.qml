@@ -6,7 +6,7 @@ import "../theme"
 
 RowLayout {
     id: root
-    spacing: 12
+    spacing: Theme.spacingMd
 
     QtObject {
         id: state
@@ -107,11 +107,11 @@ RowLayout {
 
         Rectangle {
             anchors.fill: parent
-            radius: 6
-            color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.33)
+            radius: Theme.radiusSm
+            color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacityOverlay)
             border {
                 width: 1
-                color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.3)
+                color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
             }
         }
 
@@ -123,12 +123,12 @@ RowLayout {
             Text {
                 text: parent.parent.label
                 color: parent.parent.labelColor
-                font { family: Colors.uiFont; pixelSize: 11 }
+                font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
             }
             Text {
                 text: parent.parent.value
                 color: parent.parent.valueColor
-                font { family: Colors.uiFont; pixelSize: 12 }
+                font { family: Colors.uiFont; pixelSize: Theme.fontSizeBody }
             }
         }
     }
@@ -146,11 +146,11 @@ RowLayout {
 
         Rectangle {
             anchors.fill: parent
-            radius: 6
-            color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.33)
+            radius: Theme.radiusSm
+            color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacityOverlay)
             border {
                 width: 1
-                color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.3)
+                color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
             }
         }
 
@@ -158,7 +158,7 @@ RowLayout {
             id: timeText
             anchors.centerIn: parent
             color: Colors.text
-            font { family: Colors.uiFont; pixelSize: 13 }
+            font { family: Colors.uiFont; pixelSize: Theme.fontSizeBody }
 
             Timer {
                 interval: 1000

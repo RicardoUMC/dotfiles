@@ -46,8 +46,8 @@ Item {
             x: Math.min(Math.max(root.anchorX - popupW / 2, 8), popup.width - popupW - 8)
             y: 44
 
-            radius: 10
-            color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.96)
+            radius: Theme.radiusMd
+            color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacitySurface)
             border {
                 width: 1
                 color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.25)
@@ -56,14 +56,14 @@ Item {
             MouseArea { anchors.fill: parent }
 
             ColumnLayout {
-                anchors { fill: parent; margins: 16 }
-                spacing: 12
+                anchors { fill: parent; margins: Theme.spacingLg }
+                spacing: Theme.spacingMd
 
                 // Cover art
                 Rectangle {
                     Layout.fillWidth: true
                     height: 120
-                    radius: 6
+                    radius: Theme.radiusSm
                     color: Qt.rgba(Colors.base00.r, Colors.base00.g, Colors.base00.b, 0.8)
                     visible: (root.player?.trackArtUrl ?? "") !== ""
                     clip: true
@@ -84,7 +84,7 @@ Item {
                         Layout.fillWidth: true
                         text: root.player?.trackTitle ?? ""
                         color: Colors.text
-                        font { family: Colors.uiFont; pixelSize: 13 }
+                        font { family: Colors.uiFont; pixelSize: Theme.fontSizeBody }
                         elide: Text.ElideRight
                     }
 
@@ -92,7 +92,7 @@ Item {
                         Layout.fillWidth: true
                         text: root.player?.trackArtist ?? ""
                         color: Colors.textDim
-                        font { family: Colors.uiFont; pixelSize: 11 }
+                        font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
                         elide: Text.ElideRight
                     }
                 }
@@ -102,7 +102,7 @@ Item {
                     Layout.fillWidth: true
                     height: 3
                     radius: 2
-                    color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.3)
+                    color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
 
                     Rectangle {
                         width: {
@@ -115,7 +115,7 @@ Item {
                         color: Colors.accent
 
                         Behavior on width {
-                            NumberAnimation { duration: 500 }
+                            NumberAnimation { duration: Theme.animSlow }
                         }
                     }
                 }
@@ -124,12 +124,12 @@ Item {
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignHCenter
-                    spacing: 24
+                    spacing: Theme.spacingXl
 
                     Text {
                         text: "󰒮"
                         color: Colors.textDim
-                        font { family: Colors.monoFont; pixelSize: 18 }
+                        font { family: Colors.monoFont; pixelSize: Theme.fontSizeIcon }
                         MouseArea {
                             anchors.fill: parent
                             onClicked: root.player?.previous()
@@ -149,7 +149,7 @@ Item {
                     Text {
                         text: "󰒭"
                         color: Colors.textDim
-                        font { family: Colors.monoFont; pixelSize: 18 }
+                        font { family: Colors.monoFont; pixelSize: Theme.fontSizeIcon }
                         MouseArea {
                             anchors.fill: parent
                             onClicked: root.player?.next()

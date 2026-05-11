@@ -14,7 +14,7 @@ Rectangle {
 
     Layout.fillWidth: true
     implicitHeight: 34
-    radius: 6
+    radius: Theme.radiusSm
 
     color: (ma.containsMouse || root.selected)
         ? danger
@@ -23,13 +23,13 @@ Rectangle {
         : "transparent"
 
     RowLayout {
-        anchors { fill: parent; leftMargin: 10; rightMargin: 10 }
-        spacing: 10
+        anchors { fill: parent; leftMargin: Theme.spacingMd - 2; rightMargin: Theme.spacingMd - 2 }
+        spacing: Theme.spacingSm + 2
 
         Text {
             text: root.icon
             color: root.danger ? Colors.red : Colors.muted
-            font { family: Colors.monoFont; pixelSize: 14 }
+            font { family: Colors.monoFont; pixelSize: Theme.fontSizeBodyLg }
         }
 
         Text {

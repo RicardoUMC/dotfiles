@@ -6,6 +6,7 @@ import Quickshell.Hyprland
 import "bar"
 import "launcher"
 import "notifications"
+import "osd"
 import "theme"
 
 ShellRoot {
@@ -83,4 +84,6 @@ ShellRoot {
     }
 
     Notifications { id: notifications }
+
+    OsdWindow {}
 }

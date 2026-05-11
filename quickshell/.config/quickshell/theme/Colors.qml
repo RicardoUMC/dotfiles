@@ -42,5 +42,7 @@ QtObject {
 
     readonly property color accent: base0D
 
-    readonly property string monoFont: "VictorMono Nerd Font"
+    readonly property string monoFont:    "VictorMono Nerd Font"
+    readonly property string displayFont: "SF Pro Display"
+    readonly property string uiFont:      "SF Pro Text"
 }

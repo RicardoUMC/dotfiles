@@ -135,7 +135,7 @@ RowLayout {
                         Text {
                             text: parent.appName
                             color: wsItem.isActive ? Colors.textDim : Colors.muted
-                            font { family: Colors.monoFont; pixelSize: 11 }
+                            font { family: Colors.uiFont; pixelSize: 11 }
                         }
                     }
                 }

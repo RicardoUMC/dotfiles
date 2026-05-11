@@ -138,7 +138,7 @@ PanelWindow {
                                 ? root.filterText
                                 : (root.mode === "search" ? "Buscar apps..." : "Pulsa 'i' para buscar")
                             color: root.filterText.length > 0 ? Colors.text : Colors.muted
-                            font { family: Colors.monoFont; pixelSize: 13 }
+                            font { family: Colors.uiFont; pixelSize: 13 }
                             opacity: root.filterText.length > 0 ? 1.0 : 0.5
                         }
                     }
@@ -185,7 +185,7 @@ PanelWindow {
                             text: delegateItem.name
                             color: delegateItem.isSelected ? Colors.text : Colors.textDim
                             font {
-                                family: Colors.monoFont
+                                family: Colors.uiFont
                                 pixelSize: 13
                                 bold: delegateItem.isSelected
                             }
@@ -196,7 +196,7 @@ PanelWindow {
                         Text {
                             text: delegateItem.comment
                             color: Colors.muted
-                            font { family: Colors.monoFont; pixelSize: 11 }
+                            font { family: Colors.uiFont; pixelSize: 11 }
                             elide: Text.ElideRight
                             Layout.maximumWidth: 180
                         }

@@ -48,8 +48,9 @@ Item {
                     Layout.fillWidth: true
                     echoMode: TextInput.Password
                     passwordCharacter: "●"
+                    passwordMaskDelay: 0
                     color: root.colors.text
-                    font.family: root.colors.uiFont
+                    font.family: root.colors.monoFont
                     font.pixelSize: 14
                     selectionColor: Qt.rgba(root.colors.accent.r, root.colors.accent.g, root.colors.accent.b, 0.3)
                     focus: true

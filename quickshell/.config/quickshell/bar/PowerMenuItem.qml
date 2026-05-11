@@ -37,7 +37,7 @@ Rectangle {
             color: (ma.containsMouse || root.selected)
                 ? (root.danger ? Colors.red : Colors.text)
                 : Colors.textDim
-            font { family: Colors.monoFont; pixelSize: 12 }
+            font { family: Colors.uiFont; pixelSize: 12 }
             Layout.fillWidth: true
         }
     }

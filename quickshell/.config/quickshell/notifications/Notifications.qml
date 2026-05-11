@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Notifications
 import Quickshell.Wayland
 import "../theme"
@@ -18,15 +19,34 @@ PanelWindow {
     implicitWidth: 380
     implicitHeight: toastColumn.implicitHeight
 
+    property bool soundMuted: false
+
     // Internal model: { id, summary, body, appName, urgency, actions, notif }
     ListModel { id: toastModel }
+
+    Process {
+        id: soundPlayer
+        command: ["paplay", ""]
+        running: false
+    }
+
+    function playSound(urgency) {
+        if (root.soundMuted) return
+        const base = "/usr/share/sounds/freedesktop/stereo/"
+        if (urgency === NotificationUrgency.Critical)
+            soundPlayer.command = ["paplay", base + "dialog-error.oga"]
+        else if (urgency === NotificationUrgency.Low)
+            soundPlayer.command = ["paplay", base + "message-new-instant.oga"]
+        else
+            soundPlayer.command = ["paplay", base + "dialog-information.oga"]
+        soundPlayer.running = true
+    }
 
     NotificationServer {
         id: server
         keepOnReload: true
 
         onNotification: notif => {
-            // Replace existing toast from same app+summary, otherwise append
             for (let i = 0; i < toastModel.count; i++) {
                 if (toastModel.get(i).notifId === notif.id) {
                     toastModel.remove(i)
@@ -45,6 +65,8 @@ PanelWindow {
                 timeout:  timeout,
                 notif:    notif
             })
+
+            root.playSound(notif.urgency)
         }
     }
 

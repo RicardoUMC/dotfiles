@@ -3,3 +3,5 @@ Workspaces 1.0 Workspaces.qml
 SystemStats 1.0 SystemStats.qml
 PowerMenu 1.0 PowerMenu.qml
 PowerMenuItem 1.0 PowerMenuItem.qml
+MprisIndicator 1.0 MprisIndicator.qml
+MprisPopup 1.0 MprisPopup.qml

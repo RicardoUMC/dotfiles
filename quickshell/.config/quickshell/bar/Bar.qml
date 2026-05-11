@@ -19,6 +19,9 @@ PanelWindow {
     readonly property bool powerMenuVisible: powerMenu.isOpen
     readonly property real powerBtnGlobalX: root.width - 28 - 12
 
+    function closeMpris() { mprisPopup.close() }
+    readonly property bool mprisVisible: mprisPopup.isOpen
+
     RowLayout {
         anchors {
             fill: parent
@@ -33,6 +36,17 @@ PanelWindow {
 
         Item { Layout.fillWidth: true }
 
+        MprisIndicator {
+            id: mprisChip
+            Layout.alignment: Qt.AlignVCenter
+            onClicked: {
+                mprisPopup.anchorX = mprisChip.x + mprisChip.width / 2
+                mprisPopup.toggle()
+            }
+        }
+
+        Item { width: 8 }
+
         SystemStats { Layout.alignment: Qt.AlignVCenter }
 
         Item { width: 8 }
@@ -42,5 +56,9 @@ PanelWindow {
             Layout.alignment: Qt.AlignVCenter
             onOnOpened: root.powerMenuOpened()
         }
+    }
+
+    MprisPopup {
+        id: mprisPopup
     }
 }

@@ -53,7 +53,15 @@ ShellRoot {
                 || name === "activewindow" || name === "fullscreen") {
                 launcher.visible = false
                 bar.closePowerMenu()
+                bar.closeMpris()
             }
+        }
+    }
+
+    IpcHandler {
+        target: "notifications"
+        function toggleSound() {
+            notifications.soundMuted = !notifications.soundMuted
         }
     }
 
@@ -74,5 +82,5 @@ ShellRoot {
         }
     }
 
-    Notifications {}
+    Notifications { id: notifications }
 }

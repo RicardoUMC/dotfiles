@@ -26,6 +26,10 @@ QtObject {
     // Bar
     property int barHeight: 37
 
+    // Ornament
+    property real ornamentOpacity: 0.07
+    property real ornamentStroke:  1.5
+
     // Animation (ms)
     property int animFast:   180
     property int animNormal: 300
@@ -67,6 +71,8 @@ QtObject {
             if (cfg.opacity?.border  !== undefined) opacityBorder  = cfg.opacity.border
             if (cfg.opacity?.dim     !== undefined) opacityDim     = cfg.opacity.dim
             if (cfg.bar?.height      !== undefined) barHeight      = cfg.bar.height
+            if (cfg.ornament?.opacity !== undefined) ornamentOpacity = cfg.ornament.opacity
+            if (cfg.ornament?.stroke  !== undefined) ornamentStroke  = cfg.ornament.stroke
             if (cfg.anim?.fast       !== undefined) animFast       = cfg.anim.fast
             if (cfg.anim?.normal     !== undefined) animNormal     = cfg.anim.normal
             if (cfg.anim?.slow       !== undefined) animSlow       = cfg.anim.slow

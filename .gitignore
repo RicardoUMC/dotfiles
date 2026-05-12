@@ -6,3 +6,4 @@ __pycache__/
 *.qslog
 .sdd/
 .atl/
+openspec/

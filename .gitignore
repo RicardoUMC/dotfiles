@@ -5,3 +5,4 @@ __pycache__/
 # Quickshell logs/cache
 *.qslog
 .sdd/
+.atl/

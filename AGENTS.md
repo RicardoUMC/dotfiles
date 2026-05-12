@@ -76,6 +76,11 @@ Merge directly to `main` — no PRs (personal repo). Never commit without explic
 ## Design system
 See `DESIGN.md` for the full design reference — philosophy, inspirations, tokens, overlay rules, and planned architecture. Read it before touching any UI component.
 
+## Available skills (OpenCode)
+| Command | Skill | Purpose |
+|---------|-------|---------|
+| `/sync-docs` | `sync-docs` | Sync SPECS.md, DESIGN.md, AGENTS.md, specs/* to reflect current implementation state |
+
 ## Do not touch
 - `~/.config/opencode/` — managed by `gentle-ai` (AGENTS.md, opencode.json, skills/, commands/)
 - Never add `--no-verify`, amend commits, or force push

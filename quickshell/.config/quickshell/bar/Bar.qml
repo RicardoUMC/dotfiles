@@ -14,13 +14,26 @@ PanelWindow {
     color: "transparent"
 
     signal powerMenuOpened()
+    signal powerMenuClosed()
+    signal mprisToggleRequested()
+    signal mprisClosed()
     function closePowerMenu() { powerMenu.close() }
     function openPowerMenu() { powerMenu.open() }
     readonly property bool powerMenuVisible: powerMenu.isOpen
     readonly property real powerBtnGlobalX: root.width - 28 - 12
+    readonly property real mprisChipGlobalX: mprisChip.x
+    readonly property real mprisChipWidth: mprisChip.width
+    readonly property bool mprisChipActive: mprisChip.active
+    function setMprisAnchor() { mprisPopup.anchorX = mprisChip.x + mprisChip.width / 2 }
 
     function closeMpris() { mprisPopup.close() }
+    function openMpris() { mprisPopup.open() }
     readonly property bool mprisVisible: mprisPopup.isOpen
+
+    BarOrnament {
+        anchors.fill: parent
+        z: -1
+    }
 
     RowLayout {
         anchors {
@@ -41,7 +54,7 @@ PanelWindow {
             Layout.alignment: Qt.AlignVCenter
             onClicked: {
                 mprisPopup.anchorX = mprisChip.x + mprisChip.width / 2
-                mprisPopup.toggle()
+                root.mprisToggleRequested()
             }
         }
 
@@ -55,10 +68,12 @@ PanelWindow {
             id: powerMenu
             Layout.alignment: Qt.AlignVCenter
             onOnOpened: root.powerMenuOpened()
+            onClosed: root.powerMenuClosed()
         }
     }
 
     MprisPopup {
         id: mprisPopup
+        onClosed: root.mprisClosed()
     }
 }

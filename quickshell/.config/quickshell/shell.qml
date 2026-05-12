@@ -12,51 +12,12 @@ import "theme"
 ShellRoot {
     IpcHandler {
         target: "launcher"
-        function toggle() {
-            bar.closePowerMenu()
-            launcherOpenTimer.start()
-        }
+        function toggle() { overlayManager.open("launcher") }
     }
 
     IpcHandler {
         target: "powermenu"
-        function toggle() {
-            if (bar.powerMenuVisible) {
-                bar.closePowerMenu()
-            } else {
-                launcher.visible = false
-                powerMenuOpenTimer.start()
-            }
-        }
-    }
-
-    // Timers prevent Wayland serial conflicts when switching between popups
-    Timer {
-        id: launcherOpenTimer
-        interval: 50
-        repeat: false
-        onTriggered: launcher.toggleOpen()
-    }
-
-    Timer {
-        id: powerMenuOpenTimer
-        interval: 50
-        repeat: false
-        onTriggered: bar.openPowerMenu()
-    }
-
-    Connections {
-        target: Hyprland
-        function onRawEvent(event) {
-            const name = event.name
-            if (name === "workspace" || name === "workspacev2"
-                || name === "moveworkspace" || name === "movewindow"
-                || name === "activewindow" || name === "fullscreen") {
-                launcher.visible = false
-                bar.closePowerMenu()
-                bar.closeMpris()
-            }
-        }
+        function toggle() { overlayManager.open("powermenu") }
     }
 
     IpcHandler {
@@ -66,20 +27,81 @@ ShellRoot {
         }
     }
 
+    // Anti-serial-conflict timer — owned by overlayManager logic but must live in ShellRoot
+    Timer {
+        id: overlayOpenTimer
+        interval: 50
+        repeat: false
+        onTriggered: overlayManager._doOpen(overlayManager._pendingOpen)
+    }
+
+    QtObject {
+        id: overlayManager
+
+        property string activeOverlay: ""
+        property string _pendingOpen: ""
+
+        function open(name) {
+            if (activeOverlay === name) { _closeActive(); return }
+            _closeActive()
+            _pendingOpen = name
+            overlayOpenTimer.restart()
+        }
+
+        function close(name) {
+            if (activeOverlay === name) { _closeActive() }
+        }
+
+        function closeAll() { _closeActive() }
+
+        function _closeActive() {
+            // Clear activeOverlay first to prevent re-entrant calls from closed() signals
+            const current = activeOverlay
+            activeOverlay = ""
+            if (current === "launcher")  launcher.visible = false
+            if (current === "powermenu") bar.closePowerMenu()
+            if (current === "mpris")     bar.closeMpris()
+        }
+
+        function _doOpen(name) {
+            if (name === "launcher")  launcher.toggleOpen()
+            if (name === "powermenu") bar.openPowerMenu()
+            if (name === "mpris")     bar.openMpris()
+            activeOverlay = name
+        }
+    }
+
+    Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            const n = event.name
+            if (["workspace","workspacev2","moveworkspace","movewindow","activewindow","fullscreen"].includes(n))
+                overlayManager.closeAll()
+        }
+    }
+
     Bar { id: bar }
 
     Connections {
         target: bar
-        function onPowerMenuOpened() {
-            launcher.visible = false
-        }
+        function onMprisToggleRequested() { overlayManager.open("mpris") }
+        function onPowerMenuClosed() { overlayManager.close("powermenu") }
+        function onMprisClosed() { overlayManager.close("mpris") }
     }
 
     LauncherCentered {
         id: launcher
+        onDismissed: overlayManager.close("launcher")
         onOutsideClicked: (x, y) => {
-            const inPowerBtn = y < 37 && x >= bar.powerBtnGlobalX
-            if (inPowerBtn) powerMenuOpenTimer.start()
+            const inBar = y < Theme.barHeight
+            if (inBar && x >= bar.powerBtnGlobalX) {
+                overlayManager.open("powermenu")
+            } else if (inBar && bar.mprisChipActive
+                       && x >= bar.mprisChipGlobalX
+                       && x <= bar.mprisChipGlobalX + bar.mprisChipWidth) {
+                bar.setMprisAnchor()
+                overlayManager.open("mpris")
+            }
         }
     }
 

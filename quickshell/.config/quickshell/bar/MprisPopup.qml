@@ -10,8 +10,10 @@ Item {
 
     property real anchorX: 0
 
+    signal closed()
+
     function open()   { popup.visible = true }
-    function close()  { popup.visible = false }
+    function close()  { popup.visible = false; closed() }
     function toggle() { popup.visible ? root.close() : root.open() }
     readonly property bool isOpen: popup.visible
 
@@ -34,7 +36,7 @@ Item {
 
         MouseArea {
             anchors.fill: parent
-            onClicked: popup.visible = false
+            onClicked: root.close()
         }
 
         Rectangle {

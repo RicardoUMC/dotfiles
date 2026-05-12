@@ -12,7 +12,8 @@ Item {
     implicitHeight: btn.height
 
     signal onOpened()
-    function close() { popup.visible = false }
+    signal closed()
+    function close() { popup.visible = false; closed() }
     function open() { popup.selectedIndex = 0; popup.visible = true; onOpened() }
     readonly property bool isOpen: popup.visible
 
@@ -65,7 +66,7 @@ Item {
         // Click anywhere outside the menu content closes the popup
         MouseArea {
             anchors.fill: parent
-            onClicked: popup.visible = false
+            onClicked: { popup.visible = false; root.closed() }
         }
 
         Item {
@@ -86,6 +87,7 @@ Item {
                     event.accepted = true
                 } else if (key === Qt.Key_Escape) {
                     popup.visible = false
+                    root.closed()
                     event.accepted = true
                 }
             }

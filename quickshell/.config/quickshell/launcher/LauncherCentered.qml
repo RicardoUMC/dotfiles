@@ -16,6 +16,7 @@ PanelWindow {
     anchors { top: true; bottom: true; left: true; right: true }
 
     signal outsideClicked(real x, real y)
+    signal dismissed()
 
     property string mode: "search"
     property string filterText: ""
@@ -77,6 +78,7 @@ PanelWindow {
         anchors.fill: parent
         onClicked: mouse => {
             root.visible = false
+            root.dismissed()
             root.outsideClicked(mouse.x, mouse.y)
         }
     }
@@ -262,6 +264,7 @@ PanelWindow {
                 } else { // navigate
                     if (key === Qt.Key_Escape) {
                         root.visible = false
+                        root.dismissed()
                         event.accepted = true
 
                     } else if (key === Qt.Key_J || key === Qt.Key_Down) {
@@ -304,6 +307,7 @@ PanelWindow {
         if (entry) {
             entry.execute()
             root.visible = false
+            root.dismissed()
         }
     }
 }

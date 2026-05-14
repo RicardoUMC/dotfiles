@@ -9,56 +9,123 @@ PanelWindow {
 
     anchors { top: true; left: true; right: true }
     exclusionMode: ExclusionMode.Auto
-    implicitHeight: Theme.barHeight
+    implicitHeight: Theme.barRailHeight + Theme.tabCollapsedHeight
     margins { top: 0; left: 0; right: 0 }
     color: "transparent"
 
+    // IPC signals
     signal powerMenuOpened()
+    signal powerMenuClosed()
+    signal mprisToggleRequested()
+    signal mprisClosed()
+
+    property bool centerExpanded: false
+
+    // IPC functions
     function closePowerMenu() { powerMenu.close() }
-    function openPowerMenu() { powerMenu.open() }
+    function openPowerMenu()  { powerMenu.open() }
+    function closeMpris()     { mprisPopup.close() }
+    function openMpris() {
+        mprisPopup.anchorX = centerTab.x + centerTab.width / 2
+        mprisPopup.open()
+    }
+    function setMprisAnchor() {
+        mprisPopup.anchorX = centerTab.x + centerTab.width / 2
+    }
+
+    // IPC readonly properties
     readonly property bool powerMenuVisible: powerMenu.isOpen
-    readonly property real powerBtnGlobalX: root.width - 28 - 12
+    readonly property real powerBtnGlobalX:  rightTab.x + rightTab.width - powerMenu.implicitWidth - Theme.tabPaddingH
+    readonly property real mprisChipGlobalX: centerTab.x + centerTab.width / 2
+    readonly property real mprisChipWidth:   mprisChip.width
+    readonly property bool mprisChipActive:  mprisChip.active
+    readonly property bool mprisVisible:     mprisPopup.isOpen
 
-    function closeMpris() { mprisPopup.close() }
-    readonly property bool mprisVisible: mprisPopup.isOpen
-
-    RowLayout {
+    // Top rail — thin full-width bar anchored to top
+    Rectangle {
+        id: rail
         anchors {
-            fill: parent
-            leftMargin: Theme.spacingMd
-            rightMargin: Theme.spacingMd
-            topMargin: 10
-            bottomMargin: 0
+            top: parent.top
+            left: parent.left
+            right: parent.right
         }
-        spacing: 0
+        height: Theme.barRailHeight
+        topLeftRadius:     Theme.tabRadius
+        topRightRadius:    Theme.tabRadius
+        bottomLeftRadius:  0
+        bottomRightRadius: 0
+        color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.tabBgOpacity)
+        border {
+            width: 1
+            color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.islandBorderOpacity)
+        }
+    }
 
-        Workspaces { Layout.alignment: Qt.AlignVCenter }
+    // Left tab — Workspaces
+    BarTab {
+        id: leftTab
+        compact: true
+        anchors {
+            left: parent.left
+            leftMargin: Theme.spacingMd
+            top: rail.bottom
+            topMargin: 0
+        }
 
-        Item { Layout.fillWidth: true }
+        Workspaces {}
+    }
+
+    // Center tab — Clock always visible + MPRIS inside when active; expandable on click
+    BarTab {
+        id: centerTab
+        clip: true
+        anchors {
+            horizontalCenter: parent.horizontalCenter
+            top: rail.bottom
+            topMargin: 0
+        }
+        implicitHeight: centerExpanded ? Theme.tabMaxHeight : Theme.tabCollapsedHeight
+        Behavior on implicitHeight {
+            NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic }
+        }
+
+        ClockChip {}
 
         MprisIndicator {
             id: mprisChip
-            Layout.alignment: Qt.AlignVCenter
-            onClicked: {
-                mprisPopup.anchorX = mprisChip.x + mprisChip.width / 2
-                mprisPopup.toggle()
-            }
+            visible: active
+            onClicked: root.mprisToggleRequested()
+        }
+    }
+
+    MouseArea {
+        anchors.fill: centerTab
+        onClicked: root.centerExpanded = !root.centerExpanded
+        z: 1
+    }
+
+    // Right tab — SystemStats + PowerMenu button
+    BarTab {
+        id: rightTab
+        compact: true
+        anchors {
+            right: parent.right
+            rightMargin: Theme.spacingMd
+            top: rail.bottom
+            topMargin: 0
         }
 
-        Item { width: Theme.spacingSm }
-
-        SystemStats { Layout.alignment: Qt.AlignVCenter }
-
-        Item { width: Theme.spacingSm }
+        SystemStats {}
 
         PowerMenu {
             id: powerMenu
-            Layout.alignment: Qt.AlignVCenter
             onOnOpened: root.powerMenuOpened()
+            onOnClosed: root.powerMenuClosed()
         }
     }
 
     MprisPopup {
         id: mprisPopup
+        onClosed: root.mprisClosed()
     }
 }

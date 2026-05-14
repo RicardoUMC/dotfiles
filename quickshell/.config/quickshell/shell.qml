@@ -93,12 +93,12 @@ ShellRoot {
         id: launcher
         onDismissed: overlayManager.close("launcher")
         onOutsideClicked: (x, y) => {
-            const inBar = y < Theme.barHeight
+            const inBar = y < Theme.barRailHeight
             if (inBar && x >= bar.powerBtnGlobalX) {
                 overlayManager.open("powermenu")
             } else if (inBar && bar.mprisChipActive
-                       && x >= bar.mprisChipGlobalX
-                       && x <= bar.mprisChipGlobalX + bar.mprisChipWidth) {
+                       && x >= bar.mprisChipGlobalX - bar.mprisChipWidth / 2
+                       && x <= bar.mprisChipGlobalX + bar.mprisChipWidth / 2) {
                 bar.setMprisAnchor()
                 overlayManager.open("mpris")
             }

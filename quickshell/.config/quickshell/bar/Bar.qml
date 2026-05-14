@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
 import "../theme"
@@ -10,7 +9,7 @@ PanelWindow {
 
     anchors { top: true; left: true; right: true }
     exclusionMode: ExclusionMode.Auto
-    implicitHeight: Theme.barHeightIslands
+    implicitHeight: Theme.barRailHeight + Theme.tabCollapsedHeight
     margins { top: 0; left: 0; right: 0 }
     color: "transparent"
 
@@ -20,97 +19,103 @@ PanelWindow {
     signal mprisToggleRequested()
     signal mprisClosed()
 
+    property bool centerExpanded: false
+
     // IPC functions
     function closePowerMenu() { powerMenu.close() }
     function openPowerMenu()  { powerMenu.open() }
     function closeMpris()     { mprisPopup.close() }
-    function openMpris()      { mprisPopup.open() }
+    function openMpris() {
+        mprisPopup.anchorX = centerTab.x + centerTab.width / 2
+        mprisPopup.open()
+    }
     function setMprisAnchor() {
-        mprisPopup.anchorX = mprisChip.x + centerIsland.x + mprisChip.width / 2
+        mprisPopup.anchorX = centerTab.x + centerTab.width / 2
     }
 
     // IPC readonly properties
     readonly property bool powerMenuVisible: powerMenu.isOpen
-    readonly property real powerBtnGlobalX:  rightIsland.x + rightIsland.width - powerMenu.implicitWidth - Theme.islandPaddingH
-    readonly property real mprisChipGlobalX: centerIsland.x + Theme.islandPaddingH
+    readonly property real powerBtnGlobalX:  rightTab.x + rightTab.width - powerMenu.implicitWidth - Theme.tabPaddingH
+    readonly property real mprisChipGlobalX: centerTab.x + centerTab.width / 2
     readonly property real mprisChipWidth:   mprisChip.width
     readonly property bool mprisChipActive:  mprisChip.active
     readonly property bool mprisVisible:     mprisPopup.isOpen
 
-    // Decorative ornament layer — behind everything
-    Shape {
-        anchors.fill: parent
-        z: -1
-
-        ShapePath {
-            strokeColor: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, Theme.ornamentOpacity)
-            strokeWidth: Theme.ornamentStroke
-            fillColor: "transparent"
-            startX: 0; startY: parent.height * 0.6
-            PathCubic {
-                x: parent.width * 0.5; y: parent.height * 0.2
-                control1X: parent.width * 0.15; control1Y: parent.height * 0.1
-                control2X: parent.width * 0.35; control2Y: parent.height * 0.05
-            }
-            PathCubic {
-                x: parent.width; y: parent.height * 0.5
-                control1X: parent.width * 0.65; control1Y: parent.height * 0.35
-                control2X: parent.width * 0.85; control2Y: parent.height * 0.6
-            }
+    // Top rail — thin full-width bar anchored to top
+    Rectangle {
+        id: rail
+        anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
         }
-
-        ShapePath {
-            strokeColor: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, Theme.ornamentOpacity)
-            strokeWidth: Theme.ornamentStroke
-            fillColor: "transparent"
-            startX: parent.width * 0.2; startY: 0
-            PathCubic {
-                x: parent.width * 0.8; y: parent.height
-                control1X: parent.width * 0.4;  control1Y: parent.height * 0.3
-                control2X: parent.width * 0.6;  control2Y: parent.height * 0.7
-            }
+        height: Theme.barRailHeight
+        topLeftRadius:     Theme.tabRadius
+        topRightRadius:    Theme.tabRadius
+        bottomLeftRadius:  0
+        bottomRightRadius: 0
+        color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.tabBgOpacity)
+        border {
+            width: 1
+            color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.islandBorderOpacity)
         }
     }
 
-    // Left island — Workspaces
-    BarIsland {
-        id: leftIsland
-        spacing: 0
+    // Left tab — Workspaces
+    BarTab {
+        id: leftTab
+        compact: true
         anchors {
             left: parent.left
             leftMargin: Theme.spacingMd
-            verticalCenter: parent.verticalCenter
+            top: rail.bottom
+            topMargin: 0
         }
 
         Workspaces {}
     }
 
-    // Center island — MPRIS (visible only when active)
-    BarIsland {
-        id: centerIsland
+    // Center tab — Clock always visible + MPRIS inside when active; expandable on click
+    BarTab {
+        id: centerTab
+        clip: true
         anchors {
             horizontalCenter: parent.horizontalCenter
-            verticalCenter: parent.verticalCenter
+            top: rail.bottom
+            topMargin: 0
         }
-        visible: mprisChip.active
+        implicitHeight: centerExpanded ? Theme.tabMaxHeight : Theme.tabCollapsedHeight
+        Behavior on implicitHeight {
+            NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic }
+        }
+
+        ClockChip {}
 
         MprisIndicator {
             id: mprisChip
+            visible: active
             onClicked: root.mprisToggleRequested()
         }
     }
 
-    // Right island — SystemStats + ClockChip + PowerMenu
-    BarIsland {
-        id: rightIsland
+    MouseArea {
+        anchors.fill: centerTab
+        onClicked: root.centerExpanded = !root.centerExpanded
+        z: 1
+    }
+
+    // Right tab — SystemStats + PowerMenu button
+    BarTab {
+        id: rightTab
+        compact: true
         anchors {
             right: parent.right
             rightMargin: Theme.spacingMd
-            verticalCenter: parent.verticalCenter
+            top: rail.bottom
+            topMargin: 0
         }
 
         SystemStats {}
-        ClockChip {}
 
         PowerMenu {
             id: powerMenu

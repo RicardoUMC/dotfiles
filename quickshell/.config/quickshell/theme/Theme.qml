@@ -26,13 +26,22 @@ QtObject {
     // Bar
     property int barHeight: 37
 
+    // Bar Tabs (Variant B)
+    property int barRailHeight: 4      // thin top rail height
+    property int tabPaddingH:   12     // horizontal content padding
+    property int tabPaddingV:   5      // vertical content padding
+    property int tabRadius:     10     // bottom corner radius
+    property int tabMaxHeight:  60     // fully expanded center tab height
+    property int  tabCollapsedHeight: 34  // collapsed tab height (content 26 + paddingV 5×2)
+    property real tabBgOpacity:       1.0 // opaque bg; eliminates alpha-seam with rail
+
     // Islands (Variant A)
     property int  barHeightIslands:    52
     property int  islandPaddingH:      16
     property int  islandPaddingV:      6
     property int  islandGap:           8
     property real islandBlur:          12.0
-    property real islandBgOpacity:     0.45
+    property real islandBgOpacity:     0.92
     property real islandBorderOpacity: 0.15
 
     // Ornament (Variant A & B)
@@ -81,6 +90,13 @@ QtObject {
             if (cfg.opacity?.dim     !== undefined) opacityDim     = cfg.opacity.dim
             if (cfg.bar?.height             !== undefined) barHeight             = cfg.bar.height
             if (cfg.bar?.heightIslands      !== undefined) barHeightIslands      = cfg.bar.heightIslands
+            if (cfg.bar?.railHeight         !== undefined) barRailHeight         = cfg.bar.railHeight
+            if (cfg.tab?.paddingH           !== undefined) tabPaddingH           = cfg.tab.paddingH
+            if (cfg.tab?.paddingV           !== undefined) tabPaddingV           = cfg.tab.paddingV
+            if (cfg.tab?.radius             !== undefined) tabRadius             = cfg.tab.radius
+            if (cfg.tab?.maxHeight          !== undefined) tabMaxHeight          = cfg.tab.maxHeight
+            if (cfg.tab?.collapsedHeight    !== undefined) tabCollapsedHeight    = cfg.tab.collapsedHeight
+            if (cfg.tab?.bgOpacity         !== undefined) tabBgOpacity         = cfg.tab.bgOpacity
             if (cfg.island?.paddingH        !== undefined) islandPaddingH        = cfg.island.paddingH
             if (cfg.island?.paddingV        !== undefined) islandPaddingV        = cfg.island.paddingV
             if (cfg.island?.gap             !== undefined) islandGap             = cfg.island.gap

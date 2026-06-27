@@ -9,7 +9,7 @@ PanelWindow {
 
     anchors { top: true; left: true; right: true }
     exclusionMode: ExclusionMode.Auto
-    implicitHeight: Theme.barRailHeight + Theme.tabCollapsedHeight
+    implicitHeight: Theme.barRailHeight + Math.max(leftTab.implicitHeight, centerTab.implicitHeight, rightTab.implicitHeight)
     margins { top: 0; left: 0; right: 0 }
     color: "transparent"
 
@@ -18,6 +18,9 @@ PanelWindow {
     signal powerMenuClosed()
     signal mprisToggleRequested()
     signal mprisClosed()
+    signal metricsOpened()
+    signal metricsClosed()
+    signal metricsToggleRequested()
 
     property bool centerExpanded: false
 
@@ -25,6 +28,8 @@ PanelWindow {
     function closePowerMenu() { powerMenu.close() }
     function openPowerMenu()  { powerMenu.open() }
     function closeMpris()     { mprisPopup.close() }
+    function openMetrics()    { metricsDropdown.open() }
+    function closeMetrics()   { metricsDropdown.close() }
     function openMpris() {
         mprisPopup.anchorX = centerTab.x + centerTab.width / 2
         mprisPopup.open()
@@ -44,6 +49,7 @@ PanelWindow {
     // Top rail — thin full-width bar anchored to top
     Rectangle {
         id: rail
+        z: 0
         anchors {
             top: parent.top
             left: parent.left
@@ -61,13 +67,29 @@ PanelWindow {
         }
     }
 
+    // Debug visual bounds overlay for rail (development scaffolding)
+    Rectangle {
+        anchors.fill: rail
+        color: "transparent"
+        topLeftRadius:     Theme.tabRadius
+        topRightRadius:    Theme.tabRadius
+        bottomLeftRadius:  0
+        bottomRightRadius: 0
+        border {
+            width: Theme.debugBorderWidth
+            color: Theme.debugBorderColor
+        }
+        visible: Theme.debugVisualBounds
+        z: 999
+    }
+
     // Left tab — Workspaces
     BarTab {
         id: leftTab
+        z: 1
         compact: true
         anchors {
             left: parent.left
-            leftMargin: Theme.spacingMd
             top: rail.bottom
             topMargin: 0
         }
@@ -78,18 +100,25 @@ PanelWindow {
     // Center tab — Clock always visible + MPRIS inside when active; expandable on click
     BarTab {
         id: centerTab
-        clip: true
+        z: 2
+        width: root.centerExpanded ? 440 : 360
+        paddingH: Theme.spacingXl
+        paddingV: root.centerExpanded ? Theme.spacingMd : Theme.spacingSm
+        bgOpacity: 0.98
+        borderOpacity: 0.42
         anchors {
             horizontalCenter: parent.horizontalCenter
             top: rail.bottom
             topMargin: 0
         }
-        implicitHeight: centerExpanded ? Theme.tabMaxHeight : Theme.tabCollapsedHeight
+        Behavior on width {
+            NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic }
+        }
         Behavior on implicitHeight {
             NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic }
         }
 
-        ClockChip {}
+        ClockChip { expanded: root.centerExpanded }
 
         MprisIndicator {
             id: mprisChip
@@ -104,24 +133,35 @@ PanelWindow {
         z: 1
     }
 
-    // Right tab — SystemStats + PowerMenu button
+    // Right tab — MetricsButton + PowerMenu button
     BarTab {
         id: rightTab
+        z: 1
         compact: true
         anchors {
             right: parent.right
-            rightMargin: Theme.spacingMd
             top: rail.bottom
             topMargin: 0
         }
 
-        SystemStats {}
+        SystemStats { id: statsEngine }
+
+        MetricsButton {
+            onClicked: root.metricsToggleRequested()
+        }
 
         PowerMenu {
             id: powerMenu
             onOnOpened: root.powerMenuOpened()
             onOnClosed: root.powerMenuClosed()
         }
+    }
+
+    MetricsDropdown {
+        id: metricsDropdown
+        systemStatsState: statsEngine.dataState
+        onOpened: root.metricsOpened()
+        onClosed: root.metricsClosed()
     }
 
     MprisPopup {

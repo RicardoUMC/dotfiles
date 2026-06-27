@@ -60,6 +60,12 @@ QtObject {
     property int fontSizeBodyLg:  14
     property int fontSizeIcon:    18
 
+    // Debug / Visual Bounds (development scaffolding)
+    // Set debugVisualBounds: false in config.json before final polish
+    property bool  debugVisualBounds: true
+    property color debugBorderColor:  "#ff3344"
+    property int   debugBorderWidth:  1
+
     // Hot-reload
     property Timer debounce: Timer {
         interval: 100
@@ -113,6 +119,9 @@ QtObject {
             if (cfg.font?.body       !== undefined) fontSizeBody    = cfg.font.body
             if (cfg.font?.bodyLg     !== undefined) fontSizeBodyLg  = cfg.font.bodyLg
             if (cfg.font?.icon       !== undefined) fontSizeIcon    = cfg.font.icon
+            if (cfg.debug?.visualBounds !== undefined) debugVisualBounds = cfg.debug.visualBounds
+            if (cfg.debug?.borderColor  !== undefined) debugBorderColor  = cfg.debug.borderColor
+            if (cfg.debug?.borderWidth  !== undefined) debugBorderWidth  = cfg.debug.borderWidth
         } catch(e) {}
     }
 

@@ -8,6 +8,8 @@ RowLayout {
     id: root
     spacing: Theme.spacingMd
 
+    property alias dataState: state
+
     QtObject {
         id: state
         property real ram: 0
@@ -96,47 +98,4 @@ RowLayout {
         return Colors.textDim
     }
 
-    component Stat: Item {
-        property string label: ""
-        property string value: ""
-        property color  labelColor: Colors.muted
-        property color  valueColor: Colors.textDim
-
-        implicitWidth: inner.implicitWidth + 18
-        implicitHeight: 26
-
-        Rectangle {
-            anchors.fill: parent
-            radius: Theme.radiusSm
-            color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacityOverlay)
-            border {
-                width: 1
-                color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
-            }
-        }
-
-        RowLayout {
-            id: inner
-            anchors.centerIn: parent
-            spacing: 5
-
-            Text {
-                text: parent.parent.label
-                color: parent.parent.labelColor
-                font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
-            }
-            Text {
-                text: parent.parent.value
-                color: parent.parent.valueColor
-                font { family: Colors.uiFont; pixelSize: Theme.fontSizeBody }
-            }
-        }
-    }
-
-    Stat { label: "RAM"; value: state.ram + "%"; labelColor: Colors.blue;    valueColor: root.statColor(state.ram) }
-    Stat { label: "GPU"; value: state.gpu + "%"; labelColor: Colors.magenta; valueColor: root.statColor(state.gpu) }
-    Stat { label: "CPU"; value: state.cpu + "%"; labelColor: Colors.orange;  valueColor: root.statColor(state.cpu) }
-    Stat { label: "DSK"; value: state.disk + " MB/s"; labelColor: Colors.brown; valueColor: Colors.textDim }
-    Stat { label: "NET"; value: state.netUp ? "ON" : "OFF"; labelColor: Colors.green; valueColor: state.netUp ? Colors.green : Colors.red }
-    Stat { label: "VOL"; value: state.muted ? "MUTED" : state.volume + "%"; labelColor: Colors.yellow; valueColor: state.muted ? Colors.muted : Colors.textDim }
 }

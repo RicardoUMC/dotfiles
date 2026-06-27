@@ -39,6 +39,19 @@ Item {
         }
     }
 
+    // Debug visual bounds overlay (development scaffolding)
+    Rectangle {
+        anchors.fill: parent
+        color: "transparent"
+        radius: Theme.radiusSm
+        border {
+            width: Theme.debugBorderWidth
+            color: Theme.debugBorderColor
+        }
+        visible: Theme.debugVisualBounds
+        z: 999
+    }
+
     RowLayout {
         id: chipRow
         anchors.centerIn: parent

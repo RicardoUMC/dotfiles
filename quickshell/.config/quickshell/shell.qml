@@ -61,12 +61,14 @@ ShellRoot {
             if (current === "launcher")  launcher.visible = false
             if (current === "powermenu") bar.closePowerMenu()
             if (current === "mpris")     bar.closeMpris()
+            if (current === "metrics")   bar.closeMetrics()
         }
 
         function _doOpen(name) {
             if (name === "launcher")  launcher.toggleOpen()
             if (name === "powermenu") bar.openPowerMenu()
             if (name === "mpris")     bar.openMpris()
+            if (name === "metrics")   bar.openMetrics()
             activeOverlay = name
         }
     }
@@ -87,6 +89,8 @@ ShellRoot {
         function onMprisToggleRequested() { overlayManager.open("mpris") }
         function onPowerMenuClosed() { overlayManager.close("powermenu") }
         function onMprisClosed() { overlayManager.close("mpris") }
+        function onMetricsToggleRequested() { overlayManager.open("metrics") }
+        function onMetricsClosed() { overlayManager.close("metrics") }
     }
 
     LauncherCentered {

@@ -70,6 +70,19 @@ RowLayout {
                 }
             }
 
+            // Debug visual bounds overlay — per-pill (development scaffolding)
+            Rectangle {
+                anchors.fill: parent
+                color: "transparent"
+                radius: Theme.radiusSm
+                border {
+                    width: Theme.debugBorderWidth
+                    color: Theme.debugBorderColor
+                }
+                visible: Theme.debugVisualBounds
+                z: 999
+            }
+
             RowLayout {
                 id: wsRow
                 anchors.centerIn: parent

@@ -48,4 +48,17 @@ Rectangle {
         hoverEnabled: true
         onClicked: root.activated()
     }
+
+    // Debug visual bounds overlay (development scaffolding)
+    Rectangle {
+        anchors.fill: parent
+        color: "transparent"
+        radius: parent.radius
+        border {
+            width: Theme.debugBorderWidth
+            color: Theme.debugBorderColor
+        }
+        visible: Theme.debugVisualBounds
+        z: 999
+    }
 }

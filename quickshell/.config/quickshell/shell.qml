@@ -58,17 +58,19 @@ ShellRoot {
             // Clear activeOverlay first to prevent re-entrant calls from closed() signals
             const current = activeOverlay
             activeOverlay = ""
-            if (current === "launcher")  launcher.visible = false
-            if (current === "powermenu") bar.closePowerMenu()
-            if (current === "mpris")     bar.closeMpris()
-            if (current === "metrics")   bar.closeMetrics()
+            if (current === "launcher")      launcher.visible = false
+            if (current === "powermenu")     bar.closePowerMenu()
+            if (current === "mpris")         bar.closeMpris()
+            if (current === "metrics")       bar.closeMetrics()
+            if (current === "center-panel")  bar.closeCenterPanel()
         }
 
         function _doOpen(name) {
-            if (name === "launcher")  launcher.toggleOpen()
-            if (name === "powermenu") bar.openPowerMenu()
-            if (name === "mpris")     bar.openMpris()
-            if (name === "metrics")   bar.openMetrics()
+            if (name === "launcher")      launcher.toggleOpen()
+            if (name === "powermenu")     bar.openPowerMenu()
+            if (name === "mpris")         bar.openMpris()
+            if (name === "metrics")       bar.openMetrics()
+            if (name === "center-panel")  bar.openCenterPanel()
             activeOverlay = name
         }
     }
@@ -91,6 +93,8 @@ ShellRoot {
         function onMprisClosed() { overlayManager.close("mpris") }
         function onMetricsToggleRequested() { overlayManager.open("metrics") }
         function onMetricsClosed() { overlayManager.close("metrics") }
+        function onCenterPanelToggleRequested() { overlayManager.open("center-panel") }
+        function onCenterPanelClosed() { overlayManager.close("center-panel") }
     }
 
     LauncherCentered {

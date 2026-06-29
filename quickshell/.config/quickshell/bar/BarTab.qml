@@ -11,6 +11,9 @@ Item {
 
     property bool compact: false
 
+    /// When \c true, renders a 2px Colors.accent left-border on this tab.
+    property bool accentBorder: false
+
     property int paddingH: Theme.tabPaddingH
     property int paddingV: compact ? Theme.tabPaddingV : Theme.tabPaddingV * 2
 
@@ -60,6 +63,18 @@ Item {
             width: 1
             color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, root.borderOpacity)
         }
+    }
+
+    // Accent left-border — 2px Colors.accent, visible when accentBorder is true
+    Rectangle {
+        anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+        width: 2
+        color: Colors.accent
+        visible: root.accentBorder
+        topLeftRadius:     0
+        topRightRadius:    0
+        bottomLeftRadius:  Theme.tabRadius
+        bottomRightRadius: Theme.tabRadius
     }
 
     RowLayout {

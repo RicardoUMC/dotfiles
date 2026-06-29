@@ -62,7 +62,7 @@ QtObject {
 
     // Debug / Visual Bounds (development scaffolding)
     // Set debugVisualBounds: false in config.json before final polish
-    property bool  debugVisualBounds: true
+    property bool  debugVisualBounds: false
     property color debugBorderColor:  "#ff3344"
     property int   debugBorderWidth:  1
 

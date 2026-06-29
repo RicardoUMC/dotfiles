@@ -9,4 +9,5 @@ MprisPopup 1.0 MprisPopup.qml
 BarIsland 1.0 BarIsland.qml
 MetricsButton 1.0 MetricsButton.qml
 MetricsDropdown 1.0 MetricsDropdown.qml
+CenterPanel 1.0 CenterPanel.qml
 ClockChip 1.0 ClockChip.qml

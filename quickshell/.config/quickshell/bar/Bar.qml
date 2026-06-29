@@ -21,8 +21,9 @@ PanelWindow {
     signal metricsOpened()
     signal metricsClosed()
     signal metricsToggleRequested()
-
-    property bool centerExpanded: false
+    signal centerPanelToggleRequested()
+    signal centerPanelOpened()
+    signal centerPanelClosed()
 
     // IPC functions
     function closePowerMenu() { powerMenu.close() }
@@ -37,6 +38,8 @@ PanelWindow {
     function setMprisAnchor() {
         mprisPopup.anchorX = centerTab.x + centerTab.width / 2
     }
+    function openCenterPanel()  { centerPanel.open() }
+    function closeCenterPanel() { centerPanel.close() }
 
     // IPC readonly properties
     readonly property bool powerMenuVisible: powerMenu.isOpen
@@ -97,13 +100,16 @@ PanelWindow {
         Workspaces {}
     }
 
-    // Center tab — Clock always visible + MPRIS inside when active; expandable on click
+    // Center tab — Clock always visible + MPRIS chip inside when active.
+    // Fixed at 360px width (no in-place expansion). Clicking emits a toggle
+    // signal that opens the floating CenterPanel overlay.
     BarTab {
         id: centerTab
         z: 2
-        width: root.centerExpanded ? 440 : 360
+        accentBorder: true
+        width: 360
         paddingH: Theme.spacingXl
-        paddingV: root.centerExpanded ? Theme.spacingMd : Theme.spacingSm
+        paddingV: Theme.spacingSm
         bgOpacity: 0.98
         borderOpacity: 0.42
         anchors {
@@ -111,14 +117,8 @@ PanelWindow {
             top: rail.bottom
             topMargin: 0
         }
-        Behavior on width {
-            NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic }
-        }
-        Behavior on implicitHeight {
-            NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic }
-        }
 
-        ClockChip { expanded: root.centerExpanded }
+        ClockChip { expanded: false }
 
         MprisIndicator {
             id: mprisChip
@@ -129,7 +129,7 @@ PanelWindow {
 
     MouseArea {
         anchors.fill: centerTab
-        onClicked: root.centerExpanded = !root.centerExpanded
+        onClicked: root.centerPanelToggleRequested()
         z: 1
     }
 
@@ -167,5 +167,11 @@ PanelWindow {
     MprisPopup {
         id: mprisPopup
         onClosed: root.mprisClosed()
+    }
+
+    CenterPanel {
+        id: centerPanel
+        onOpened: root.centerPanelOpened()
+        onClosed: root.centerPanelClosed()
     }
 }

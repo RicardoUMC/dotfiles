@@ -49,14 +49,6 @@ PanelWindow {
     readonly property bool mprisChipActive:  mprisChip.active
     readonly property bool mprisVisible:     mprisPopup.isOpen
 
-    // Composed segment geometry (replaces old ShapePath silhouette)
-    // All three lower segments share equal notch depth in base normal state.
-    // The gaps between segments create concave notch openings where the
-    // transparent PanelWindow background shows through.
-    readonly property real notchDepth: root.height * Theme.barNotchDepthRatio
-    readonly property real connectorHeight: root.height - notchDepth
-    readonly property real gapHalf: Theme.barNotchGapWidth / 2
-
     // Segment fill: normal base01 or high-contrast debug red
     readonly property color segmentFill: Theme.debugBarSilhouette
         ? Qt.rgba(1.0, 0.2, 0.2, 0.65)
@@ -65,74 +57,62 @@ PanelWindow {
     readonly property int segmentBorderWidth: Theme.debugBarSilhouette ? 1 : 0
     readonly property color segmentBorderColor: Theme.debugBarSilhouette ? "#ff3344" : "transparent"
 
-    // --- Composed silhouette: 3 bottom segments + top connector strip ---
-    // All segments share the same visual height (notchDepth) per spec R4.
-    // Gaps between segments at section boundaries expose transparent
-    // PanelWindow background, creating the concave notch visual.
-    // Top connector (z:0) spans full width above the notch zone.
+    // --- Island silhouette: 3 content-sized full-height segments ---
+    // Each background follows its BarTab bounds instead of filling the space
+    // between sections. The remaining space stays transparent, creating the
+    // breathing/islands visual without fixed spacer geometry.
 
-    // Left segment — equal depth with center and right.
-    // bottomLeftRadius: 0 keeps outer edge square per design decision.
+    // Left island — square at screen edge (left), rounded at gap (right).
     Rectangle {
         id: leftSegment
-        y: root.connectorHeight
-        x: 0
-        width: centerTab.x - gapHalf
-        height: root.notchDepth
+        y: 0
+        x: leftTab.x
+        width: leftTab.width
+        height: parent.height
         visible: Theme.barStyle === "silhouette"
         color: root.segmentFill
         border { width: root.segmentBorderWidth; color: root.segmentBorderColor }
         radius: 0
+        topLeftRadius: 0
+        topRightRadius: Theme.tabRadius
         bottomLeftRadius: 0
         bottomRightRadius: Theme.tabRadius
         z: 0
     }
 
-    // Center segment — equal depth with left/right in base normal state.
-    // (Future expanded/open state may use a deeper/taller center overlay,
-    // but the base normal silhouette is uniform height.)
+    // Center island — rounded on all four corners (gap-facing both sides).
     Rectangle {
         id: centerSegment
-        y: root.connectorHeight
-        x: centerTab.x + gapHalf
-        width: centerTab.width - Theme.barNotchGapWidth
-        height: root.notchDepth
+        y: 0
+        x: centerTab.x
+        width: centerTab.width
+        height: parent.height
         visible: Theme.barStyle === "silhouette"
         color: root.segmentFill
         border { width: root.segmentBorderWidth; color: root.segmentBorderColor }
         radius: 0
+        topLeftRadius: Theme.tabRadius
+        topRightRadius: Theme.tabRadius
         bottomLeftRadius: Theme.tabRadius
         bottomRightRadius: Theme.tabRadius
         z: 0
     }
 
-    // Right segment — equal depth with left and center.
-    // bottomRightRadius: 0 keeps outer edge square.
+    // Right island — rounded at gap (left), square at screen edge (right).
     Rectangle {
         id: rightSegment
-        y: root.connectorHeight
-        x: centerTab.x + centerTab.width + gapHalf
-        width: parent.width - x
-        height: root.notchDepth
+        y: 0
+        x: rightTab.x
+        width: rightTab.width
+        height: parent.height
         visible: Theme.barStyle === "silhouette"
         color: root.segmentFill
         border { width: root.segmentBorderWidth; color: root.segmentBorderColor }
         radius: 0
+        topLeftRadius: Theme.tabRadius
+        topRightRadius: 0
         bottomLeftRadius: Theme.tabRadius
         bottomRightRadius: 0
-        z: 0
-    }
-
-    // Top connector strip — full-width, sits above the notch zone.
-    // Square outer corners per design decision.
-    Rectangle {
-        id: topConnector
-        anchors { left: parent.left; right: parent.right; top: parent.top }
-        height: root.connectorHeight
-        visible: Theme.barStyle === "silhouette"
-        color: root.segmentFill
-        border { width: root.segmentBorderWidth; color: root.segmentBorderColor }
-        radius: 0
         z: 0
     }
 

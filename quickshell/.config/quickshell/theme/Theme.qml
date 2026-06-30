@@ -25,6 +25,8 @@ QtObject {
 
     // Bar
     property int barHeight: 37
+    property string barStyle: "silhouette"         // "silhouette" | "plain"
+    property real barCurveDepthRatio: 0.2           // concave depth = height × ratio
 
     // Bar Tabs (Variant B)
     property int barRailHeight: 4      // thin top rail height
@@ -65,6 +67,7 @@ QtObject {
     property bool  debugVisualBounds: false
     property color debugBorderColor:  "#ff3344"
     property int   debugBorderWidth:  1
+    property bool  debugBarSilhouette: false         // high-contrast debug silhouette fill/stroke
 
     // Hot-reload
     property Timer debounce: Timer {
@@ -95,6 +98,12 @@ QtObject {
             if (cfg.opacity?.border  !== undefined) opacityBorder  = cfg.opacity.border
             if (cfg.opacity?.dim     !== undefined) opacityDim     = cfg.opacity.dim
             if (cfg.bar?.height             !== undefined) barHeight             = cfg.bar.height
+            if (cfg.bar?.style !== undefined) {
+                barStyle = cfg.bar.style
+            } else if (cfg.bar?.outerFrame !== undefined) {
+                barStyle = cfg.bar.outerFrame ? "silhouette" : "plain"
+            }
+            if (cfg.bar?.curveDepthRatio    !== undefined) barCurveDepthRatio    = cfg.bar.curveDepthRatio
             if (cfg.bar?.heightIslands      !== undefined) barHeightIslands      = cfg.bar.heightIslands
             if (cfg.bar?.railHeight         !== undefined) barRailHeight         = cfg.bar.railHeight
             if (cfg.tab?.paddingH           !== undefined) tabPaddingH           = cfg.tab.paddingH
@@ -119,9 +128,10 @@ QtObject {
             if (cfg.font?.body       !== undefined) fontSizeBody    = cfg.font.body
             if (cfg.font?.bodyLg     !== undefined) fontSizeBodyLg  = cfg.font.bodyLg
             if (cfg.font?.icon       !== undefined) fontSizeIcon    = cfg.font.icon
-            if (cfg.debug?.visualBounds !== undefined) debugVisualBounds = cfg.debug.visualBounds
-            if (cfg.debug?.borderColor  !== undefined) debugBorderColor  = cfg.debug.borderColor
-            if (cfg.debug?.borderWidth  !== undefined) debugBorderWidth  = cfg.debug.borderWidth
+            if (cfg.debug?.visualBounds  !== undefined) debugVisualBounds  = cfg.debug.visualBounds
+            if (cfg.debug?.borderColor   !== undefined) debugBorderColor   = cfg.debug.borderColor
+            if (cfg.debug?.borderWidth   !== undefined) debugBorderWidth   = cfg.debug.borderWidth
+            if (cfg.debug?.barSilhouette !== undefined) debugBarSilhouette = cfg.debug.barSilhouette
         } catch(e) {}
     }
 

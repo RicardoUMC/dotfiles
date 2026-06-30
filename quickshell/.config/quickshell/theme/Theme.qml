@@ -26,7 +26,9 @@ QtObject {
     // Bar
     property int barHeight: 37
     property string barStyle: "silhouette"         // "silhouette" | "plain"
-    property real barCurveDepthRatio: 0.2           // concave depth = height × ratio
+    property real barCurveDepthRatio: 0.2           // concave depth = height × ratio (legacy, use barNotchDepthRatio)
+    property real barNotchGapWidth: 30              // px gap at each section boundary
+    property real barNotchDepthRatio: 0.2           // all segments share the same notch depth = height × ratio
 
     // Bar Tabs (Variant B)
     property int barRailHeight: 4      // thin top rail height
@@ -104,6 +106,9 @@ QtObject {
                 barStyle = cfg.bar.outerFrame ? "silhouette" : "plain"
             }
             if (cfg.bar?.curveDepthRatio    !== undefined) barCurveDepthRatio    = cfg.bar.curveDepthRatio
+            if (cfg.bar?.notchGapWidth          !== undefined) barNotchGapWidth          = cfg.bar.notchGapWidth
+            if (cfg.bar?.notchDepthRatio        !== undefined) barNotchDepthRatio        = cfg.bar.notchDepthRatio
+            else if (cfg.bar?.curveDepthRatio    !== undefined) barNotchDepthRatio        = cfg.bar.curveDepthRatio
             if (cfg.bar?.heightIslands      !== undefined) barHeightIslands      = cfg.bar.heightIslands
             if (cfg.bar?.railHeight         !== undefined) barRailHeight         = cfg.bar.railHeight
             if (cfg.tab?.paddingH           !== undefined) tabPaddingH           = cfg.tab.paddingH
@@ -135,5 +140,8 @@ QtObject {
         } catch(e) {}
     }
 
-    Component.onCompleted: applyConfig()
+    Component.onCompleted: {
+        applyConfig()
+        debounce.restart()
+    }
 }

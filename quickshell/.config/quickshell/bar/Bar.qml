@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
 import "../theme"
@@ -50,109 +49,91 @@ PanelWindow {
     readonly property bool mprisChipActive:  mprisChip.active
     readonly property bool mprisVisible:     mprisPopup.isOpen
 
-    // Bar silhouette — single continuous ShapePath curved frame (z:0, sole background)
-    Shape {
-        z: 0
-        anchors.fill: parent
+    // Composed segment geometry (replaces old ShapePath silhouette)
+    // All three lower segments share equal notch depth in base normal state.
+    // The gaps between segments create concave notch openings where the
+    // transparent PanelWindow background shows through.
+    readonly property real notchDepth: root.height * Theme.barNotchDepthRatio
+    readonly property real connectorHeight: root.height - notchDepth
+    readonly property real gapHalf: Theme.barNotchGapWidth / 2
+
+    // Segment fill: normal base01 or high-contrast debug red
+    readonly property color segmentFill: Theme.debugBarSilhouette
+        ? Qt.rgba(1.0, 0.2, 0.2, 0.65)
+        : Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.tabBgOpacity)
+
+    readonly property int segmentBorderWidth: Theme.debugBarSilhouette ? 1 : 0
+    readonly property color segmentBorderColor: Theme.debugBarSilhouette ? "#ff3344" : "transparent"
+
+    // --- Composed silhouette: 3 bottom segments + top connector strip ---
+    // All segments share the same visual height (notchDepth) per spec R4.
+    // Gaps between segments at section boundaries expose transparent
+    // PanelWindow background, creating the concave notch visual.
+    // Top connector (z:0) spans full width above the notch zone.
+
+    // Left segment — equal depth with center and right.
+    // bottomLeftRadius: 0 keeps outer edge square per design decision.
+    Rectangle {
+        id: leftSegment
+        y: root.connectorHeight
+        x: 0
+        width: centerTab.x - gapHalf
+        height: root.notchDepth
         visible: Theme.barStyle === "silhouette"
+        color: root.segmentFill
+        border { width: root.segmentBorderWidth; color: root.segmentBorderColor }
+        radius: 0
+        bottomLeftRadius: 0
+        bottomRightRadius: Theme.tabRadius
+        z: 0
+    }
 
-        ShapePath {
-            id: barSilhouette
+    // Center segment — equal depth with left/right in base normal state.
+    // (Future expanded/open state may use a deeper/taller center overlay,
+    // but the base normal silhouette is uniform height.)
+    Rectangle {
+        id: centerSegment
+        y: root.connectorHeight
+        x: centerTab.x + gapHalf
+        width: centerTab.width - Theme.barNotchGapWidth
+        height: root.notchDepth
+        visible: Theme.barStyle === "silhouette"
+        color: root.segmentFill
+        border { width: root.segmentBorderWidth; color: root.segmentBorderColor }
+        radius: 0
+        bottomLeftRadius: Theme.tabRadius
+        bottomRightRadius: Theme.tabRadius
+        z: 0
+    }
 
-            // Runtime geometry computed from parent scope — used via fully qualified refs
-            // inside nested Path objects to avoid ReferenceError.
-            property real sGapL: centerTab.x
-            property real sGapR: centerTab.x + centerTab.width
-            property real sDepth: root.height * Theme.barCurveDepthRatio
-            property real sInset: barSilhouette.strokeWidth / 2
-            property real sGapW: 30
+    // Right segment — equal depth with left and center.
+    // bottomRightRadius: 0 keeps outer edge square.
+    Rectangle {
+        id: rightSegment
+        y: root.connectorHeight
+        x: centerTab.x + centerTab.width + gapHalf
+        width: parent.width - x
+        height: root.notchDepth
+        visible: Theme.barStyle === "silhouette"
+        color: root.segmentFill
+        border { width: root.segmentBorderWidth; color: root.segmentBorderColor }
+        radius: 0
+        bottomLeftRadius: Theme.tabRadius
+        bottomRightRadius: 0
+        z: 0
+    }
 
-            strokeWidth: Theme.debugBarSilhouette ? 2 : 1
-            strokeColor: Theme.debugBarSilhouette
-                ? Theme.debugBorderColor
-                : Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.islandBorderOpacity)
-            fillColor: Theme.debugBarSilhouette
-                ? Qt.rgba(1.0, 0.2, 0.2, 0.3)
-                : Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.tabBgOpacity)
-            joinStyle: Qt.RoundJoin
-
-            // Start at top edge, just past top-left rounded corner
-            startX: barSilhouette.sInset + Theme.tabRadius
-            startY: barSilhouette.sInset
-
-            // Top edge (left to right)
-            PathLine {
-                x: root.width - barSilhouette.sInset - Theme.tabRadius
-                y: barSilhouette.sInset
-            }
-
-            // Top-right corner arc
-            PathArc {
-                x: root.width - barSilhouette.sInset
-                y: barSilhouette.sInset + Theme.tabRadius
-                radiusX: Theme.tabRadius
-                radiusY: Theme.tabRadius
-            }
-
-            // Right edge (top to bottom)
-            PathLine {
-                x: root.width - barSilhouette.sInset
-                y: root.height - barSilhouette.sInset
-            }
-
-            // Bottom edge (right to left, with concave transitions at section gaps)
-            // Right section flat bottom → gapR
-            PathLine {
-                x: barSilhouette.sGapR + barSilhouette.sGapW / 2
-                y: root.height - barSilhouette.sInset
-            }
-
-            // Concave transition at gapR (between right and center sections)
-            PathCubic {
-                control1X: barSilhouette.sGapR + barSilhouette.sGapW * 0.275
-                control1Y: root.height - barSilhouette.sInset - barSilhouette.sDepth
-                control2X: barSilhouette.sGapR - barSilhouette.sGapW * 0.275
-                control2Y: root.height - barSilhouette.sInset - barSilhouette.sDepth
-                x: barSilhouette.sGapR - barSilhouette.sGapW / 2
-                y: root.height - barSilhouette.sInset
-            }
-
-            // Center section flat bottom → gapL
-            PathLine {
-                x: barSilhouette.sGapL + barSilhouette.sGapW / 2
-                y: root.height - barSilhouette.sInset
-            }
-
-            // Concave transition at gapL (between center and left sections)
-            PathCubic {
-                control1X: barSilhouette.sGapL + barSilhouette.sGapW * 0.275
-                control1Y: root.height - barSilhouette.sInset - barSilhouette.sDepth
-                control2X: barSilhouette.sGapL - barSilhouette.sGapW * 0.275
-                control2Y: root.height - barSilhouette.sInset - barSilhouette.sDepth
-                x: barSilhouette.sGapL - barSilhouette.sGapW / 2
-                y: root.height - barSilhouette.sInset
-            }
-
-            // Left section flat bottom → bottom-left
-            PathLine {
-                x: barSilhouette.sInset
-                y: root.height - barSilhouette.sInset
-            }
-
-            // Left edge (bottom to top)
-            PathLine {
-                x: barSilhouette.sInset
-                y: barSilhouette.sInset + Theme.tabRadius
-            }
-
-            // Top-left corner arc
-            PathArc {
-                x: barSilhouette.sInset + Theme.tabRadius
-                y: barSilhouette.sInset
-                radiusX: Theme.tabRadius
-                radiusY: Theme.tabRadius
-            }
-        }
+    // Top connector strip — full-width, sits above the notch zone.
+    // Square outer corners per design decision.
+    Rectangle {
+        id: topConnector
+        anchors { left: parent.left; right: parent.right; top: parent.top }
+        height: root.connectorHeight
+        visible: Theme.barStyle === "silhouette"
+        color: root.segmentFill
+        border { width: root.segmentBorderWidth; color: root.segmentBorderColor }
+        radius: 0
+        z: 0
     }
 
     // Left tab — Workspaces

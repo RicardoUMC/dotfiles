@@ -2,7 +2,7 @@
   "radius":  { "sm": 6,    "md": 10,   "lg": 12,  "pill": 999 },
   "spacing": { "xs": 4,    "sm": 8,    "md": 12,  "lg": 16, "xl": 24 },
   "opacity": { "surface": 0.97, "overlay": 0.33, "border": 0.30, "dim": 0.15 },
-  "bar":     { "height": 37, "style": "silhouette", "notchGapWidth": 30, "notchDepthRatio": 0.2 },
+  "bar":     { "height": 37, "style": "silhouette", "notchGapWidth": 30, "notchDepthRatio": 0.2, "curveRadius": 16, "wrapDepth": 12, "chipHeight": 26 },
   "anim":    { "fast": 180, "normal": 300, "slow": 500 },
   "font":    { "caption": 10, "label": 11, "body": 13, "bodyLg": 14, "icon": 18 },
   "debug":   { "visualBounds": false, "borderColor": "#ff3344", "borderWidth": 1, "barSilhouette": true }

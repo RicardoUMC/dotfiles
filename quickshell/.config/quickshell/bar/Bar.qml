@@ -125,6 +125,7 @@ PanelWindow {
             y: leftTab.y + leftTab.height
             width: silhouetteMask._cornerSize
             height: silhouetteMask._wrapDepth
+            radius: silhouetteMask._cornerSize
             corner: "topLeft"
             color: "white"
             visible: width > 0 && height > 0
@@ -135,6 +136,7 @@ PanelWindow {
             y: rightTab.y + rightTab.height
             width: silhouetteMask._cornerSize
             height: silhouetteMask._wrapDepth
+            radius: silhouetteMask._cornerSize
             corner: "topRight"
             color: "white"
             visible: width > 0 && height > 0
@@ -298,9 +300,11 @@ PanelWindow {
 
         property string corner: "topLeft"
         property color color: "white"
+        property real radius: Math.min(width, height)
 
         onCornerChanged: cornerCanvas.requestPaint()
         onColorChanged: cornerCanvas.requestPaint()
+        onRadiusChanged: cornerCanvas.requestPaint()
         onWidthChanged: cornerCanvas.requestPaint()
         onHeightChanged: cornerCanvas.requestPaint()
 
@@ -311,7 +315,7 @@ PanelWindow {
 
             onPaint: {
                 const ctx = getContext("2d");
-                const r = Math.min(width, height);
+                const r = Math.max(0, notchCornerMask.radius);
 
                 ctx.clearRect(0, 0, width, height);
                 if (r <= 0) return;

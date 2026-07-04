@@ -10,7 +10,10 @@ PanelWindow {
 
     anchors { top: true; left: true; right: true }
     exclusionMode: ExclusionMode.Auto
-    implicitHeight: Math.max(leftTab.implicitHeight, centerTab.implicitHeight, rightTab.implicitHeight)
+    readonly property real barContentHeight: Math.max(leftTab.implicitHeight, centerTab.implicitHeight, rightTab.implicitHeight)
+    readonly property real silhouetteCornerSize: Math.min(Theme.tabRadius + 4, barContentHeight)
+
+    implicitHeight: barContentHeight + (Theme.barStyle === "silhouette" ? silhouetteCornerSize : 0)
     margins { top: 0; left: 0; right: 0 }
     color: "transparent"
 
@@ -71,78 +74,62 @@ PanelWindow {
     }
 
     // Mask geometry — invisible render target for MultiEffect.
-    // Keep the three bar islands separated. The sketch-like detail is local:
-    // square top edges with rounded lower/internal corners at the section gaps.
+    // Keep the three bar islands separated while borrowing Ambxst's default
+    // notch composition: a rectangular body plus explicit mask-only corner
+    // pieces on the gap-facing top edges.
     Item {
         id: silhouetteMask
         visible: false
         layer.enabled: true
         anchors.fill: parent
 
-        // Tuning params (visual-only; adjust via hot-reload)
-        readonly property real _cornerRadius: Math.min(Theme.tabRadius * 1.8, parent.height)
+        readonly property real _cornerSize: root.silhouetteCornerSize
 
-        Canvas {
-            id: frameMaskCanvas
-            anchors.fill: parent
-            antialiasing: true
+        NotchIslandMask {
+            targetItem: leftTab
+            cornerSize: silhouetteMask._cornerSize
+            leftCornerEnabled: false
+            rightCornerEnabled: true
+            bottomLeftRounded: false
+            bottomRightRounded: true
+        }
 
-            property real leftX: leftTab.x
-            property real leftW: leftTab.width
-            property real centerX: centerTab.x
-            property real centerW: centerTab.width
-            property real rightX: rightTab.x
-            property real rightW: rightTab.width
-            property real cornerRadius: silhouetteMask._cornerRadius
+        NotchIslandMask {
+            targetItem: centerTab
+            cornerSize: silhouetteMask._cornerSize
+            leftCornerEnabled: true
+            rightCornerEnabled: true
+            bottomLeftRounded: true
+            bottomRightRounded: true
+        }
 
-            onLeftXChanged: requestPaint()
-            onLeftWChanged: requestPaint()
-            onCenterXChanged: requestPaint()
-            onCenterWChanged: requestPaint()
-            onRightXChanged: requestPaint()
-            onRightWChanged: requestPaint()
-            onCornerRadiusChanged: requestPaint()
-            onWidthChanged: requestPaint()
-            onHeightChanged: requestPaint()
+        NotchIslandMask {
+            targetItem: rightTab
+            cornerSize: silhouetteMask._cornerSize
+            leftCornerEnabled: true
+            rightCornerEnabled: false
+            bottomLeftRounded: true
+            bottomRightRounded: false
+        }
 
-            function roundedRect(ctx, x, y, w, h, r, tl, tr, br, bl) {
-                const radius = Math.max(0, Math.min(r, w / 2, h / 2));
-                ctx.beginPath();
-                ctx.moveTo(x + (tl ? radius : 0), y);
-                ctx.lineTo(x + w - (tr ? radius : 0), y);
-                if (tr) ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
-                else ctx.lineTo(x + w, y);
-                ctx.lineTo(x + w, y + h - (br ? radius : 0));
-                if (br) ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
-                else ctx.lineTo(x + w, y + h);
-                ctx.lineTo(x + (bl ? radius : 0), y + h);
-                if (bl) ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
-                else ctx.lineTo(x, y + h);
-                ctx.lineTo(x, y + (tl ? radius : 0));
-                if (tl) ctx.quadraticCurveTo(x, y, x + radius, y);
-                else ctx.lineTo(x, y);
-                ctx.closePath();
-                ctx.fill();
-            }
+        NotchCornerMask {
+            x: leftTab.x
+            y: leftTab.y + leftTab.height
+            width: silhouetteMask._cornerSize
+            height: width
+            corner: "topLeft"
+            color: "white"
+            visible: width > 0
+        }
 
-            onPaint: {
-                const ctx = getContext("2d");
-                const r = frameMaskCanvas.cornerRadius;
-
-                ctx.clearRect(0, 0, width, height);
-                ctx.fillStyle = "white";
-
-                // Left: square at screen edge and top edge; rounded only where it
-                // drops away into the transparent gap.
-                roundedRect(ctx, frameMaskCanvas.leftX, 0, frameMaskCanvas.leftW, height, r, false, false, true, false);
-
-                // Center: square top edge, rounded lower corners only.
-                roundedRect(ctx, frameMaskCanvas.centerX, 0, frameMaskCanvas.centerW, height, r, false, false, true, true);
-
-                // Right: mirrored local detail at the gap-facing lower corner;
-                // square at screen edge and top edge.
-                roundedRect(ctx, frameMaskCanvas.rightX, 0, frameMaskCanvas.rightW, height, r, false, false, false, true);
-            }
+        NotchCornerMask {
+            x: rightTab.x + rightTab.width - width
+            y: rightTab.y + rightTab.height
+            width: silhouetteMask._cornerSize
+            height: width
+            corner: "topRight"
+            color: "white"
+            visible: width > 0
         }
     }
 
@@ -240,5 +227,109 @@ PanelWindow {
         id: centerPanel
         onOpened: root.centerPanelOpened()
         onClosed: root.centerPanelClosed()
+    }
+
+    component NotchIslandMask: Item {
+        id: notchIslandMask
+
+        required property Item targetItem
+        property real cornerSize: 0
+        property bool leftCornerEnabled: true
+        property bool rightCornerEnabled: true
+        property bool bottomLeftRounded: true
+        property bool bottomRightRounded: true
+
+        readonly property real resolvedCornerSize: Math.max(0, Math.min(cornerSize, height))
+
+        x: targetItem.x - (leftCornerEnabled ? resolvedCornerSize : 0)
+        y: targetItem.y
+        width: targetItem.width
+            + (leftCornerEnabled ? resolvedCornerSize : 0)
+            + (rightCornerEnabled ? resolvedCornerSize : 0)
+        height: targetItem.height
+
+        NotchCornerMask {
+            id: leftNotchCorner
+            anchors.top: parent.top
+            anchors.left: parent.left
+            width: notchIslandMask.leftCornerEnabled ? notchIslandMask.resolvedCornerSize : 0
+            height: width
+            corner: "topRight"
+            color: "white"
+            visible: notchIslandMask.leftCornerEnabled && width > 0
+        }
+
+        Rectangle {
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.left: leftNotchCorner.right
+            anchors.right: rightNotchCorner.left
+            color: "white"
+            topLeftRadius: 0
+            topRightRadius: 0
+            bottomLeftRadius: notchIslandMask.bottomLeftRounded ? Theme.tabRadius : 0
+            bottomRightRadius: notchIslandMask.bottomRightRounded ? Theme.tabRadius : 0
+        }
+
+        NotchCornerMask {
+            id: rightNotchCorner
+            anchors.top: parent.top
+            anchors.right: parent.right
+            width: notchIslandMask.rightCornerEnabled ? notchIslandMask.resolvedCornerSize : 0
+            height: width
+            corner: "topLeft"
+            color: "white"
+            visible: notchIslandMask.rightCornerEnabled && width > 0
+        }
+    }
+
+    component NotchCornerMask: Item {
+        id: notchCornerMask
+
+        property string corner: "topLeft"
+        property color color: "white"
+
+        onCornerChanged: cornerCanvas.requestPaint()
+        onColorChanged: cornerCanvas.requestPaint()
+        onWidthChanged: cornerCanvas.requestPaint()
+        onHeightChanged: cornerCanvas.requestPaint()
+
+        Canvas {
+            id: cornerCanvas
+            anchors.fill: parent
+            antialiasing: true
+
+            onPaint: {
+                const ctx = getContext("2d");
+                const r = Math.min(width, height);
+
+                ctx.clearRect(0, 0, width, height);
+                if (r <= 0) return;
+
+                ctx.beginPath();
+                switch (notchCornerMask.corner) {
+                case "topRight":
+                    ctx.arc(0, r, r, 3 * Math.PI / 2, 2 * Math.PI);
+                    ctx.lineTo(r, 0);
+                    break;
+                case "bottomLeft":
+                    ctx.arc(r, 0, r, Math.PI / 2, Math.PI);
+                    ctx.lineTo(0, r);
+                    break;
+                case "bottomRight":
+                    ctx.arc(0, 0, r, 0, Math.PI / 2);
+                    ctx.lineTo(r, r);
+                    break;
+                case "topLeft":
+                default:
+                    ctx.arc(r, r, r, Math.PI, 3 * Math.PI / 2);
+                    ctx.lineTo(0, 0);
+                    break;
+                }
+                ctx.closePath();
+                ctx.fillStyle = notchCornerMask.color;
+                ctx.fill();
+            }
+        }
     }
 }

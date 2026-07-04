@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
 import "../theme"
@@ -54,66 +55,105 @@ PanelWindow {
         ? Qt.rgba(1.0, 0.2, 0.2, 0.65)
         : Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.tabBgOpacity)
 
-    readonly property int segmentBorderWidth: Theme.debugBarSilhouette ? 1 : 0
-    readonly property color segmentBorderColor: Theme.debugBarSilhouette ? "#ff3344" : "transparent"
+    // --- Island silhouette: single fill surface + composite mask ---
+    // A full-width Rectangle provides pigment; MultiEffect clips it to three
+    // visible regions (left, center, right) matching BarTab bounds via an
+    // invisible white-rectangle mask. Gaps between segments stay transparent
+    // because the mask has no geometry there.
 
-    // --- Island silhouette: 3 content-sized full-height segments ---
-    // Each background follows its BarTab bounds instead of filling the space
-    // between sections. The remaining space stays transparent, creating the
-    // breathing/islands visual without fixed spacer geometry.
-
-    // Left island — square at screen edge (left), rounded at gap (right).
+    // Fill surface — pigment only, never rendered directly (MultiEffect captures it).
     Rectangle {
-        id: leftSegment
-        y: 0
-        x: leftTab.x
-        width: leftTab.width
-        height: parent.height
-        visible: Theme.barStyle === "silhouette"
+        id: silhouetteFill
+        anchors.fill: parent
+        visible: false
+        layer.enabled: true
         color: root.segmentFill
-        border { width: root.segmentBorderWidth; color: root.segmentBorderColor }
-        radius: 0
-        topLeftRadius: 0
-        topRightRadius: Theme.tabRadius
-        bottomLeftRadius: 0
-        bottomRightRadius: Theme.tabRadius
-        z: 0
     }
 
-    // Center island — rounded on all four corners (gap-facing both sides).
-    Rectangle {
-        id: centerSegment
-        y: 0
-        x: centerTab.x
-        width: centerTab.width
-        height: parent.height
-        visible: Theme.barStyle === "silhouette"
-        color: root.segmentFill
-        border { width: root.segmentBorderWidth; color: root.segmentBorderColor }
-        radius: 0
-        topLeftRadius: Theme.tabRadius
-        topRightRadius: Theme.tabRadius
-        bottomLeftRadius: Theme.tabRadius
-        bottomRightRadius: Theme.tabRadius
-        z: 0
+    // Mask geometry — invisible render target for MultiEffect.
+    // Keep the three bar islands separated. The sketch-like detail is local:
+    // square top edges with rounded lower/internal corners at the section gaps.
+    Item {
+        id: silhouetteMask
+        visible: false
+        layer.enabled: true
+        anchors.fill: parent
+
+        // Tuning params (visual-only; adjust via hot-reload)
+        readonly property real _cornerRadius: Math.min(Theme.tabRadius * 1.8, parent.height)
+
+        Canvas {
+            id: frameMaskCanvas
+            anchors.fill: parent
+            antialiasing: true
+
+            property real leftX: leftTab.x
+            property real leftW: leftTab.width
+            property real centerX: centerTab.x
+            property real centerW: centerTab.width
+            property real rightX: rightTab.x
+            property real rightW: rightTab.width
+            property real cornerRadius: silhouetteMask._cornerRadius
+
+            onLeftXChanged: requestPaint()
+            onLeftWChanged: requestPaint()
+            onCenterXChanged: requestPaint()
+            onCenterWChanged: requestPaint()
+            onRightXChanged: requestPaint()
+            onRightWChanged: requestPaint()
+            onCornerRadiusChanged: requestPaint()
+            onWidthChanged: requestPaint()
+            onHeightChanged: requestPaint()
+
+            function roundedRect(ctx, x, y, w, h, r, tl, tr, br, bl) {
+                const radius = Math.max(0, Math.min(r, w / 2, h / 2));
+                ctx.beginPath();
+                ctx.moveTo(x + (tl ? radius : 0), y);
+                ctx.lineTo(x + w - (tr ? radius : 0), y);
+                if (tr) ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+                else ctx.lineTo(x + w, y);
+                ctx.lineTo(x + w, y + h - (br ? radius : 0));
+                if (br) ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+                else ctx.lineTo(x + w, y + h);
+                ctx.lineTo(x + (bl ? radius : 0), y + h);
+                if (bl) ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+                else ctx.lineTo(x, y + h);
+                ctx.lineTo(x, y + (tl ? radius : 0));
+                if (tl) ctx.quadraticCurveTo(x, y, x + radius, y);
+                else ctx.lineTo(x, y);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            onPaint: {
+                const ctx = getContext("2d");
+                const r = frameMaskCanvas.cornerRadius;
+
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = "white";
+
+                // Left: square at screen edge and top edge; rounded only where it
+                // drops away into the transparent gap.
+                roundedRect(ctx, frameMaskCanvas.leftX, 0, frameMaskCanvas.leftW, height, r, false, false, true, false);
+
+                // Center: square top edge, rounded lower corners only.
+                roundedRect(ctx, frameMaskCanvas.centerX, 0, frameMaskCanvas.centerW, height, r, false, false, true, true);
+
+                // Right: mirrored local detail at the gap-facing lower corner;
+                // square at screen edge and top edge.
+                roundedRect(ctx, frameMaskCanvas.rightX, 0, frameMaskCanvas.rightW, height, r, false, false, false, true);
+            }
+        }
     }
 
-    // Right island — rounded at gap (left), square at screen edge (right).
-    Rectangle {
-        id: rightSegment
-        y: 0
-        x: rightTab.x
-        width: rightTab.width
-        height: parent.height
+    // Composite effect — clips fill surface to visible regions.
+    MultiEffect {
+        id: silhouetteEffect
+        source: silhouetteFill
+        maskEnabled: true
+        maskSource: silhouetteMask
+        anchors.fill: parent
         visible: Theme.barStyle === "silhouette"
-        color: root.segmentFill
-        border { width: root.segmentBorderWidth; color: root.segmentBorderColor }
-        radius: 0
-        topLeftRadius: Theme.tabRadius
-        topRightRadius: 0
-        bottomLeftRadius: Theme.tabRadius
-        bottomRightRadius: 0
-        z: 0
     }
 
     // Left tab — Workspaces

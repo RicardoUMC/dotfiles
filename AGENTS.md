@@ -76,6 +76,13 @@ Merge directly to `main` — no PRs (personal repo). Never commit without explic
 ## Design system
 See `DESIGN.md` for the full design reference — philosophy, inspirations, tokens, overlay rules, and planned architecture. Read it before touching any UI component.
 
+## Reference-first feature workflow
+- Ambxst/Ax-Shell is a reference implementation for inspiration, not a source to copy wholesale.
+- Before implementing a feature inspired by Ambxst, inspect how Ambxst solves the same problem, then compare at least one alternative approach with pros and cons.
+- Final decisions must adapt the idea to this shell's architecture, tokens, overlay rules, and Ricardo's personal design goals.
+- Keep the reference clone outside this repository. Current local reference path: `/home/unseen/src/reference/Ambxst`.
+- Do not vendor, stow, or copy Ambxst files into `dotfiles` unless Ricardo explicitly asks for a deliberate port.
+
 ## Available skills (OpenCode)
 | Command | Skill | Purpose |
 |---------|-------|---------|

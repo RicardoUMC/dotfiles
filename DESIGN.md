@@ -40,6 +40,8 @@ The shell should feel **fast, technical, clean, and modular**. "Hacker/dev works
 
 **Primary inspiration** — the direction that fits this project most.
 
+Ambxst is a reference to study, not a target to clone. For features inspired by it, first inspect the local reference implementation at `/home/unseen/src/reference/Ambxst`, understand the pattern, compare alternatives, then adapt the final design to this shell's own architecture and preferences.
+
 **What to take:**
 
 - Expandable dashboards

@@ -9,9 +9,15 @@ PanelWindow {
     id: root
 
     anchors { top: true; left: true; right: true }
-    exclusionMode: ExclusionMode.Auto
     readonly property real barContentHeight: Math.max(leftTab.implicitHeight, centerTab.implicitHeight, rightTab.implicitHeight)
+    // Single source of truth for the silhouette curvature. Every notch, wrap,
+    // and lower island radius uses this value so the shape tunes as one system.
     readonly property real silhouetteCornerSize: Math.min(Theme.tabRadius + 4, barContentHeight)
+
+    // Reserve only the interactive/content height. The wrapped silhouette still
+    // draws through implicitHeight, but it does not push tiled windows by its
+    // full decorative depth.
+    exclusiveZone: Math.ceil(barContentHeight)
 
     implicitHeight: barContentHeight + (Theme.barStyle === "silhouette" ? silhouetteCornerSize : 0)
     margins { top: 0; left: 0; right: 0 }
@@ -267,8 +273,8 @@ PanelWindow {
             color: "white"
             topLeftRadius: 0
             topRightRadius: 0
-            bottomLeftRadius: notchIslandMask.bottomLeftRounded ? Theme.tabRadius : 0
-            bottomRightRadius: notchIslandMask.bottomRightRounded ? Theme.tabRadius : 0
+            bottomLeftRadius: notchIslandMask.bottomLeftRounded ? notchIslandMask.resolvedCornerSize : 0
+            bottomRightRadius: notchIslandMask.bottomRightRounded ? notchIslandMask.resolvedCornerSize : 0
         }
 
         NotchCornerMask {

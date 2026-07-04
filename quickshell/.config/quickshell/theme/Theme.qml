@@ -26,6 +26,8 @@ QtObject {
     // Bar
     property int barHeight: 37
     property int barChipHeight: 26
+    property int barCurveRadius: 14
+    property int barWrapDepth: 14
     property string barStyle: "silhouette"         // "silhouette" | "plain"
     property real barCurveDepthRatio: 0.2           // concave depth = height × ratio (legacy, use barNotchDepthRatio)
     property real barNotchGapWidth: 30              // px gap at each section boundary
@@ -102,6 +104,8 @@ QtObject {
             if (cfg.opacity?.dim     !== undefined) opacityDim     = cfg.opacity.dim
             if (cfg.bar?.height             !== undefined) barHeight             = cfg.bar.height
             if (cfg.bar?.chipHeight         !== undefined) barChipHeight         = cfg.bar.chipHeight
+            if (cfg.bar?.curveRadius        !== undefined) barCurveRadius        = cfg.bar.curveRadius
+            if (cfg.bar?.wrapDepth          !== undefined) barWrapDepth          = cfg.bar.wrapDepth
             if (cfg.bar?.style !== undefined) {
                 barStyle = cfg.bar.style
             } else if (cfg.bar?.outerFrame !== undefined) {

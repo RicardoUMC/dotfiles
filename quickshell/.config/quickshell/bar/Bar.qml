@@ -11,16 +11,16 @@ PanelWindow {
     anchors { top: true; left: true; right: true }
     readonly property real sideTabHeight: Math.max(leftTab.implicitHeight, rightTab.implicitHeight)
     readonly property real barContentHeight: Math.max(sideTabHeight, centerTab.implicitHeight)
-    // Single source of truth for the silhouette curvature. Every notch, wrap,
-    // and lower island radius uses this value so the shape tunes as one system.
-    readonly property real silhouetteCornerSize: Math.min(Theme.tabRadius + 4, barContentHeight)
+    // Single source of truth for the silhouette curvature. Every notch and lower
+    // island radius uses this value so the shape tunes as one system.
+    readonly property real silhouetteCornerSize: Math.min(Theme.barCurveRadius, barContentHeight)
 
     // Reserve only the interactive/content height. The wrapped silhouette still
     // draws through implicitHeight, but it does not push tiled windows by its
     // full decorative depth.
     exclusiveZone: Math.ceil(barContentHeight)
 
-    implicitHeight: barContentHeight + (Theme.barStyle === "silhouette" ? silhouetteCornerSize : 0)
+    implicitHeight: barContentHeight + (Theme.barStyle === "silhouette" ? Theme.barWrapDepth : 0)
     margins { top: 0; left: 0; right: 0 }
     color: "transparent"
 
@@ -91,6 +91,7 @@ PanelWindow {
         anchors.fill: parent
 
         readonly property real _cornerSize: root.silhouetteCornerSize
+        readonly property real _wrapDepth: Theme.barWrapDepth
 
         NotchIslandMask {
             targetItem: leftTab
@@ -123,20 +124,20 @@ PanelWindow {
             x: leftTab.x
             y: leftTab.y + leftTab.height
             width: silhouetteMask._cornerSize
-            height: width
+            height: silhouetteMask._wrapDepth
             corner: "topLeft"
             color: "white"
-            visible: width > 0
+            visible: width > 0 && height > 0
         }
 
         NotchCornerMask {
             x: rightTab.x + rightTab.width - width
             y: rightTab.y + rightTab.height
             width: silhouetteMask._cornerSize
-            height: width
+            height: silhouetteMask._wrapDepth
             corner: "topRight"
             color: "white"
-            visible: width > 0
+            visible: width > 0 && height > 0
         }
     }
 

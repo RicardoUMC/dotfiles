@@ -54,7 +54,7 @@ RowLayout {
 
             Layout.alignment: Qt.AlignVCenter
             implicitWidth: wsRow.implicitWidth + 16
-            implicitHeight: 26
+            implicitHeight: Theme.barChipHeight
 
             Rectangle {
                 anchors.fill: parent

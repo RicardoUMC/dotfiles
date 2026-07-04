@@ -20,7 +20,7 @@ Item {
     Rectangle {
         id: btn
         width: 28
-        height: 22
+        height: Theme.barChipHeight
         radius: Theme.radiusSm
         color: mouseBtn.containsMouse
             ? Qt.rgba(Colors.red.r, Colors.red.g, Colors.red.b, Theme.opacityDim)

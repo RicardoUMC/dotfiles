@@ -9,7 +9,8 @@ PanelWindow {
     id: root
 
     anchors { top: true; left: true; right: true }
-    readonly property real barContentHeight: Math.max(leftTab.implicitHeight, centerTab.implicitHeight, rightTab.implicitHeight)
+    readonly property real sideTabHeight: Math.max(leftTab.implicitHeight, rightTab.implicitHeight)
+    readonly property real barContentHeight: Math.max(sideTabHeight, centerTab.implicitHeight)
     // Single source of truth for the silhouette curvature. Every notch, wrap,
     // and lower island radius uses this value so the shape tunes as one system.
     readonly property real silhouetteCornerSize: Math.min(Theme.tabRadius + 4, barContentHeight)
@@ -154,6 +155,7 @@ PanelWindow {
         id: leftTab
         z: 1
         compact: true
+        height: root.sideTabHeight
         anchors {
             left: parent.left
             top: parent.top
@@ -198,6 +200,7 @@ PanelWindow {
         id: rightTab
         z: 1
         compact: true
+        height: root.sideTabHeight
         anchors {
             right: parent.right
             top: parent.top

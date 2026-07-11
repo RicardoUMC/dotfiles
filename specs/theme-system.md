@@ -2,7 +2,7 @@
 
 ## Description
 
-Mutable `Theme.qml` singleton providing structural design tokens (radius, spacing, opacity, bar height, animation durations, font sizes) with optional hot-reload via `config.json`. Complements the static `Colors.qml` palette — colors are not part of this system.
+Mutable `Theme.qml` singleton providing structural design tokens (radius, spacing, opacity, bar geometry, tab geometry, debug scaffolding, animation durations, font sizes) with hot-reload via `config.json`. Complements the static `Colors.qml` palette — colors are not part of this system.
 
 ---
 
@@ -12,9 +12,9 @@ Mutable `Theme.qml` singleton providing structural design tokens (radius, spacin
 
 `Theme.qml` is a mutable `pragma Singleton` importable from any component. All token properties declare their safe default values inline (not in `Component.onCompleted`) to guarantee a valid first frame.
 
-### Requirement: Token Catalog
+### Requirement: Core Token Catalog
 
-All 21 structural tokens with their defaults:
+Core structural tokens with their defaults:
 
 | Group | Token | Default | Type |
 |-------|-------|---------|------|
@@ -32,6 +32,10 @@ All 21 structural tokens with their defaults:
 | Opacity | `opacityBorder` | `0.30` | `real` |
 | Opacity | `opacityDim` | `0.15` | `real` |
 | Bar | `barHeight` | `37` | `int` |
+| Bar | `barChipHeight` | `26` | `int` |
+| Bar | `barCurveRadius` | `14` | `int` |
+| Bar | `barWrapDepth` | `14` | `int` |
+| Bar | `barStyle` | `"silhouette"` | `string` |
 | Animation | `animFast` | `180` | `int` (ms) |
 | Animation | `animNormal` | `300` | `int` (ms) |
 | Animation | `animSlow` | `500` | `int` (ms) |
@@ -41,17 +45,23 @@ All 21 structural tokens with their defaults:
 | Font size | `fontSizeBodyLg` | `14` | `int` |
 | Font size | `fontSizeIcon` | `18` | `int` |
 
+Additional implemented groups include tab geometry (`tabPaddingH`, `tabPaddingV`, `tabRadius`, `tabMaxHeight`, `tabCollapsedHeight`, `tabBgOpacity`), island/ornament experimental tokens, and debug scaffolding (`debugVisualBounds`, `debugBorderColor`, `debugBorderWidth`, `debugBarSilhouette`).
+
 ### Requirement: Colors.qml Unchanged
 
 `Colors.qml` remains a separate readonly singleton for color/font-family tokens. It is NOT part of the theme system.
 
 ### Requirement: Zero Visual Regression
 
-All migrated components produce identical visual output with default token values. `barHeight` (37) is adopted by all 3 layout consumers: `Bar.qml`, `Notifications.qml`, `PowerMenu.qml`.
+All migrated components produce stable visual output with default token values. `barHeight` (37) is used for overlay offsets, while current bar content sizing uses `barChipHeight`, tab padding, and measured island implicit heights.
+
+### Requirement: Wrapped Bar Silhouette Tokens
+
+`Bar.qml` uses `barCurveRadius` as the shared corner curvature source and `barWrapDepth` as an independent decorative downward wrap depth. The panel `exclusiveZone` reserves only the measured interactive content height, not the full decorative silhouette height.
 
 ### Requirement: Hot-Reload via config.json
 
-`Theme.qml` watches `~/.config/quickshell/config.json` via `FileView` with `watchFiles: true`. On file change, a 100ms debounce `Timer` fires before re-parsing, preventing reactions to partial writes. Missing file uses defaults silently.
+`Theme.qml` watches `~/.config/quickshell/config.json` via `FileView` with `watchChanges: true`. On file change, a 100ms debounce `Timer` fires before re-parsing, preventing reactions to partial writes. Missing file uses defaults silently.
 
 ### Requirement: Robust Configuration Parsing
 
@@ -68,13 +78,14 @@ All fields optional. Missing fields keep defaults.
   "radius":  { "sm": 6,    "md": 10,   "lg": 12  },
   "spacing": { "xs": 4,    "sm": 8,    "md": 12,  "lg": 16, "xl": 24 },
   "opacity": { "surface": 0.97, "overlay": 0.33, "border": 0.30, "dim": 0.15 },
-  "bar":     { "height": 37 },
+  "bar":     { "height": 37, "style": "silhouette", "chipHeight": 26, "curveRadius": 14, "wrapDepth": 14 },
   "anim":    { "fast": 180, "normal": 300, "slow": 500 },
-  "font":    { "caption": 10, "label": 11, "body": 13, "bodyLg": 14, "icon": 18 }
+  "font":    { "caption": 10, "label": 11, "body": 13, "bodyLg": 14, "icon": 18 },
+  "debug":   { "visualBounds": false, "borderColor": "#ff3344", "borderWidth": 1, "barSilhouette": false }
 }
 ```
 
-Location: `~/.config/quickshell/config.json` — NOT stow-managed (user-editable runtime file).
+Location in this stow-managed repo: `quickshell/.config/quickshell/config.json`, which maps to `~/.config/quickshell/config.json`.
 
 ---
 
@@ -94,7 +105,7 @@ config.json ──(write)──→ FileView.onFileChanged
                     All bound components re-render
 ```
 
-- **watchChanges**: `FileView.watchFiles: true`
+- **watchChanges**: `FileView.watchChanges: true`
 - **Debounce**: 100ms `Timer`, restarted on each `fileChanged` signal
 - **Silent fail**: `try/catch` around `JSON.parse` — no crash, no log on malformed JSON
 - **Partial override**: each token guarded independently (`if (cfg.radius?.sm !== undefined)`)

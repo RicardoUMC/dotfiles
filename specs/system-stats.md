@@ -14,7 +14,7 @@ Right-aligned stats bar showing system metrics and a clock.
 | GPU | busy % | `/sys/class/drm/card1/device/gpu_busy_percent` |
 | CPU | usage % | `/proc/stat` |
 | DSK | read+write MB/s | `/proc/diskstats` (nvme0n1) |
-| NET | UP / OFF | `/sys/class/net/wlp11s0/operstate` |
+| NET | UP / OFF | default route detection via `ip route` |
 | VOL | volume % or MUTED | `wpctl get-volume` |
 
 ## Color coding

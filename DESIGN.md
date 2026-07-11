@@ -58,7 +58,10 @@ Ambxst is a reference to study, not a target to clone. For features inspired by 
 
 ## Design Tokens
 
-All tokens live in `theme/Colors.qml` (current) and will migrate to `theme/Theme.qml` (planned mutable singleton).
+Design tokens are split across two QML singletons:
+
+- `theme/Colors.qml` — readonly palette and font-family tokens.
+- `theme/Theme.qml` — mutable structural tokens loaded from `config.json` with hot-reload.
 
 ### Palette — Tokyo City Terminal Dark (Base16)
 
@@ -93,6 +96,20 @@ All tokens live in `theme/Colors.qml` (current) and will migrate to `theme/Theme
 
 **Why SF Pro:** chosen over Geist and Outfit for the "premium software" feel. SF Pro Text for UI consistency, SF Pro Display for typographic hierarchy. Geist is installed but not used in the UI.
 
+### Mutable structural tokens
+
+`Theme.qml` exposes runtime-tunable structural values. Current bar-specific tokens include:
+
+| Token | Default | Current config | Use |
+| ----- | ------- | -------------- | --- |
+| `Theme.barHeight` | `37` | `37` | Base top-bar offset used by overlays. |
+| `Theme.barChipHeight` | `26` | `26` | Uniform chip height for workspace pills, metrics, and power button. |
+| `Theme.barCurveRadius` | `14` | `16` | Shared silhouette/notch curvature source. |
+| `Theme.barWrapDepth` | `14` | `12` | Decorative downward wrap depth below the interactive bar content. |
+| `Theme.barStyle` | `"silhouette"` | `"silhouette"` | Enables the masked wrapped silhouette; `"plain"` disables it. |
+
+Debug scaffolding is also configurable through `debug.*` keys. `debug.barSilhouette` intentionally remains available for high-contrast silhouette tuning and should only be disabled when Ricardo explicitly requests it.
+
 ---
 
 ## Visual System
@@ -124,7 +141,14 @@ Cards and panels may use a **single-side color highlight** (left border) to crea
 
 ### Bar Style
 
-**Floating islands** — not full-width. The bar is composed of independent floating segments with gaps between them, anchored to the top of the screen. Inspired by macOS Sonoma / Ax-Shell.
+**Wrapped floating silhouette** — not full-width. The bar is composed of independent left, center, and right islands with transparent gaps, anchored to the top of the screen. Inspired by macOS Sonoma / Ax-Shell and adapted from Ambxst's mask-composition idea.
+
+The accepted silhouette design uses one fill surface clipped by a composite mask:
+
+- `NotchIslandMask` defines each separated island and its gap-facing top corner pieces.
+- `NotchCornerMask` draws explicit curved mask pieces, including lateral downward wrap pieces.
+- `exclusiveZone` reserves only the interactive/content height; decorative wrap depth can draw below it without reserving the full visual height.
+- Side islands share `sideTabHeight`, while chips use `Theme.barChipHeight` for consistent internal rhythm.
 
 ---
 
@@ -189,27 +213,27 @@ Sound can be muted independently of notifications via IPC: `quickshell ipc call 
 
 ---
 
-## Planned: Design Token System
+## Design Token System
 
-The current `Colors.qml` is a `pragma Singleton` with `readonly` properties — it cannot be mutated at runtime.
+`Colors.qml` remains a `pragma Singleton` with readonly color and font-family properties. `Theme.qml` is the mutable structural-token singleton.
 
-**Planned architecture:**
+**Current architecture:**
 
-- `theme/Theme.qml` — mutable singleton that exposes all configurable tokens (radii, spacing, opacity, blur, fonts, colors)
-- `~/.config/quickshell/config.json` — persists user preferences; read on startup, written on change
+- `theme/Theme.qml` — mutable singleton that exposes configurable structural tokens (radii, spacing, opacity, bar geometry, animation durations, and font sizes)
+- `~/.config/quickshell/config.json` — persists user preferences and is read on startup
 - Hot-reload via Quickshell's `FileView` — changes apply without restarting
-- All components migrate from `Colors.*` to `Theme.*` for configurable values
+- Components use `Colors.*` for palette/font families and `Theme.*` for structural values
 
-### Planned token categories
+### Token categories
 
 ```
 Theme.radius.sm / md / lg / pill
 Theme.spacing.xs / sm / md / lg
 Theme.opacity.surface / overlay / dim
-Theme.blur.intensity
-Theme.font.ui / display / mono
-Theme.bar.islandStyle (bool)
-Theme.color.accent / background / surface / ...
+Theme.bar.height / chipHeight / curveRadius / wrapDepth / style
+Theme.tab.paddingH / paddingV / radius / collapsedHeight
+Theme.font.caption / label / body / bodyLg / icon
+Theme.debug.visualBounds / borderColor / borderWidth / barSilhouette
 ```
 
 ---

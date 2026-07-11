@@ -20,12 +20,13 @@ Install: `cd ~/dotfiles && stow quickshell hyprland wezterm`
 
 ```
 shell.qml               ← coordinator: owns all overlay state, IPC handlers
-bar/Bar.qml             ← PanelWindow top bar, imports bar/* components
+bar/Bar.qml             ← PanelWindow top bar, wrapped silhouette mask, imports bar/* components
 bar/PowerMenu.qml       ← fullscreen PanelWindow Overlay (WlrLayer.Overlay)
 bar/MprisPopup.qml      ← fullscreen PanelWindow Overlay
 launcher/LauncherCentered.qml ← fullscreen PanelWindow Overlay
 notifications/Notifications.qml ← PanelWindow Overlay, top-right
-theme/Colors.qml        ← pragma Singleton — all color + font tokens
+theme/Colors.qml        ← pragma Singleton — readonly color + font tokens
+theme/Theme.qml         ← pragma Singleton — mutable structural tokens from config.json
 ```
 
 **Every QML module needs its type declared in the local `qmldir` file** — missing entries cause `Type X unavailable` errors on load.
@@ -42,12 +43,19 @@ theme/Colors.qml        ← pragma Singleton — all color + font tokens
 - Test theme without logging out: `sddm-greeter-qt6 --test-mode --theme /usr/share/sddm/themes/tokyo-city`
 
 ## Typography system
-All components use tokens from `Colors.qml` — never hardcode font families:
+All components use font-family tokens from `Colors.qml` — never hardcode font families:
 | Token | Font | Use |
 |-------|------|-----|
 | `Colors.uiFont` | SF Pro Text | Labels, buttons, body text, metric values |
 | `Colors.displayFont` | SF Pro Display | Large titles, headers |
 | `Colors.monoFont` | VictorMono Nerd Font | Nerd Font icons, separators |
+
+## Mutable structural tokens
+`Theme.qml` reads structural token overrides from `quickshell/.config/quickshell/config.json` with hot-reload. Key bar tokens currently in use:
+- `Theme.barChipHeight` — chip height shared by workspaces, metrics, and power button
+- `Theme.barCurveRadius` — shared wrapped-silhouette corner radius
+- `Theme.barWrapDepth` — decorative downward wrap depth below the interactive bar content
+- `Theme.debugBarSilhouette` — high-contrast red debug silhouette; do not disable unless Ricardo explicitly asks
 
 ## Palette — Tokyo City Terminal Dark (Base16)
 Key values used in components:
@@ -60,7 +68,7 @@ Key values used in components:
 ## Hardware paths (used in SystemStats.qml)
 - GPU busy: `/sys/class/drm/card1/device/gpu_busy_percent`
 - Disk: `nvme0n1`
-- Network: `wlp11s0`
+- Network status: default route detection via `ip route`
 
 ## IPC commands
 ```bash

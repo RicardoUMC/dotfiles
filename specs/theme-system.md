@@ -35,6 +35,9 @@ Core structural tokens with their defaults:
 | Bar | `barChipHeight` | `26` | `int` |
 | Bar | `barCurveRadius` | `14` | `int` |
 | Bar | `barWrapDepth` | `14` | `int` |
+| Bar | `centerCollapsedWidth` | `360` | `int` |
+| Bar | `centerExpandedWidth` | `520` | `int` |
+| Bar | `centerExpandedHeight` | `260` | `int` |
 | Bar | `barStyle` | `"silhouette"` | `string` |
 | Animation | `animFast` | `180` | `int` (ms) |
 | Animation | `animNormal` | `300` | `int` (ms) |
@@ -57,7 +60,7 @@ All migrated components produce stable visual output with default token values. 
 
 ### Requirement: Wrapped Bar Silhouette Tokens
 
-`Bar.qml` uses `barCurveRadius` as the shared corner curvature source and `barWrapDepth` as an independent decorative downward wrap depth. The panel `exclusiveZone` reserves only the measured interactive content height, not the full decorative silhouette height.
+`Bar.qml` uses `barCurveRadius` as the shared corner curvature source and `barWrapDepth` as an independent decorative downward wrap depth. The panel `exclusiveZone` reserves only the measured interactive content height, not the full decorative silhouette height. The center notch uses `centerCollapsedWidth`, `centerExpandedWidth`, and `centerExpandedHeight` to grow in place into a dashboard without increasing reserved Hyprland space.
 
 ### Requirement: Hot-Reload via config.json
 
@@ -78,7 +81,7 @@ All fields optional. Missing fields keep defaults.
   "radius":  { "sm": 6,    "md": 10,   "lg": 12  },
   "spacing": { "xs": 4,    "sm": 8,    "md": 12,  "lg": 16, "xl": 24 },
   "opacity": { "surface": 0.97, "overlay": 0.33, "border": 0.30, "dim": 0.15 },
-  "bar":     { "height": 37, "style": "silhouette", "chipHeight": 26, "curveRadius": 14, "wrapDepth": 14 },
+  "bar":     { "height": 37, "style": "silhouette", "chipHeight": 26, "curveRadius": 14, "wrapDepth": 14, "centerCollapsedWidth": 360, "centerExpandedWidth": 520, "centerExpandedHeight": 260 },
   "anim":    { "fast": 180, "normal": 300, "slow": 500 },
   "font":    { "caption": 10, "label": 11, "body": 13, "bodyLg": 14, "icon": 18 },
   "debug":   { "visualBounds": false, "borderColor": "#ff3344", "borderWidth": 1, "barSilhouette": false }

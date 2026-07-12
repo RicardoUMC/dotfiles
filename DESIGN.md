@@ -106,6 +106,9 @@ Design tokens are split across two QML singletons:
 | `Theme.barChipHeight` | `26` | `26` | Uniform chip height for workspace pills, metrics, and power button. |
 | `Theme.barCurveRadius` | `14` | `16` | Shared silhouette/notch curvature source. |
 | `Theme.barWrapDepth` | `14` | `12` | Decorative downward wrap depth below the interactive bar content. |
+| `Theme.centerCollapsedWidth` | `360` | `360` | Collapsed center notch width. |
+| `Theme.centerExpandedWidth` | `520` | `520` | Expanded in-place center dashboard width. |
+| `Theme.centerExpandedHeight` | `260` | `260` | Expanded in-place center dashboard height. |
 | `Theme.barStyle` | `"silhouette"` | `"silhouette"` | Enables the masked wrapped silhouette; `"plain"` disables it. |
 
 Debug scaffolding is also configurable through `debug.*` keys. `debug.barSilhouette` intentionally remains available for high-contrast silhouette tuning and should only be disabled when Ricardo explicitly requests it.
@@ -149,6 +152,8 @@ The accepted silhouette design uses one fill surface clipped by a composite mask
 - `NotchCornerMask` draws explicit curved mask pieces, including lateral downward wrap pieces.
 - `exclusiveZone` reserves only the interactive/content height; decorative wrap depth can draw below it without reserving the full visual height.
 - Side islands share `sideTabHeight`, while chips use `Theme.barChipHeight` for consistent internal rhythm.
+- The center island expands in place into the dashboard. Its expanded body overlays app content and does not increase Hyprland reserved space.
+- The expanded center notch hosts MPRIS content directly; the standalone MPRIS popup remains the compact-chip behavior only.
 
 ---
 

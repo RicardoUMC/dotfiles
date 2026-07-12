@@ -4,7 +4,7 @@
 **File:** `quickshell/.config/quickshell/bar/Bar.qml`
 
 ## Description
-Top-anchored floating bar composed of independent wrapped-silhouette islands. Coordinates overlay state for all bar-level components.
+Top-anchored floating bar composed of independent wrapped-silhouette islands. Coordinates overlay state for all bar-level components and expands the center island in place into a lightweight dashboard.
 
 ## Behavior
 
@@ -14,6 +14,8 @@ Top-anchored floating bar composed of independent wrapped-silhouette islands. Co
 - Reserves only the interactive content height through `exclusiveZone`
 - Decorative wrapped silhouette depth may draw below the reserved height when `Theme.barStyle === "silhouette"`
 - Left and right islands share `sideTabHeight`; workspace, metrics, and power chips share `Theme.barChipHeight`
+- The center island uses `Theme.centerCollapsedWidth` when collapsed and `Theme.centerExpandedWidth` / `Theme.centerExpandedHeight` when expanded
+- Expanded center content overlays app windows without increasing reserved Hyprland space
 
 ### Silhouette mask
 - Uses one hidden fill surface clipped through a `MultiEffect` mask
@@ -27,6 +29,7 @@ Top-anchored floating bar composed of independent wrapped-silhouette islands. Co
 - Exposes `closePowerMenu()`, `openPowerMenu()`, `closeMpris()`, `openMpris()`, `openMetrics()`, `closeMetrics()`, `openCenterPanel()`, and `closeCenterPanel()` functions
 - Exposes `powerMenuVisible`, `mprisVisible`, MPRIS anchor properties, and power-button anchor properties as readonly state
 - Does not communicate directly with launcher — routes through `shell.qml`
+- `CenterPanel.qml` is an invisible overlay-layer input catcher only; it provides Escape/outside-click dismissal and leaves an input pass-through hole over the expanded center notch
 
 ### Power button
 - Positioned at right edge with fixed `x` exposed as `powerBtnGlobalX` for launcher click detection
@@ -35,7 +38,10 @@ Top-anchored floating bar composed of independent wrapped-silhouette islands. Co
 ### Center island
 - Shows `ClockChip` by default
 - Shows `MprisIndicator` when an MPRIS player has title or artist metadata
-- Clicking the center island requests the floating center panel toggle through `shell.qml`
+- Clicking the center island requests the in-place center dashboard toggle through `shell.qml`
+- Expanded state keeps the same center island visible and grows it in place rather than opening a separate visible floating panel
+- Expanded state shows media content inside the notch: title, artist, progress, previous/play-next controls, and `No media playing` fallback when no player is available
+- Compact MPRIS chip clicks open the existing `MprisPopup`; expanded MPRIS chip clicks do not open a separate popup because media controls live inside the notch
 
 ### Metrics button
 - Compact icon button in the right island

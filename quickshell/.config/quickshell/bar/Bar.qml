@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
 import Quickshell
+import Quickshell.Services.Mpris
 import Quickshell.Wayland
 import "../theme"
 
@@ -11,14 +12,16 @@ PanelWindow {
     anchors { top: true; left: true; right: true }
     readonly property real sideTabHeight: Math.max(leftTab.implicitHeight, rightTab.implicitHeight)
     readonly property real barContentHeight: Math.max(sideTabHeight, centerTab.implicitHeight)
+    readonly property real reservedBarContentHeight: Math.max(sideTabHeight,
+        centerHeader.implicitHeight + centerTab.paddingV * 2)
     // Single source of truth for the silhouette curvature. Every notch and lower
     // island radius uses this value so the shape tunes as one system.
     readonly property real silhouetteCornerSize: Math.min(Theme.barCurveRadius, barContentHeight)
 
-    // Reserve only the interactive/content height. The wrapped silhouette still
-    // draws through implicitHeight, but it does not push tiled windows by its
-    // full decorative depth.
-    exclusiveZone: Math.ceil(barContentHeight)
+    // Reserve only the collapsed interactive bar height. The expanded center
+    // body still draws through implicitHeight, but it overlays tiled windows
+    // instead of increasing Hyprland's reserved top margin.
+    exclusiveZone: Math.ceil(reservedBarContentHeight)
 
     implicitHeight: barContentHeight + (Theme.barStyle === "silhouette" ? Theme.barWrapDepth : 0)
     margins { top: 0; left: 0; right: 0 }
@@ -59,6 +62,15 @@ PanelWindow {
     readonly property real mprisChipWidth:   mprisChip.width
     readonly property bool mprisChipActive:  mprisChip.active
     readonly property bool mprisVisible:     mprisPopup.isOpen
+    readonly property bool centerPanelVisible: centerPanel.isOpen
+    readonly property var mediaPlayer: {
+        const players = Mpris.players.values
+        for (let i = 0; i < players.length; i++) {
+            if (players[i].playbackState === MprisPlaybackState.Playing)
+                return players[i]
+        }
+        return players.length > 0 ? players[0] : null
+    }
 
     // Segment fill: normal base01 or high-contrast debug red
     readonly property color segmentFill: Theme.debugBarSilhouette
@@ -168,13 +180,14 @@ PanelWindow {
         Workspaces {}
     }
 
-    // Center tab — Clock always visible + MPRIS chip inside when active.
-    // Fixed at 360px width (no in-place expansion). Clicking emits a toggle
-    // signal that opens the floating CenterPanel overlay.
+    // Center tab — grows in place into the dashboard body.
     BarTab {
         id: centerTab
         z: 2
-        width: 360
+        readonly property bool expanded: centerPanel.isOpen
+
+        width: expanded ? Theme.centerExpandedWidth : Theme.centerCollapsedWidth
+        height: implicitHeight
         paddingH: Theme.spacingXl
         paddingV: Theme.spacingSm
         anchors {
@@ -183,19 +196,169 @@ PanelWindow {
             topMargin: 0
         }
 
-        ClockChip { expanded: false }
+        Behavior on width {
+            NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic }
+        }
 
-        MprisIndicator {
-            id: mprisChip
-            visible: active
-            onClicked: root.mprisToggleRequested()
+        ColumnLayout {
+            Layout.fillWidth: true
+            spacing: Theme.spacingMd
+
+            RowLayout {
+                id: centerHeader
+                Layout.fillWidth: true
+                spacing: Theme.spacingSm
+
+                Item { Layout.fillWidth: true }
+
+                ClockChip { expanded: false }
+
+                MprisIndicator {
+                    id: mprisChip
+                    visible: active
+                    onClicked: {
+                        if (!centerTab.expanded)
+                            root.mprisToggleRequested()
+                    }
+                }
+
+                Item { Layout.fillWidth: true }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: Math.max(0,
+                    Theme.centerExpandedHeight - Theme.barChipHeight - Theme.spacingMd - centerTab.paddingV * 2)
+                visible: centerTab.expanded
+                radius: Theme.radiusMd
+                color: Qt.rgba(Colors.base00.r, Colors.base00.g, Colors.base00.b, 0.35)
+                border {
+                    width: 1
+                    color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: mouse => mouse.accepted = true
+                }
+
+                ColumnLayout {
+                    anchors { fill: parent; margins: Theme.spacingMd }
+                    spacing: Theme.spacingMd
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.spacingSm
+
+                        Text {
+                            text: "󰎆"
+                            color: Colors.accent
+                            font { family: Colors.monoFont; pixelSize: Theme.fontSizeIcon }
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Media"
+                            color: Colors.text
+                            font { family: Colors.displayFont; pixelSize: Theme.fontSizeBodyLg }
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: root.mediaPlayer?.trackTitle || "No media playing"
+                            color: Colors.text
+                            font { family: Colors.uiFont; pixelSize: Theme.fontSizeBody }
+                            elide: Text.ElideRight
+                            horizontalAlignment: root.mediaPlayer ? Text.AlignLeft : Text.AlignHCenter
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            visible: root.mediaPlayer !== null
+                            text: root.mediaPlayer?.trackArtist ?? ""
+                            color: Colors.textDim
+                            font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 3
+                        radius: 2
+                        visible: root.mediaPlayer !== null
+                        color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
+
+                        Rectangle {
+                            width: {
+                                const len = root.mediaPlayer?.length ?? 0
+                                const pos = root.mediaPlayer?.position ?? 0
+                                return len > 0 ? parent.width * Math.min(1, Math.max(0, pos / len)) : 0
+                            }
+                            height: parent.height
+                            radius: parent.radius
+                            color: Colors.accent
+
+                            Behavior on width {
+                                NumberAnimation { duration: Theme.animSlow }
+                            }
+                        }
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignHCenter
+                        visible: root.mediaPlayer !== null
+                        spacing: Theme.spacingXl
+
+                        Text {
+                            text: "󰒮"
+                            color: Colors.textDim
+                            font { family: Colors.monoFont; pixelSize: Theme.fontSizeIcon }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: root.mediaPlayer?.previous()
+                            }
+                        }
+
+                        Text {
+                            text: root.mediaPlayer?.playbackState === MprisPlaybackState.Playing ? "󰏤" : "󰐊"
+                            color: Colors.accent
+                            font { family: Colors.monoFont; pixelSize: 22 }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: root.mediaPlayer?.togglePlaying()
+                            }
+                        }
+
+                        Text {
+                            text: "󰒭"
+                            color: Colors.textDim
+                            font { family: Colors.monoFont; pixelSize: Theme.fontSizeIcon }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: root.mediaPlayer?.next()
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
     MouseArea {
-        anchors.fill: centerTab
+        parent: centerTab
+        anchors.fill: parent
+        z: -1
         onClicked: root.centerPanelToggleRequested()
-        z: 1
     }
 
     // Right tab — MetricsButton + PowerMenu button
@@ -237,6 +400,9 @@ PanelWindow {
 
     CenterPanel {
         id: centerPanel
+        centerX: centerTab.x
+        centerWidth: centerTab.width
+        centerHeight: centerTab.height
         onOpened: root.centerPanelOpened()
         onClosed: root.centerPanelClosed()
     }

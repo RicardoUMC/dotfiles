@@ -40,7 +40,10 @@ Top-anchored floating bar composed of independent wrapped-silhouette islands. Co
 - Shows `MprisIndicator` when an MPRIS player has title or artist metadata
 - Clicking the center island requests the in-place center dashboard toggle through `shell.qml`
 - Expanded state keeps the same center island visible and grows it in place rather than opening a separate visible floating panel
-- Expanded state shows media content inside the notch: title, artist, progress, previous/play-next controls, and `No media playing` fallback when no player is available
+- Expanded state mounts `CenterDashboard.qml` inside the notch body with a vertical rail and tabbed content area
+- The rail currently exposes `Media` and `Metrics` entries; clicking an entry switches the visible pane in place
+- The `Media` pane preserves the existing MPRIS behavior: title, artist, progress, previous/play-next controls, and `No media playing` fallback when no player is available
+- The `Metrics` pane is a placeholder only and does not bind to `SystemStats` or live metric data yet
 - Compact MPRIS chip clicks open the existing `MprisPopup`; expanded MPRIS chip clicks do not open a separate popup because media controls live inside the notch
 
 ### Metrics button

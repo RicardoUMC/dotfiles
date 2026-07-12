@@ -31,6 +31,7 @@ QtObject {
     property int centerCollapsedWidth: 360
     property int centerExpandedWidth: 520
     property int centerExpandedHeight: 260
+    property int dashboardRailWidth: 44
     property string barStyle: "silhouette"         // "silhouette" | "plain"
     property real barCurveDepthRatio: 0.2           // concave depth = height × ratio (legacy, use barNotchDepthRatio)
     property real barNotchGapWidth: 30              // px gap at each section boundary
@@ -145,6 +146,7 @@ QtObject {
             if (cfg.font?.body       !== undefined) fontSizeBody    = cfg.font.body
             if (cfg.font?.bodyLg     !== undefined) fontSizeBodyLg  = cfg.font.bodyLg
             if (cfg.font?.icon       !== undefined) fontSizeIcon    = cfg.font.icon
+            if (cfg.dashboard?.railWidth !== undefined) dashboardRailWidth = cfg.dashboard.railWidth
             if (cfg.debug?.visualBounds  !== undefined) debugVisualBounds  = cfg.debug.visualBounds
             if (cfg.debug?.borderColor   !== undefined) debugBorderColor   = cfg.debug.borderColor
             if (cfg.debug?.borderWidth   !== undefined) debugBorderWidth   = cfg.debug.borderWidth

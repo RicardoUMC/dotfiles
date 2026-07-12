@@ -109,6 +109,7 @@ Design tokens are split across two QML singletons:
 | `Theme.centerCollapsedWidth` | `360` | `360` | Collapsed center notch width. |
 | `Theme.centerExpandedWidth` | `520` | `520` | Expanded in-place center dashboard width. |
 | `Theme.centerExpandedHeight` | `260` | `260` | Expanded in-place center dashboard height. |
+| `Theme.dashboardRailWidth` | `44` | `44` | Vertical tab rail width inside the expanded center dashboard. |
 | `Theme.barStyle` | `"silhouette"` | `"silhouette"` | Enables the masked wrapped silhouette; `"plain"` disables it. |
 
 Debug scaffolding is also configurable through `debug.*` keys. `debug.barSilhouette` intentionally remains available for high-contrast silhouette tuning and should only be disabled when Ricardo explicitly requests it.
@@ -153,7 +154,8 @@ The accepted silhouette design uses one fill surface clipped by a composite mask
 - `exclusiveZone` reserves only the interactive/content height; decorative wrap depth can draw below it without reserving the full visual height.
 - Side islands share `sideTabHeight`, while chips use `Theme.barChipHeight` for consistent internal rhythm.
 - The center island expands in place into the dashboard. Its expanded body overlays app content and does not increase Hyprland reserved space.
-- The expanded center notch hosts MPRIS content directly; the standalone MPRIS popup remains the compact-chip behavior only.
+- The expanded center notch hosts a small dashboard body with a vertical tab rail adapted from the Ax-Shell expandable-dashboard direction: Media preserves the existing MPRIS controls, while Metrics is currently a visual placeholder only.
+- The standalone MPRIS popup remains the compact-chip behavior only.
 
 ---
 

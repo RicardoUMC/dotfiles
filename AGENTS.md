@@ -21,6 +21,7 @@ Install: `cd ~/dotfiles && stow quickshell hyprland wezterm`
 ```
 shell.qml               ← coordinator: owns all overlay state, IPC handlers
 bar/Bar.qml             ← PanelWindow top bar, wrapped silhouette mask, in-place center notch/dashboard, imports bar/* components
+bar/CenterDashboard.qml ← tabbed body for the expanded center notch: Media pane + Metrics placeholder rail
 bar/CenterPanel.qml     ← invisible Escape/outside-click catcher for the in-place center notch
 bar/PowerMenu.qml       ← fullscreen PanelWindow Overlay (WlrLayer.Overlay)
 bar/MprisPopup.qml      ← fullscreen PanelWindow Overlay
@@ -59,6 +60,7 @@ All components use font-family tokens from `Colors.qml` — never hardcode font 
 - `Theme.centerCollapsedWidth` — collapsed center notch width
 - `Theme.centerExpandedWidth` — expanded in-place center dashboard width
 - `Theme.centerExpandedHeight` — expanded in-place center dashboard height
+- `Theme.dashboardRailWidth` — vertical tab rail width inside the expanded center dashboard
 - `Theme.debugBarSilhouette` — high-contrast red debug silhouette; do not disable unless Ricardo explicitly asks
 
 ## Palette — Tokyo City Terminal Dark (Base16)

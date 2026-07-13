@@ -12,3 +12,5 @@ MetricsDropdown 1.0 MetricsDropdown.qml
 CenterPanel 1.0 CenterPanel.qml
 CenterDashboard 1.0 CenterDashboard.qml
 ClockChip 1.0 ClockChip.qml
+MetricsPane 1.0 MetricsPane.qml
+MetricCard 1.0 MetricCard.qml

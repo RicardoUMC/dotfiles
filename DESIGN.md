@@ -154,7 +154,9 @@ The accepted silhouette design uses one fill surface clipped by a composite mask
 - `exclusiveZone` reserves only the interactive/content height; decorative wrap depth can draw below it without reserving the full visual height.
 - Side islands share `sideTabHeight`, while chips use `Theme.barChipHeight` for consistent internal rhythm.
 - The center island expands in place into the dashboard. Its expanded body overlays app content and does not increase Hyprland reserved space.
-- The expanded center notch hosts a small dashboard body with a vertical tab rail adapted from the Ax-Shell expandable-dashboard direction: Media preserves the existing MPRIS controls, while Metrics is currently a visual placeholder only.
+- The expanded center notch hosts a small dashboard body with a vertical tab rail adapted from the Ax-Shell expandable-dashboard direction: Media preserves the existing MPRIS controls, while Metrics shows live CPU/RAM/GPU cards with progress bars, Canvas sparklines, and a single compact `DSK | NET | VOL` footer row.
+- Metrics cards use contextual per-metric colors (`base09` orange for CPU, `base0D` blue for RAM, `base0E` magenta for GPU) and disabled muted treatment for unavailable GPU data. Disk/network/volume remain compact footer readouts for this first slice.
+- Deferred metrics work: temperatures, multi-GPU presentation, zoom/refresh controls, charts libraries, and external/Python monitor processes are intentionally out of scope.
 - The standalone MPRIS popup remains the compact-chip behavior only.
 
 ---

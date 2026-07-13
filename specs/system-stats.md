@@ -4,7 +4,7 @@
 **File:** `quickshell/.config/quickshell/bar/SystemStats.qml`
 
 ## Description
-Right-aligned stats bar showing system metrics and a clock.
+Right-aligned stats data provider for the bar metrics UI. `SystemStats.qml` exposes a `dataState` object used by both the compact `MetricsDropdown.qml` and the center dashboard Metrics pane.
 
 ## Metrics
 
@@ -14,8 +14,15 @@ Right-aligned stats bar showing system metrics and a clock.
 | GPU | busy % | `/sys/class/drm/card1/device/gpu_busy_percent` |
 | CPU | usage % | `/proc/stat` |
 | DSK | read+write MB/s | `/proc/diskstats` (nvme0n1) |
-| NET | UP / OFF | default route detection via `ip route` |
+| NET | UP / DOWN | default route detection via `ip route` |
 | VOL | volume % or MUTED | `wpctl get-volume` |
+
+## Rolling history
+
+- `dataState.cpuHistory`, `dataState.ramHistory`, and `dataState.gpuHistory` contain rolling percent samples for visual sparklines
+- Histories are capped at 32 samples and are reassigned on update so QML bindings react reliably
+- GPU history only updates when GPU data is available
+- `dataState.gpuAvailable` is false when `/sys/class/drm/card1/device/gpu_busy_percent` returns the `NA` sentinel or no data; consumers must render unavailable GPU as `N/A`, not as a meaningful `0%`
 
 ## Color coding
 - Label: contextual accent color per metric

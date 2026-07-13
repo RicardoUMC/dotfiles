@@ -7,6 +7,7 @@ Item {
     id: root
 
     property var mediaPlayer
+    property QtObject systemStatsState: null
     property int currentTab: 0
 
     readonly property int railWidth: Theme.dashboardRailWidth
@@ -235,24 +236,10 @@ Item {
                     onClicked: mouse => mouse.accepted = true
                 }
 
-                Column {
+                MetricsPane {
                     z: 1
-                    anchors.centerIn: parent
-                    spacing: Theme.spacingSm
-
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "󰚆"
-                        color: Colors.accent
-                        font { family: Colors.monoFont; pixelSize: Theme.fontSizeIcon }
-                    }
-
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "𝚺 Metrics"
-                        color: Colors.textDim
-                        font { family: Colors.displayFont; pixelSize: Theme.fontSizeBodyLg }
-                    }
+                    anchors.fill: parent
+                    systemStatsState: root.systemStatsState
                 }
             }
         }

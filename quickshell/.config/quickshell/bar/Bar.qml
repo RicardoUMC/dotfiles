@@ -245,6 +245,7 @@ PanelWindow {
                 CenterDashboard {
                     anchors { fill: parent; margins: Theme.spacingMd }
                     mediaPlayer: root.mediaPlayer
+                    systemStatsState: statsEngine.dataState
                 }
             }
         }

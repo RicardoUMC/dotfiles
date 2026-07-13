@@ -145,7 +145,7 @@ Item {
                     Text { text: "NET"; color: Colors.green; font { family: Colors.uiFont; pixelSize: Theme.fontSizeBody } }
                     Text {
                         Layout.fillWidth: true; horizontalAlignment: Text.AlignRight
-                        text: (root.systemStatsState?.netUp ?? false) ? "ON" : "OFF"
+                        text: (root.systemStatsState?.netUp ?? false) ? "UP" : "DOWN"
                         color: (root.systemStatsState?.netUp ?? false) ? Colors.green : Colors.red
                         font { family: Colors.uiFont; pixelSize: Theme.fontSizeBody }
                     }

@@ -41,11 +41,14 @@ Top-anchored floating bar composed of independent wrapped-silhouette islands. Co
 - Clicking the center island requests the in-place center dashboard toggle through `shell.qml`
 - Expanded state keeps the same center island visible and grows it in place rather than opening a separate visible floating panel
 - Expanded state mounts `CenterDashboard.qml` inside the notch body with a vertical rail and tabbed content area
-- The rail currently exposes `Media` and `Metrics` entries; clicking an entry switches the visible pane in place
+- The rail exposes `Media` and `Metrics` entries; clicking an entry switches the visible pane in place
 - The `Media` pane preserves the existing MPRIS behavior: title, artist, progress, previous/play-next controls, and `No media playing` fallback when no player is available
-- The `Metrics` pane is a placeholder only and does not bind to `SystemStats` or live metric data yet
+- The `Metrics` pane renders live visual telemetry from `SystemStats`: CPU/RAM/GPU cards with progress bars, Canvas sparklines, and percent values
+- GPU unavailable state displays a disabled `N/A` card instead of showing a fake `0%`
+- The `Metrics` pane footer is a single compact row with `DSK | NET | VOL` values for disk throughput, network state, and volume/mute state
 - Compact MPRIS chip clicks open the existing `MprisPopup`; expanded MPRIS chip clicks do not open a separate popup because media controls live inside the notch
 
 ### Metrics button
 - Compact icon button in the right island
 - Click emits a metrics toggle request; overlay coordination stays outside the button
+- The existing `MetricsDropdown.qml` remains the compact right-island metrics overlay and is separate from the center dashboard Metrics pane

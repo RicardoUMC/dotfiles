@@ -21,7 +21,10 @@ Install: `cd ~/dotfiles && stow quickshell hyprland wezterm`
 ```
 shell.qml               ← coordinator: owns all overlay state, IPC handlers
 bar/Bar.qml             ← PanelWindow top bar, wrapped silhouette mask, in-place center notch/dashboard, imports bar/* components
-bar/CenterDashboard.qml ← tabbed body for the expanded center notch: Media pane + Metrics placeholder rail
+bar/CenterDashboard.qml ← tabbed body for the expanded center notch: Media pane + live Metrics pane
+bar/MetricsPane.qml     ← center dashboard Metrics pane: CPU/RAM/GPU visual cards + single-row DSK/NET/VOL footer
+bar/MetricCard.qml      ← reusable metric card with progress bar, Canvas sparkline, percent/N/A state
+bar/SystemStats.qml     ← shared metrics dataState with scalar stats, 32-sample histories, and gpuAvailable flag
 bar/CenterPanel.qml     ← invisible Escape/outside-click catcher for the in-place center notch
 bar/PowerMenu.qml       ← fullscreen PanelWindow Overlay (WlrLayer.Overlay)
 bar/MprisPopup.qml      ← fullscreen PanelWindow Overlay

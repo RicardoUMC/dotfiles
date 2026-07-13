@@ -20,6 +20,19 @@ RowLayout {
         property real prevDiskSectors: 0
         property int  volume: 0
         property bool muted: false
+        property var cpuHistory: []
+        property var ramHistory: []
+        property var gpuHistory: []
+        property bool gpuAvailable: true
+        readonly property int maxHistorySamples: 32
+
+        function updateHistory(arr, val) {
+            const next = arr.slice()
+            next.push(val)
+            if (next.length > maxHistorySamples)
+                next.shift()
+            return next
+        }
     }
 
     Process {
@@ -27,7 +40,7 @@ RowLayout {
         command: [
             "bash", "-c", [
                 "ram=$(awk '/MemTotal/{t=$2}/MemAvailable/{a=$2}END{printf \"%.0f\", (t-a)/t*100}' /proc/meminfo);",
-                "gpu=$(cat /sys/class/drm/card1/device/gpu_busy_percent 2>/dev/null || echo 0);",
+                "gpu=$(cat /sys/class/drm/card1/device/gpu_busy_percent 2>/dev/null || echo NA);",
                 "read_cpu() { awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8, $5}' /proc/stat; };",
                 "c1=$(read_cpu); sleep 0.2; c2=$(read_cpu);",
                 "cpu=$(awk -v a=\"$c1\" -v b=\"$c2\" 'BEGIN{",
@@ -46,8 +59,18 @@ RowLayout {
                 if (parts.length < 5) return
 
                 state.ram = parseFloat(parts[0]) || 0
-                state.gpu = parseFloat(parts[1]) || 0
                 state.cpu = parseFloat(parts[2]) || 0
+                state.ramHistory = state.updateHistory(state.ramHistory, state.ram)
+                state.cpuHistory = state.updateHistory(state.cpuHistory, state.cpu)
+
+                if (parts[1] === "NA" || parts[1] === "") {
+                    state.gpuAvailable = false
+                    state.gpu = 0
+                } else {
+                    state.gpuAvailable = true
+                    state.gpu = parseFloat(parts[1]) || 0
+                    state.gpuHistory = state.updateHistory(state.gpuHistory, state.gpu)
+                }
 
                 // Disk: delta sectors * 512B / 1MiB / interval(2s) = MB/s
                 const sectors = parseFloat(parts[3]) || 0

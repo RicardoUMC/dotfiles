@@ -10,6 +10,8 @@ Item {
     property QtObject systemStatsState: null
     property int currentTab: 0
 
+    function selectMediaTab() { currentTab = 0 }
+
     readonly property int railWidth: Theme.dashboardRailWidth
     readonly property int tabHeight: Theme.dashboardTabHeight
     readonly property int tabSpacing: Theme.dashboardTabSpacing

@@ -1,10 +1,10 @@
 # MPRIS
 
 **Status:** Implemented
-**Files:** `quickshell/.config/quickshell/bar/MprisIndicator.qml`, `MprisPopup.qml`
+**Files:** `quickshell/.config/quickshell/bar/MprisIndicator.qml`, `CenterDashboard.qml`, `MprisPopup.qml`
 
 ## Description
-Music/media player integration via MPRIS D-Bus protocol. Composed of a bar chip and a popup player.
+Music/media player integration via MPRIS D-Bus protocol. Composed of a bar chip, the center dashboard Media pane, and a popup player kept for launcher fallback/future explicit triggers.
 
 ## Indicator Chip
 
@@ -16,16 +16,29 @@ Music/media player integration via MPRIS D-Bus protocol. Composed of a bar chip 
 ### Display
 - Icon: `󰎆` (playing) or `󰎇` (paused/stopped) — Nerd Font, accent color
 - Title: truncated to 28 characters with `…`
-- Click: toggles MPRIS popup
+- Click: selects the center dashboard Media tab and opens the in-place center dashboard when clicked from the visible compact bar chip
 
 ### Player selection priority
 1. First player with `playbackState === Playing`
 2. Fallback: first available player
 
+## Center Dashboard Media Pane
+
+### Trigger
+- Opens from visible compact center MPRIS chip clicks
+- The chip click selects the Media tab before opening the in-place center dashboard
+- The expanded center dashboard hides the compact clock/media header, so media controls live in the dashboard body rather than in an expanded chip target
+
+### Controls behavior
+- Previous: `player.previous()`
+- Play/Pause: `player.togglePlaying()`
+- Next: `player.next()`
+- Empty state: `No media playing` when no player is available
+
 ## Popup Player
 
 ### Trigger
-- Opens on chip click
+- Remains available for launcher outside-click fallback or a future explicit trigger
 - Closes on click outside, Escape, or workspace change
 - Belongs to `bar-primary` context group — opening closes other primary overlays
 

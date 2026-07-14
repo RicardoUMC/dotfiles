@@ -10,7 +10,7 @@ Top-anchored floating bar composed of independent wrapped-silhouette islands. Co
 
 ### Layout
 - Anchored to top of screen, full width
-- Contains three visible islands: left (workspaces), center (clock + optional MPRIS chip), right (metrics button + power button)
+- Contains three visible islands: left (workspaces), center (clock + optional MPRIS chip when collapsed, dashboard body when expanded), right (metrics button + power button)
 - Reserves only the interactive content height through `exclusiveZone`
 - Decorative wrapped silhouette depth may draw below the reserved height when `Theme.barStyle === "silhouette"`
 - Left and right islands share `sideTabHeight`; workspace, metrics, and power chips share `Theme.barChipHeight`
@@ -40,6 +40,7 @@ Top-anchored floating bar composed of independent wrapped-silhouette islands. Co
 - Shows `ClockChip` by default
 - Shows `MprisIndicator` when an MPRIS player has title or artist metadata
 - Clicking the center island requests the in-place center dashboard toggle through `shell.qml`
+- Expanded state hides the compact clock/media header so the dashboard owns the center notch surface
 - Expanded state keeps the same center island visible and grows it in place rather than opening a separate visible floating panel
 - Expanded state mounts `CenterDashboard.qml` inside the notch body with a vertical rail and tabbed content area
 - The rail exposes `Media` and `Metrics` entries; clicking an entry switches the visible pane in place
@@ -49,7 +50,8 @@ Top-anchored floating bar composed of independent wrapped-silhouette islands. Co
 - Metrics cards, card gaps, progress bar dimensions, sparkline dimensions, and footer height are bound to dashboard structural tokens
 - GPU unavailable state displays a disabled `N/A` card instead of showing a fake `0%`
 - The `Metrics` pane footer is a single compact row with `DSK | NET | VOL` values for disk throughput, network state, and volume/mute state
-- Compact MPRIS chip clicks open the existing `MprisPopup`; expanded MPRIS chip clicks do not open a separate popup because media controls live inside the notch
+- Compact MPRIS chip clicks select the dashboard Media tab and open the in-place center dashboard through existing overlay coordination
+- The standalone `MprisPopup` remains available for launcher fallback or a future explicit trigger, but the visible compact center media chip no longer opens it directly
 
 ### Metrics button
 - Compact icon button in the right island

@@ -207,6 +207,7 @@ PanelWindow {
             RowLayout {
                 id: centerHeader
                 Layout.fillWidth: true
+                visible: !centerTab.expanded
                 spacing: Theme.spacingSm
 
                 Item { Layout.fillWidth: true }
@@ -217,8 +218,12 @@ PanelWindow {
                     id: mprisChip
                     visible: active
                     onClicked: {
-                        if (!centerTab.expanded)
-                            root.mprisToggleRequested()
+                        if (!centerTab.expanded) {
+                            dashboard.selectMediaTab()
+                            root.centerPanelToggleRequested()
+                        }
+                        // Expanded branch intentionally empty: this header is hidden
+                        // while expanded, so no visible expanded media target exists.
                     }
                 }
 
@@ -228,7 +233,9 @@ PanelWindow {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: Math.max(0,
-                    Theme.centerExpandedHeight - Theme.barChipHeight - Theme.spacingMd - centerTab.paddingV * 2)
+                    Theme.centerExpandedHeight
+                    - (centerTab.expanded ? 0 : (Theme.barChipHeight + Theme.spacingMd))
+                    - centerTab.paddingV * 2)
                 visible: centerTab.expanded
                 radius: Theme.dashboardBodyRadius
                 color: Qt.rgba(Colors.base00.r, Colors.base00.g, Colors.base00.b, Theme.dashboardBodyOpacity)
@@ -243,6 +250,7 @@ PanelWindow {
                 }
 
                 CenterDashboard {
+                    id: dashboard
                     anchors { fill: parent; margins: Theme.dashboardBodyPadding }
                     mediaPlayer: root.mediaPlayer
                     systemStatsState: statsEngine.dataState

@@ -172,7 +172,8 @@ The accepted silhouette design uses one fill surface clipped by a composite mask
 - The expanded center notch hosts a small dashboard body with a vertical tab rail adapted from the Ax-Shell expandable-dashboard direction: Media preserves the existing MPRIS controls, while Metrics shows live CPU/RAM/GPU cards with progress bars, Canvas sparklines, and a single compact `DSK | NET | VOL` footer row.
 - Metrics cards use contextual per-metric colors (`base09` orange for CPU, `base0D` blue for RAM, `base0E` magenta for GPU) and disabled muted treatment for unavailable GPU data. Disk/network/volume remain compact footer readouts for this first slice.
 - Deferred metrics work: temperatures, multi-GPU presentation, zoom/refresh controls, charts libraries, and external/Python monitor processes are intentionally out of scope.
-- The standalone MPRIS popup remains the compact-chip behavior only.
+- Compact center media-chip clicks now select the dashboard Media tab and open the in-place center dashboard, keeping media interaction inside the expanded center notch.
+- The standalone MPRIS popup remains available for launcher fallback and future explicit triggers, but it is no longer the visible compact-chip click behavior.
 
 ---
 

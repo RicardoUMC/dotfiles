@@ -16,7 +16,7 @@ Item {
     readonly property color activeColor: disabled ? Colors.muted : color
 
     Layout.fillWidth: true
-    Layout.preferredHeight: 42
+    Layout.preferredHeight: Theme.dashboardCardHeight
 
     onHistoryChanged: sparkCanvas.requestPaint()
     onDisabledChanged: sparkCanvas.requestPaint()
@@ -51,8 +51,8 @@ Item {
 
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 4
-                radius: 2
+                Layout.preferredHeight: Theme.dashboardProgressHeight
+                radius: Theme.dashboardProgressRadius
                 color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
 
                 Rectangle {
@@ -69,8 +69,8 @@ Item {
 
             Canvas {
                 id: sparkCanvas
-                Layout.preferredWidth: 80
-                Layout.preferredHeight: 32
+                Layout.preferredWidth: Theme.dashboardSparklineWidth
+                Layout.preferredHeight: Theme.dashboardSparklineHeight
                 antialiasing: true
                 opacity: root.disabled ? 0.45 : 1
 

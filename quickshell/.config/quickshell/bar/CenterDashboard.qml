@@ -11,8 +11,8 @@ Item {
     property int currentTab: 0
 
     readonly property int railWidth: Theme.dashboardRailWidth
-    readonly property int tabHeight: 40
-    readonly property int tabSpacing: Theme.spacingSm
+    readonly property int tabHeight: Theme.dashboardTabHeight
+    readonly property int tabSpacing: Theme.dashboardTabSpacing
 
     RowLayout {
         anchors.fill: parent

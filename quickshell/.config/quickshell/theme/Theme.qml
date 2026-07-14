@@ -32,6 +32,19 @@ QtObject {
     property int centerExpandedWidth: 520
     property int centerExpandedHeight: 260
     property int dashboardRailWidth: 44
+    property int dashboardBodyRadius: 10
+    property real dashboardBodyOpacity: 0.35
+    property int dashboardBodyBorderWidth: 1
+    property int dashboardBodyPadding: 12
+    property int dashboardTabHeight: 40
+    property int dashboardTabSpacing: 8
+    property int dashboardCardHeight: 42
+    property int dashboardCardGap: 4
+    property int dashboardProgressHeight: 4
+    property int dashboardProgressRadius: 2
+    property int dashboardSparklineWidth: 80
+    property int dashboardSparklineHeight: 32
+    property int dashboardFooterHeight: 18
     property string barStyle: "silhouette"         // "silhouette" | "plain"
     property real barCurveDepthRatio: 0.2           // concave depth = height × ratio (legacy, use barNotchDepthRatio)
     property real barNotchGapWidth: 30              // px gap at each section boundary
@@ -87,7 +100,10 @@ QtObject {
     property FileView configFile: FileView {
         path: Quickshell.shellDir + "/config.json"
         watchChanges: true
-        onFileChanged: debounce.restart()
+        onFileChanged: {
+            reload()
+            debounce.restart()
+        }
     }
 
     function applyConfig() {
@@ -147,6 +163,19 @@ QtObject {
             if (cfg.font?.bodyLg     !== undefined) fontSizeBodyLg  = cfg.font.bodyLg
             if (cfg.font?.icon       !== undefined) fontSizeIcon    = cfg.font.icon
             if (cfg.dashboard?.railWidth !== undefined) dashboardRailWidth = cfg.dashboard.railWidth
+            if (cfg.dashboard?.bodyRadius       !== undefined) dashboardBodyRadius       = cfg.dashboard.bodyRadius
+            if (cfg.dashboard?.bodyOpacity      !== undefined) dashboardBodyOpacity      = cfg.dashboard.bodyOpacity
+            if (cfg.dashboard?.bodyBorderWidth  !== undefined) dashboardBodyBorderWidth  = cfg.dashboard.bodyBorderWidth
+            if (cfg.dashboard?.bodyPadding      !== undefined) dashboardBodyPadding      = cfg.dashboard.bodyPadding
+            if (cfg.dashboard?.tabHeight        !== undefined) dashboardTabHeight        = cfg.dashboard.tabHeight
+            if (cfg.dashboard?.tabSpacing       !== undefined) dashboardTabSpacing       = cfg.dashboard.tabSpacing
+            if (cfg.dashboard?.cardHeight       !== undefined) dashboardCardHeight       = cfg.dashboard.cardHeight
+            if (cfg.dashboard?.cardGap          !== undefined) dashboardCardGap          = cfg.dashboard.cardGap
+            if (cfg.dashboard?.progressHeight   !== undefined) dashboardProgressHeight   = cfg.dashboard.progressHeight
+            if (cfg.dashboard?.progressRadius   !== undefined) dashboardProgressRadius   = cfg.dashboard.progressRadius
+            if (cfg.dashboard?.sparklineWidth   !== undefined) dashboardSparklineWidth   = cfg.dashboard.sparklineWidth
+            if (cfg.dashboard?.sparklineHeight  !== undefined) dashboardSparklineHeight  = cfg.dashboard.sparklineHeight
+            if (cfg.dashboard?.footerHeight     !== undefined) dashboardFooterHeight     = cfg.dashboard.footerHeight
             if (cfg.debug?.visualBounds  !== undefined) debugVisualBounds  = cfg.debug.visualBounds
             if (cfg.debug?.borderColor   !== undefined) debugBorderColor   = cfg.debug.borderColor
             if (cfg.debug?.borderWidth   !== undefined) debugBorderWidth   = cfg.debug.borderWidth

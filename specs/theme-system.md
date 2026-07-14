@@ -2,7 +2,7 @@
 
 ## Description
 
-Mutable `Theme.qml` singleton providing structural design tokens (radius, spacing, opacity, bar geometry, tab geometry, debug scaffolding, animation durations, font sizes) with hot-reload via `config.json`. Complements the static `Colors.qml` palette — colors are not part of this system.
+Mutable `Theme.qml` singleton providing structural design tokens (radius, spacing, opacity, bar geometry, dashboard geometry, tab geometry, debug scaffolding, animation durations, font sizes) with hot-reload via `config.json`. Complements the static `Colors.qml` palette — colors are not part of this system.
 
 ---
 
@@ -39,6 +39,19 @@ Core structural tokens with their defaults:
 | Bar | `centerExpandedWidth` | `520` | `int` |
 | Bar | `centerExpandedHeight` | `260` | `int` |
 | Bar | `dashboardRailWidth` | `44` | `int` |
+| Bar | `dashboardBodyRadius` | `10` | `int` |
+| Bar | `dashboardBodyOpacity` | `0.35` | `real` |
+| Bar | `dashboardBodyBorderWidth` | `1` | `int` |
+| Bar | `dashboardBodyPadding` | `12` | `int` |
+| Bar | `dashboardTabHeight` | `40` | `int` |
+| Bar | `dashboardTabSpacing` | `8` | `int` |
+| Bar | `dashboardCardHeight` | `42` | `int` |
+| Bar | `dashboardCardGap` | `4` | `int` |
+| Bar | `dashboardProgressHeight` | `4` | `int` |
+| Bar | `dashboardProgressRadius` | `2` | `int` |
+| Bar | `dashboardSparklineWidth` | `80` | `int` |
+| Bar | `dashboardSparklineHeight` | `32` | `int` |
+| Bar | `dashboardFooterHeight` | `18` | `int` |
 | Bar | `barStyle` | `"silhouette"` | `string` |
 | Animation | `animFast` | `180` | `int` (ms) |
 | Animation | `animNormal` | `300` | `int` (ms) |
@@ -61,11 +74,11 @@ All migrated components produce stable visual output with default token values. 
 
 ### Requirement: Wrapped Bar Silhouette Tokens
 
-`Bar.qml` uses `barCurveRadius` as the shared corner curvature source and `barWrapDepth` as an independent decorative downward wrap depth. The panel `exclusiveZone` reserves only the measured interactive content height, not the full decorative silhouette height. The center notch uses `centerCollapsedWidth`, `centerExpandedWidth`, and `centerExpandedHeight` to grow in place into a dashboard without increasing reserved Hyprland space. `CenterDashboard.qml` uses `dashboardRailWidth` for the vertical tab rail width.
+`Bar.qml` uses `barCurveRadius` as the shared corner curvature source and `barWrapDepth` as an independent decorative downward wrap depth. The panel `exclusiveZone` reserves only the measured interactive content height, not the full decorative silhouette height. The center notch uses `centerCollapsedWidth`, `centerExpandedWidth`, and `centerExpandedHeight` to grow in place into a dashboard without increasing reserved Hyprland space. `Bar.qml` uses dashboard body tokens for the expanded body radius, opacity, border width, and padding. `CenterDashboard.qml` uses dashboard rail/tab tokens. `MetricsPane.qml` and `MetricCard.qml` use dashboard card, progress, sparkline, and footer tokens.
 
 ### Requirement: Hot-Reload via config.json
 
-`Theme.qml` watches `~/.config/quickshell/config.json` via `FileView` with `watchChanges: true`. On file change, a 100ms debounce `Timer` fires before re-parsing, preventing reactions to partial writes. Missing file uses defaults silently.
+`Theme.qml` watches `~/.config/quickshell/config.json` via `FileView` with `watchChanges: true`. On file change, `FileView.reload()` refreshes the text content before a 100ms debounce `Timer` fires and re-parses the config, preventing reactions to partial writes while still applying live edits. Missing file uses defaults silently.
 
 ### Requirement: Robust Configuration Parsing
 
@@ -83,7 +96,7 @@ All fields optional. Missing fields keep defaults.
   "spacing": { "xs": 4,    "sm": 8,    "md": 12,  "lg": 16, "xl": 24 },
   "opacity": { "surface": 0.97, "overlay": 0.33, "border": 0.30, "dim": 0.15 },
   "bar":     { "height": 37, "style": "silhouette", "chipHeight": 26, "curveRadius": 14, "wrapDepth": 14, "centerCollapsedWidth": 360, "centerExpandedWidth": 520, "centerExpandedHeight": 260 },
-  "dashboard": { "railWidth": 44 },
+  "dashboard": { "railWidth": 44, "bodyRadius": 10, "bodyOpacity": 0.35, "bodyBorderWidth": 1, "bodyPadding": 12, "tabHeight": 40, "tabSpacing": 8, "cardHeight": 42, "cardGap": 4, "progressHeight": 4, "progressRadius": 2, "sparklineWidth": 80, "sparklineHeight": 32, "footerHeight": 18 },
   "anim":    { "fast": 180, "normal": 300, "slow": 500 },
   "font":    { "caption": 10, "label": 11, "body": 13, "bodyLg": 14, "icon": 18 },
   "debug":   { "visualBounds": false, "borderColor": "#ff3344", "borderWidth": 1, "barSilhouette": false }
@@ -99,6 +112,8 @@ Location in this stow-managed repo: `quickshell/.config/quickshell/config.json`,
 ```
 config.json ──(write)──→ FileView.onFileChanged
                                │
+                          FileView.reload()
+                               │
                           Timer.restart()  ← 100ms debounce
                                │
                           Timer.onTriggered
@@ -111,10 +126,13 @@ config.json ──(write)──→ FileView.onFileChanged
 ```
 
 - **watchChanges**: `FileView.watchChanges: true`
+- **Reload before debounce**: `FileView.onFileChanged` calls `reload()` before restarting the debounce so `configFile.text()` is fresh when `applyConfig()` runs
 - **Debounce**: 100ms `Timer`, restarted on each `fileChanged` signal
 - **Silent fail**: `try/catch` around `JSON.parse` — no crash, no log on malformed JSON
 - **Partial override**: each token guarded independently (`if (cfg.radius?.sm !== undefined)`)
 - **Initial load**: `Component.onCompleted` calls `applyConfig()` once at startup
+
+Dashboard overrides are grouped under `dashboard.*` in `config.json` but exposed to QML consumers as flat `Theme.dashboardXxx` properties to match the existing `Theme.applyConfig()` pattern. Defaults preserve the implemented center-dashboard layout; extreme size overrides can overflow unless `centerExpandedWidth` and `centerExpandedHeight` are tuned together.
 
 ---
 
@@ -149,3 +167,9 @@ config.json ──(write)──→ FileView.onFileChanged
 - **GIVEN** a component is bound to a token (e.g., `Theme.radiusSm`)
 - **WHEN** the token updates via hot-reload
 - **THEN** the component immediately receives and applies the new value
+
+### Scenario: Dashboard Structural Overrides
+
+- **GIVEN** `config.json` contains dashboard structural overrides such as `dashboard.bodyPadding`, `dashboard.cardHeight`, or `dashboard.sparklineWidth`
+- **WHEN** `Theme.qml` parses the config at startup or after hot-reload
+- **THEN** the matching flat `Theme.dashboardXxx` properties update and bound dashboard components re-render without requiring new QML types

@@ -9,7 +9,7 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        spacing: Theme.spacingXs
+        spacing: Theme.dashboardCardGap
 
         MetricCard {
             icon: "󰻠"
@@ -40,7 +40,7 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 18
+            Layout.preferredHeight: Theme.dashboardFooterHeight
             spacing: Theme.spacingSm
 
             FooterStat {

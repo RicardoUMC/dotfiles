@@ -64,7 +64,27 @@ All components use font-family tokens from `Colors.qml` — never hardcode font 
 - `Theme.centerExpandedWidth` — expanded in-place center dashboard width
 - `Theme.centerExpandedHeight` — expanded in-place center dashboard height
 - `Theme.dashboardRailWidth` — vertical tab rail width inside the expanded center dashboard
+- `Theme.dashboardBodyRadius` — expanded dashboard body corner radius
+- `Theme.dashboardBodyOpacity` — expanded dashboard body background opacity
+- `Theme.dashboardBodyBorderWidth` — expanded dashboard body border width
+- `Theme.dashboardBodyPadding` — inner margin around `CenterDashboard.qml`
+- `Theme.dashboardTabHeight` — vertical rail tab height
+- `Theme.dashboardTabSpacing` — spacing between vertical rail tabs
+- `Theme.dashboardCardHeight` — Metrics pane card height
+- `Theme.dashboardCardGap` — Metrics pane vertical card gap
+- `Theme.dashboardProgressHeight` — Metrics card progress bar height
+- `Theme.dashboardProgressRadius` — Metrics card progress bar radius
+- `Theme.dashboardSparklineWidth` — Metrics card sparkline width
+- `Theme.dashboardSparklineHeight` — Metrics card sparkline height
+- `Theme.dashboardFooterHeight` — Metrics pane footer row height
 - `Theme.debugBarSilhouette` — high-contrast red debug silhouette; do not disable unless Ricardo explicitly asks
+
+## Configurability-first UI rule
+- For UI/layout work, always evaluate which visual structure values should be user-configurable through `Theme.qml` + `config.json` before hardcoding them.
+- Prefer exposing high-leverage structural knobs: padding, gaps, component heights, widths, radii/curves, opacity, border width, chart dimensions, and dashboard/bar proportions.
+- Keep color and font families in `Colors.qml`; keep mutable layout/shape values in `Theme.qml` with safe defaults and optional `config.json` overrides.
+- Avoid token sprawl: do not expose one-off decorative constants unless they materially help Ricardo tune the UI.
+- Document any new tokens in `DESIGN.md`, `AGENTS.md`, and relevant `specs/*.md` via `sync-docs` after implementation.
 
 ## Palette — Tokyo City Terminal Dark (Base16)
 Key values used in components:

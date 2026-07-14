@@ -110,9 +110,24 @@ Design tokens are split across two QML singletons:
 | `Theme.centerExpandedWidth` | `520` | `520` | Expanded in-place center dashboard width. |
 | `Theme.centerExpandedHeight` | `260` | `260` | Expanded in-place center dashboard height. |
 | `Theme.dashboardRailWidth` | `44` | `44` | Vertical tab rail width inside the expanded center dashboard. |
+| `Theme.dashboardBodyRadius` | `10` | `10` | Expanded dashboard body corner radius. |
+| `Theme.dashboardBodyOpacity` | `0.35` | `0.35` | Expanded dashboard body background opacity. |
+| `Theme.dashboardBodyBorderWidth` | `1` | `1` | Expanded dashboard body border width. |
+| `Theme.dashboardBodyPadding` | `12` | `12` | Inner margin around `CenterDashboard.qml`. |
+| `Theme.dashboardTabHeight` | `40` | `40` | Vertical dashboard rail tab height. |
+| `Theme.dashboardTabSpacing` | `8` | `8` | Spacing between dashboard rail tabs. |
+| `Theme.dashboardCardHeight` | `42` | `42` | Metrics pane card height. |
+| `Theme.dashboardCardGap` | `4` | `4` | Metrics pane vertical card gap. |
+| `Theme.dashboardProgressHeight` | `4` | `4` | Metrics card progress bar height. |
+| `Theme.dashboardProgressRadius` | `2` | `2` | Metrics card progress bar radius. |
+| `Theme.dashboardSparklineWidth` | `80` | `80` | Metrics card sparkline width. |
+| `Theme.dashboardSparklineHeight` | `32` | `32` | Metrics card sparkline height. |
+| `Theme.dashboardFooterHeight` | `18` | `18` | Metrics pane footer row height. |
 | `Theme.barStyle` | `"silhouette"` | `"silhouette"` | Enables the masked wrapped silhouette; `"plain"` disables it. |
 
 Debug scaffolding is also configurable through `debug.*` keys. `debug.barSilhouette` intentionally remains available for high-contrast silhouette tuning and should only be disabled when Ricardo explicitly requests it.
+
+Dashboard body, rail, card, progress, sparkline, and footer geometry is configurable through the flat `Theme.dashboardXxx` properties above and the `dashboard.*` group in `config.json`. Defaults intentionally preserve the current center-dashboard visuals; large overrides may need proportional width/height tuning because the expanded notch remains bounded by `Theme.centerExpandedWidth` and `Theme.centerExpandedHeight`.
 
 ---
 
@@ -228,7 +243,7 @@ Sound can be muted independently of notifications via IPC: `quickshell ipc call 
 
 **Current architecture:**
 
-- `theme/Theme.qml` — mutable singleton that exposes configurable structural tokens (radii, spacing, opacity, bar geometry, animation durations, and font sizes)
+- `theme/Theme.qml` — mutable singleton that exposes configurable structural tokens (radii, spacing, opacity, bar/dashboard geometry, animation durations, and font sizes)
 - `~/.config/quickshell/config.json` — persists user preferences and is read on startup
 - Hot-reload via Quickshell's `FileView` — changes apply without restarting
 - Components use `Colors.*` for palette/font families and `Theme.*` for structural values
@@ -240,6 +255,9 @@ Theme.radius.sm / md / lg / pill
 Theme.spacing.xs / sm / md / lg
 Theme.opacity.surface / overlay / dim
 Theme.bar.height / chipHeight / curveRadius / wrapDepth / style
+Theme.dashboard.railWidth / bodyRadius / bodyOpacity / bodyBorderWidth / bodyPadding
+Theme.dashboard.tabHeight / tabSpacing
+Theme.dashboard.cardHeight / cardGap / progressHeight / progressRadius / sparklineWidth / sparklineHeight / footerHeight
 Theme.tab.paddingH / paddingV / radius / collapsedHeight
 Theme.font.caption / label / body / bodyLg / icon
 Theme.debug.visualBounds / borderColor / borderWidth / barSilhouette

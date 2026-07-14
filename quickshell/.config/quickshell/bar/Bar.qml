@@ -230,10 +230,10 @@ PanelWindow {
                 Layout.preferredHeight: Math.max(0,
                     Theme.centerExpandedHeight - Theme.barChipHeight - Theme.spacingMd - centerTab.paddingV * 2)
                 visible: centerTab.expanded
-                radius: Theme.radiusMd
-                color: Qt.rgba(Colors.base00.r, Colors.base00.g, Colors.base00.b, 0.35)
+                radius: Theme.dashboardBodyRadius
+                color: Qt.rgba(Colors.base00.r, Colors.base00.g, Colors.base00.b, Theme.dashboardBodyOpacity)
                 border {
-                    width: 1
+                    width: Theme.dashboardBodyBorderWidth
                     color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
                 }
 
@@ -243,7 +243,7 @@ PanelWindow {
                 }
 
                 CenterDashboard {
-                    anchors { fill: parent; margins: Theme.spacingMd }
+                    anchors { fill: parent; margins: Theme.dashboardBodyPadding }
                     mediaPlayer: root.mediaPlayer
                     systemStatsState: statsEngine.dataState
                 }

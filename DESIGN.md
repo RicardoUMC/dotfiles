@@ -162,11 +162,13 @@ Cards and panels may use a **single-side color highlight** (left border) to crea
 
 **Wrapped floating silhouette** — not full-width. The bar is composed of independent left, center, and right islands with transparent gaps, anchored to the top of the screen. Inspired by macOS Sonoma / Ax-Shell and adapted from Ambxst's mask-composition idea.
 
-The accepted silhouette design uses one fill surface clipped by a composite mask:
+The accepted silhouette design uses independent per-section surfaces coordinated by `Bar.qml`:
 
+- `BarSection` wraps each left, center, and right island with its own masked fill surface and hit region.
+- `Bar.qml` exposes one layer-shell input mask as the union of the three section hit regions, preserving transparent click-through gaps between islands.
 - `NotchIslandMask` defines each separated island and its gap-facing top corner pieces.
 - `NotchCornerMask` draws explicit curved mask pieces, including lateral downward wrap pieces.
-- `exclusiveZone` reserves only the interactive/content height; decorative wrap depth can draw below it without reserving the full visual height.
+- `exclusiveZone` reserves only the collapsed interactive/content height; the `PanelWindow` keeps a stable expanded-aware `implicitHeight` so opening the center dashboard does not resize the layer-shell surface or shift tiled windows.
 - Side islands share `sideTabHeight`, while chips use `Theme.barChipHeight` for consistent internal rhythm.
 - The center island expands in place into the dashboard. Its expanded body overlays app content and does not increase Hyprland reserved space.
 - The expanded center notch hosts a small dashboard body with a vertical tab rail adapted from the Ax-Shell expandable-dashboard direction: Media preserves the existing MPRIS controls, while Metrics shows live CPU/RAM/GPU cards with progress bars, Canvas sparklines, and a single compact `DSK | NET | VOL` footer row.

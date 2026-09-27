@@ -1,7 +1,7 @@
 # Bar
 
 **Status:** Implemented
-**File:** `quickshell/.config/quickshell/bar/Bar.qml`
+**Files:** `quickshell/.config/quickshell/bar/Bar.qml`, `BarSection.qml`, `NotchIslandMask.qml`, `NotchCornerMask.qml`
 
 ## Description
 Top-anchored floating bar composed of independent wrapped-silhouette islands. Coordinates overlay state for all bar-level components and expands the center island in place into a lightweight dashboard.
@@ -13,18 +13,21 @@ Top-anchored floating bar composed of independent wrapped-silhouette islands. Co
 - Contains three visible islands: left (workspaces), center (clock + optional MPRIS chip when collapsed, dashboard body when expanded), right (metrics button + power button)
 - Reserves only the interactive content height through `exclusiveZone`
 - Decorative wrapped silhouette depth may draw below the reserved height when `Theme.barStyle === "silhouette"`
+- Keeps `PanelWindow.implicitHeight` stable at the expanded-aware surface height so opening the center dashboard does not resize the layer-shell surface or shift tiled windows
 - Left and right islands share `sideTabHeight`; workspace, metrics, and power chips share `Theme.barChipHeight`
 - The center island uses `Theme.centerCollapsedWidth` when collapsed and `Theme.centerExpandedWidth` / `Theme.centerExpandedHeight` when expanded
 - Expanded center content overlays app windows without increasing reserved Hyprland space
 - The expanded dashboard body uses dashboard structural tokens for radius, background opacity, border width, and inner padding
 
 ### Silhouette mask
-- Uses one hidden fill surface clipped through a `MultiEffect` mask
-- `NotchIslandMask` defines separated island regions with gap-facing top corner pieces
+- `Bar.qml` coordinates three independent `BarSection` surfaces rather than one shared silhouette surface
+- Each `BarSection` owns a hidden fill surface clipped through a `MultiEffect` mask
+- The `PanelWindow` input mask is the union of the left, center, and right section hit regions, so transparent gaps remain click-through
+- `NotchIslandMask` defines each island region with gap-facing top corner pieces
 - `NotchCornerMask` draws explicit curved mask pieces, including lateral downward wrap pieces
 - `Theme.barCurveRadius` controls shared corner curvature
 - `Theme.barWrapDepth` controls decorative downward wrap depth independently from the curvature radius
-- `Theme.debugBarSilhouette` can switch the silhouette fill to high-contrast red for tuning
+- `Theme.debugBarSilhouette` can switch each section silhouette fill to high-contrast red for tuning
 
 ### Overlay coordination
 - Exposes `closePowerMenu()`, `openPowerMenu()`, `closeMpris()`, `openMpris()`, `openMetrics()`, `closeMetrics()`, `openCenterPanel()`, and `closeCenterPanel()` functions

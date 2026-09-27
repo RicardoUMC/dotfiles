@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Effects
 import Quickshell
 import Quickshell.Services.Mpris
 import Quickshell.Wayland
@@ -11,21 +10,27 @@ PanelWindow {
 
     anchors { top: true; left: true; right: true }
     readonly property real sideTabHeight: Math.max(leftTab.implicitHeight, rightTab.implicitHeight)
-    readonly property real barContentHeight: Math.max(sideTabHeight, centerTab.implicitHeight)
-    readonly property real reservedBarContentHeight: Math.max(sideTabHeight,
-        centerHeader.implicitHeight + centerTab.paddingV * 2)
-    // Single source of truth for the silhouette curvature. Every notch and lower
-    // island radius uses this value so the shape tunes as one system.
-    readonly property real silhouetteCornerSize: Math.min(Theme.barCurveRadius, barContentHeight)
-
-    // Reserve only the collapsed interactive bar height. The expanded center
-    // body still draws through implicitHeight, but it overlays tiled windows
-    // instead of increasing Hyprland's reserved top margin.
+    readonly property real stableSurfaceContentHeight: Math.max(sideTabHeight, Theme.centerExpandedHeight)
+    readonly property real centerCollapsedHeight: centerHeader.implicitHeight + centerTab.paddingV * 2
+    readonly property real reservedBarContentHeight: Math.max(
+        leftSection.reservedHeight,
+        centerSection.reservedHeight,
+        rightSection.reservedHeight)
+    // Reserve only the collapsed interactive bar height. Keep the underlying
+    // PanelWindow surface sized for the largest center state so opening the
+    // dashboard does not resize the layer-shell surface or shift tiled windows.
     exclusiveZone: Math.ceil(reservedBarContentHeight)
 
-    implicitHeight: barContentHeight + (Theme.barStyle === "silhouette" ? Theme.barWrapDepth : 0)
+    implicitHeight: stableSurfaceContentHeight + (Theme.barStyle === "silhouette" ? Theme.barWrapDepth : 0)
     margins { top: 0; left: 0; right: 0 }
     color: "transparent"
+    mask: Region {
+        regions: [
+            Region { item: leftSection.hit },
+            Region { item: centerSection.hit },
+            Region { item: rightSection.hit }
+        ]
+    }
 
     // IPC signals
     signal powerMenuOpened()
@@ -72,97 +77,43 @@ PanelWindow {
         return players.length > 0 ? players[0] : null
     }
 
-    // Segment fill: normal base01 or high-contrast debug red
-    readonly property color segmentFill: Theme.debugBarSilhouette
-        ? Qt.rgba(1.0, 0.2, 0.2, 0.65)
-        : Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.tabBgOpacity)
-
-    // --- Island silhouette: single fill surface + composite mask ---
-    // A full-width Rectangle provides pigment; MultiEffect clips it to three
-    // visible regions (left, center, right) matching BarTab bounds via an
-    // invisible white-rectangle mask. Gaps between segments stay transparent
-    // because the mask has no geometry there.
-
-    // Fill surface — pigment only, never rendered directly (MultiEffect captures it).
-    Rectangle {
-        id: silhouetteFill
-        anchors.fill: parent
-        visible: false
-        layer.enabled: true
-        color: root.segmentFill
+    BarSection {
+        id: leftSection
+        z: 0
+        targetItem: leftTab
+        sectionId: "left"
+        collapsedHeight: root.sideTabHeight
+        hasWrap: true
+        leftCornerEnabled: false
+        rightCornerEnabled: true
+        bottomLeftRounded: false
+        bottomRightRounded: true
     }
 
-    // Mask geometry — invisible render target for MultiEffect.
-    // Keep the three bar islands separated while borrowing Ambxst's default
-    // notch composition: a rectangular body plus explicit mask-only corner
-    // pieces on the gap-facing top edges.
-    Item {
-        id: silhouetteMask
-        visible: false
-        layer.enabled: true
-        anchors.fill: parent
-
-        readonly property real _cornerSize: root.silhouetteCornerSize
-        readonly property real _wrapDepth: Theme.barWrapDepth
-
-        NotchIslandMask {
-            targetItem: leftTab
-            cornerSize: silhouetteMask._cornerSize
-            leftCornerEnabled: false
-            rightCornerEnabled: true
-            bottomLeftRounded: false
-            bottomRightRounded: true
-        }
-
-        NotchIslandMask {
-            targetItem: centerTab
-            cornerSize: silhouetteMask._cornerSize
-            leftCornerEnabled: true
-            rightCornerEnabled: true
-            bottomLeftRounded: true
-            bottomRightRounded: true
-        }
-
-        NotchIslandMask {
-            targetItem: rightTab
-            cornerSize: silhouetteMask._cornerSize
-            leftCornerEnabled: true
-            rightCornerEnabled: false
-            bottomLeftRounded: true
-            bottomRightRounded: false
-        }
-
-        NotchCornerMask {
-            x: leftTab.x
-            y: leftTab.y + leftTab.height
-            width: silhouetteMask._cornerSize
-            height: silhouetteMask._wrapDepth
-            radius: silhouetteMask._cornerSize
-            corner: "topLeft"
-            color: "white"
-            visible: width > 0 && height > 0
-        }
-
-        NotchCornerMask {
-            x: rightTab.x + rightTab.width - width
-            y: rightTab.y + rightTab.height
-            width: silhouetteMask._cornerSize
-            height: silhouetteMask._wrapDepth
-            radius: silhouetteMask._cornerSize
-            corner: "topRight"
-            color: "white"
-            visible: width > 0 && height > 0
-        }
+    BarSection {
+        id: centerSection
+        z: 0
+        targetItem: centerTab
+        sectionId: "center"
+        collapsedHeight: root.centerCollapsedHeight
+        hasWrap: false
+        leftCornerEnabled: true
+        rightCornerEnabled: true
+        bottomLeftRounded: true
+        bottomRightRounded: true
     }
 
-    // Composite effect — clips fill surface to visible regions.
-    MultiEffect {
-        id: silhouetteEffect
-        source: silhouetteFill
-        maskEnabled: true
-        maskSource: silhouetteMask
-        anchors.fill: parent
-        visible: Theme.barStyle === "silhouette"
+    BarSection {
+        id: rightSection
+        z: 0
+        targetItem: rightTab
+        sectionId: "right"
+        collapsedHeight: root.sideTabHeight
+        hasWrap: true
+        leftCornerEnabled: true
+        rightCornerEnabled: false
+        bottomLeftRounded: true
+        bottomRightRounded: false
     }
 
     // Left tab — Workspaces
@@ -197,6 +148,10 @@ PanelWindow {
         }
 
         Behavior on width {
+            NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic }
+        }
+
+        Behavior on height {
             NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic }
         }
 
@@ -305,116 +260,10 @@ PanelWindow {
 
     CenterPanel {
         id: centerPanel
-        centerX: centerTab.x
-        centerWidth: centerTab.width
-        centerHeight: centerTab.height
+        centerX: centerSection.centerX
+        centerWidth: centerSection.centerWidth
+        centerHeight: centerSection.centerHeight
         onOpened: root.centerPanelOpened()
         onClosed: root.centerPanelClosed()
-    }
-
-    component NotchIslandMask: Item {
-        id: notchIslandMask
-
-        required property Item targetItem
-        property real cornerSize: 0
-        property bool leftCornerEnabled: true
-        property bool rightCornerEnabled: true
-        property bool bottomLeftRounded: true
-        property bool bottomRightRounded: true
-
-        readonly property real resolvedCornerSize: Math.max(0, Math.min(cornerSize, height))
-
-        x: targetItem.x - (leftCornerEnabled ? resolvedCornerSize : 0)
-        y: targetItem.y
-        width: targetItem.width
-            + (leftCornerEnabled ? resolvedCornerSize : 0)
-            + (rightCornerEnabled ? resolvedCornerSize : 0)
-        height: targetItem.height
-
-        NotchCornerMask {
-            id: leftNotchCorner
-            anchors.top: parent.top
-            anchors.left: parent.left
-            width: notchIslandMask.leftCornerEnabled ? notchIslandMask.resolvedCornerSize : 0
-            height: width
-            corner: "topRight"
-            color: "white"
-            visible: notchIslandMask.leftCornerEnabled && width > 0
-        }
-
-        Rectangle {
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.left: leftNotchCorner.right
-            anchors.right: rightNotchCorner.left
-            color: "white"
-            topLeftRadius: 0
-            topRightRadius: 0
-            bottomLeftRadius: notchIslandMask.bottomLeftRounded ? notchIslandMask.resolvedCornerSize : 0
-            bottomRightRadius: notchIslandMask.bottomRightRounded ? notchIslandMask.resolvedCornerSize : 0
-        }
-
-        NotchCornerMask {
-            id: rightNotchCorner
-            anchors.top: parent.top
-            anchors.right: parent.right
-            width: notchIslandMask.rightCornerEnabled ? notchIslandMask.resolvedCornerSize : 0
-            height: width
-            corner: "topLeft"
-            color: "white"
-            visible: notchIslandMask.rightCornerEnabled && width > 0
-        }
-    }
-
-    component NotchCornerMask: Item {
-        id: notchCornerMask
-
-        property string corner: "topLeft"
-        property color color: "white"
-        property real radius: Math.min(width, height)
-
-        onCornerChanged: cornerCanvas.requestPaint()
-        onColorChanged: cornerCanvas.requestPaint()
-        onRadiusChanged: cornerCanvas.requestPaint()
-        onWidthChanged: cornerCanvas.requestPaint()
-        onHeightChanged: cornerCanvas.requestPaint()
-
-        Canvas {
-            id: cornerCanvas
-            anchors.fill: parent
-            antialiasing: true
-
-            onPaint: {
-                const ctx = getContext("2d");
-                const r = Math.max(0, notchCornerMask.radius);
-
-                ctx.clearRect(0, 0, width, height);
-                if (r <= 0) return;
-
-                ctx.beginPath();
-                switch (notchCornerMask.corner) {
-                case "topRight":
-                    ctx.arc(0, r, r, 3 * Math.PI / 2, 2 * Math.PI);
-                    ctx.lineTo(r, 0);
-                    break;
-                case "bottomLeft":
-                    ctx.arc(r, 0, r, Math.PI / 2, Math.PI);
-                    ctx.lineTo(0, r);
-                    break;
-                case "bottomRight":
-                    ctx.arc(0, 0, r, 0, Math.PI / 2);
-                    ctx.lineTo(r, r);
-                    break;
-                case "topLeft":
-                default:
-                    ctx.arc(r, r, r, Math.PI, 3 * Math.PI / 2);
-                    ctx.lineTo(0, 0);
-                    break;
-                }
-                ctx.closePath();
-                ctx.fillStyle = notchCornerMask.color;
-                ctx.fill();
-            }
-        }
     }
 }

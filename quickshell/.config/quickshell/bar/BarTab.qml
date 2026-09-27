@@ -6,7 +6,6 @@ Item {
     id: root
 
     property bool compact: false
-    property bool silhouetteOnly: true
 
     property int paddingH: Theme.tabPaddingH
     property int paddingV: compact ? Theme.tabPaddingV : Theme.tabPaddingV * 2

@@ -20,7 +20,10 @@ Install: `cd ~/dotfiles && stow quickshell hyprland wezterm`
 
 ```
 shell.qml               ← coordinator: owns all overlay state, IPC handlers
-bar/Bar.qml             ← PanelWindow top bar, wrapped silhouette mask, in-place center notch/dashboard, imports bar/* components
+bar/Bar.qml             ← PanelWindow top bar coordinator; owns independent section surfaces, union input mask, and in-place center notch/dashboard
+bar/BarSection.qml      ← reusable per-section masked silhouette surface and hit region wrapper for left/center/right bar islands
+bar/NotchIslandMask.qml ← mask geometry for each bar island body and gap-facing notch corners
+bar/NotchCornerMask.qml ← Canvas-drawn corner mask primitive used by island and wrap masks
 bar/CenterDashboard.qml ← tabbed body for the expanded center notch: Media pane + live Metrics pane
 bar/MetricsPane.qml     ← center dashboard Metrics pane: CPU/RAM/GPU visual cards + single-row DSK/NET/VOL footer
 bar/MetricCard.qml      ← reusable metric card with progress bar, Canvas sparkline, percent/N/A state

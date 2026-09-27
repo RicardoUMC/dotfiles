@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+recording_dir="/tmp/quickshell-recordings"
+pid_file="${recording_dir}/gpu-screen-recorder.pid"
+recorder="/usr/bin/gpu-screen-recorder"
+
+notify() {
+    local title="$1"
+    local body="$2"
+
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send --app-name="Screen Recording" "${title}" "${body}"
+    fi
+}
+
+mkdir -p "${recording_dir}"
+find "${recording_dir}" -maxdepth 1 -type f -name '*.mp4' -mmin +360 -delete
+
+is_recorder_process() {
+    local pid="$1"
+
+    [[ -r "/proc/${pid}/cmdline" ]] || return 1
+    tr '\0' ' ' < "/proc/${pid}/cmdline" | grep -q -- "${recorder}"
+}
+
+stop_recording() {
+    local pid="$1"
+    local output_path="${2:-unknown}"
+
+    kill -INT "${pid}" 2>/dev/null || true
+
+    for _ in {1..50}; do
+        if ! kill -0 "${pid}" 2>/dev/null; then
+            rm -f "${pid_file}"
+            notify "Recording stopped" "Saved to ${output_path}"
+            printf 'Stopped screen recording: %s\n' "${output_path}"
+            return 0
+        fi
+        sleep 0.1
+    done
+
+    kill -TERM "${pid}" 2>/dev/null || true
+    rm -f "${pid_file}"
+    notify "Recording stopped" "Saved to ${output_path}"
+    printf 'Stopped screen recording: %s\n' "${output_path}"
+}
+
+if [[ -f "${pid_file}" ]]; then
+    mapfile -t state < "${pid_file}"
+    pid="${state[0]:-}"
+    output_path="${state[1]:-unknown}"
+
+    if [[ "${pid}" =~ ^[0-9]+$ ]] && kill -0 "${pid}" 2>/dev/null && is_recorder_process "${pid}"; then
+        stop_recording "${pid}" "${output_path}"
+        exit 0
+    fi
+
+    rm -f "${pid_file}"
+fi
+
+timestamp="$(date +%Y%m%d_%H%M%S)"
+output_path="${recording_dir}/screen_${timestamp}.mp4"
+
+"${recorder}" -w screen -f 60 -o "${output_path}" >/dev/null 2>&1 &
+pid="$!"
+printf '%s\n%s\n' "${pid}" "${output_path}" > "${pid_file}"
+
+notify "Recording started" "Saving to ${output_path}"
+printf 'Started screen recording: %s\n' "${output_path}"

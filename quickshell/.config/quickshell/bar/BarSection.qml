@@ -48,6 +48,7 @@ Item {
         anchors.fill: parent
         visible: false
         layer.enabled: true
+        layer.smooth: true
         color: root._segmentFill
     }
 
@@ -56,6 +57,7 @@ Item {
         anchors.fill: parent
         visible: false
         layer.enabled: true
+        layer.smooth: true
 
         NotchIslandMask {
             targetItem: targetProxy
@@ -93,6 +95,8 @@ Item {
         source: bgSource
         maskEnabled: true
         maskSource: sectionMask
+        maskThresholdMin: 0.5
+        maskSpreadAtMin: 1.0
         anchors.fill: parent
         visible: Theme.barStyle === "silhouette"
     }

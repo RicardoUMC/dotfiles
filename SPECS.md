@@ -22,6 +22,7 @@ For agent/developer workflow, see `AGENTS.md`.
 | [Lock Screen](specs/lock-screen.md)         | Implemented | hyprlock-based lock screen                  |
 | [Theme System](specs/theme-system.md)       | Implemented | Mutable design tokens + config.json         |
 | [Settings GUI](specs/settings-gui.md)       | Planned     | Visual configuration panel                  |
+| [Right Island Control Center](specs/right-island-control-center.md) | Planned | Right-island system controls and metrics |
 | [Calendar](specs/calendar.md)               | Planned     | Calendar popup from clock                   |
 | [OSD](specs/osd.md)                         | Implemented | Volume/brightness overlay                   |
 | [Overlay Manager](specs/overlay-manager.md) | Implemented | Centralized overlay focus system            |

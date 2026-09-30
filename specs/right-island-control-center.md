@@ -4,7 +4,7 @@
 
 In Progress
 
-Implemented and lint-verified: `services/` Wi-Fi, Bluetooth and Audio singletons; the specialty cards (`WifiControlCard`, `BluetoothControlCard`, `AudioControlCard`/`AudioControlPanel`, `NotificationControlCard`, `MetricsControlCard`); the `RightControlCenter` host with per-section specialty routing; and compact right-island icons. Not yet verified at runtime on the live compositor, so this is `In Progress` rather than `Implemented`.
+Implemented and lint-verified: `services/` Wi-Fi, Bluetooth and Audio singletons; the specialty cards (`WifiControlCard`, `BluetoothControlCard`, `AudioControlCard`/`AudioControlPanel`, `NotificationControlCard`, `MetricsControlCard`); the `RightControlCenter` host with per-section specialty routing; and compact right-island icons. The radio/adapter power switch in the two radio heroes and the group-header overflow reveals are implemented in the cards described below. None of it is yet verified at runtime on the live compositor, so this is `In Progress` rather than `Implemented`.
 
 ## Purpose
 
@@ -202,11 +202,13 @@ Wi-Fi uses the inline expander prototype inside the right dropdown. Expanded Wi-
 
 Initial direction:
 
-- Collapsed Wi-Fi card shows icon, current SSID or disconnected label, signal strength, and connection state.
-- The collapsed Wi-Fi entry is a single interaction surface that opens the standalone Wi-Fi panel; it should not use a left-side power toggle.
-- The previous split toggle/chevron interaction is intentionally retired because it was not practical in use.
-- The Wi-Fi panel itself may show power state and future power control, but opening details is the primary compact-island action.
-- When Wi-Fi is off, the panel communicates `Wi-Fi off` without expanding an empty network list.
+- Collapsed Wi-Fi card shows icon, current SSID or disconnected label, signal strength, and connection state. In the expanded panel the hero reorders this information as a state puck (glyph + signal), a status label (`Connected` / `Searching…` / `Not connected` / `Wi-Fi off`), a title, and a meta line.
+- The collapsed Wi-Fi entry is a single interaction surface that opens the standalone Wi-Fi panel; it does not use a left-side power toggle.
+- The previous split toggle/chevron interaction on the collapsed card is intentionally retired because it was not practical in use. The power affordance now lives inside the panel, which is what the earlier decision said should happen.
+- The panel ships the radio power control. The hero's trailing edge carries the `WifiPowerSwitch` — a borderless power glyph over a thin accent rail (height `Theme.accentSeamWidth`), no border, no box, secondary to the network identity. It sits in the trailing slot that the chevron (`visible: !root.standalone && WifiService.wifiEnabled`) vacates in standalone mode, and the panel still has exactly one accent seam: the hero's state-colored left rail. While the radio is on, the switch is the module's power control; the chevron handles expansion separately.
+- When Wi-Fi is off, the hero itself becomes the power action: the hero `MouseArea` routes to `requestPower(true)`, the meta line changes from a description to an instruction (`Select to turn Wi-Fi on`), the switch takes its emphasis weight (accent slab, widened rail, `Turn on` label, `Theme.radiusMd`), and the nearby-networks group stays hidden (`visible: root.expanded && WifiService.wifiEnabled`), so no disabled empty list or dead vertical space appears under the hero.
+- In-flight: `WifiService.setWifiEnabled` has exactly one UI call site, the card's `requestPower()` funnel, which early-returns while `powerPending` is set, so repeat clicks cannot enqueue a second call. While pending, the rail becomes a sweeping accent slab, the meta line reads `Turning Wi-Fi on…` / `Turning Wi-Fi off…`, and the switch's `MouseArea` is disabled. A `Connections` handler on `WifiService.onWifiEnabledChanged` settles the pending state as soon as the reported state matches `powerPendingTarget` and stops the settle timer; the `powerSettleTimer` fallback (`Theme.animSlow * 30` = 15 s ≈ three 5 s service refresh cycles) clears the pending state if the change is never reported, so a failed `nmcli radio` cannot leave the affordance permanently frozen in a pending animation; a reported service error surfaces through the card's `errorMessage` line instead.
+- When Wi-Fi is off, the panel communicates it on the hero itself — both title and status read `Wi-Fi off` — without expanding an empty network list.
 - When Wi-Fi is on but not connected, show `Searching…` while scanning and `Not connected` when idle.
 - When Wi-Fi is connected, show SSID, signal strength, and a small `Connected` state label if it fits cleanly.
 - Use an available-height-aware maximum with a strict cap.
@@ -219,7 +221,7 @@ Initial direction:
 - `Forget` must always require confirmation before removing a saved network.
 - For a secured unknown network, show password entry inline within the expanded Wi-Fi area rather than opening a separate dialog.
 - Inline password entry should be compact, clearly associated with the selected network, and easy to cancel without collapsing the full Wi-Fi section.
-- Additional networks require scroll or a `More` affordance.
+- Overflow is a real group-header control, not a scroll guess: a borderless `WifiPillAction` next to `Scan` in the `Nearby networks` header toggles `showAllNetworks`. Preview 5 / expanded all, with labels `Show all N` and `Show top 5`. Lifecycle rules: [Group-level overflow reveal](#group-level-overflow-reveal).
 - Hidden SSID / `Join hidden network` is out of scope for the first version.
 - The collapsed Wi-Fi control should show connection state clearly before expansion.
 
@@ -229,12 +231,14 @@ Bluetooth uses the nested/detail-pane prototype inside the same floating surface
 
 Initial direction:
 
-- Collapsed Bluetooth card shows icon, primary connected device name, and connected-device count when more than one device is connected.
-- The collapsed Bluetooth entry is a single interaction surface that opens the standalone Bluetooth detail pane; it should not use a left-side power toggle.
-- The previous split toggle/chevron interaction is intentionally retired because it was not practical in use.
+- Collapsed Bluetooth card shows icon, primary connected device name, and connected-device count when more than one device is connected; in the expanded panel the hero shows the first connected device's name as title and `N Connected` as the status label.
+- The collapsed Bluetooth entry is a single interaction surface that opens the standalone Bluetooth detail pane; it does not use a left-side power toggle.
+- The previous split toggle/chevron interaction is intentionally retired because it was not practical in use. The power affordance now lives inside the panel, which is what the earlier decision said should happen.
 - Collapsed fallback states: `No devices` when Bluetooth is on with no connected devices, and `Bluetooth off` when the adapter is off.
-- When Bluetooth is off, the standalone panel communicates `Bluetooth off` without opening an empty device list.
-- Separate devices into `Connected` and `Available` sections.
+- When Bluetooth is off, the standalone panel communicates `Bluetooth off` without opening an empty device list; both device groups are `visible: root.expanded && BluetoothService.bluetoothEnabled`.
+- The panel ships the adapter power control with the same grammar as Wi-Fi: a borderless `BtPowerSwitch` on the hero's trailing edge (the slot the chevron vacates in standalone mode), one accent seam per module; adapter off turns the hero itself into the enable action, with the instruction meta line `Turn Bluetooth on to manage devices`, accent puck and rail, and the device groups hidden. In-flight behavior is identical: `BluetoothService.setBluetoothEnabled` has exactly one UI call site, the `requestPower()` funnel, and `powerPending` drives the sweeping rail, the `Turning Bluetooth on…` meta line, the click-blocking disabled handler, the `onBluetoothEnabledChanged` settle, and the same `Theme.animSlow * 30` settle-timer fallback that prevents a permanently stuck pending state after a failed `bluetoothctl power`.
+- Separate devices into `Connected` and `Available` sections. The `Connected devices` group is intentionally uncapped — its list is never truncated, so it carries no reveal control, only the `N active` count in its header.
+- Available-device overflow is a group-header control: a borderless `BtPillAction` next to `Scan` in the `Available devices` header toggles `showAllDevices`. Preview 6 / expanded all, with labels `Show all N` and `Show top 6`. Lifecycle rules: [Group-level overflow reveal](#group-level-overflow-reveal).
 - Device rows show name, connection/pairing state, device-type icon where available, and battery level where available.
 - Keep always-visible actions minimal. Selecting a connected device expands its row inline with `Disconnect` and `Forget` actions instead of immediately disconnecting or navigating to a separate device detail view.
 - `Forget` must always require confirmation before removing a Bluetooth device.
@@ -271,8 +275,8 @@ Initial direction:
 
 The compact notification icon should open a notification mini panel rather than only toggling mute. The mini panel should combine:
 
-- Recent notification list or preview.
-- Available-height-aware recent notification count, defaulting to 3 visible notifications.
+- Recent notification list or preview: newest-first rows from the retained history, preview capped at `maxVisibleNotifications: 3`.
+- Overflow is a group-header control: a `NotificationPillAction` — a new in-file borderless pill component matching the other cards' header vocabulary — sits in the `Recent` header, ordered before the destructive `Clear all` text, and toggles `showAllNotifications`. Preview 3 / expanded up to the 50-row store cap, with labels `Show all N` and `Show newest 3`. Lifecycle rules: [Group-level overflow reveal](#group-level-overflow-reveal).
 - Default grouping: chronological list without grouping.
 - Future configuration may enable app grouping or smart grouping, but the first version should remain simple.
 - Separate sound mute control: notifications still arrive but do not play sound.
@@ -281,6 +285,17 @@ The compact notification icon should open a notification mini panel rather than 
 - Clear/dismiss affordances where appropriate.
 
 The notification surface should stay smaller than the full control center and should not compete with Wi-Fi, Bluetooth, and audio as the primary daily controls.
+
+## Group-level Overflow Reveal
+
+The inert `+N more …` labels the first pass rendered under each truncated list are gone. Overflow is now a reversible view-mode control in each list's own group header, using that card's existing borderless pill vocabulary (`WifiPillAction`, `BtPillAction`, `NotificationPillAction`). Shared lifecycle rules, verified in all three cards:
+
+- **The pill only exists while the list is truncated** (`visible: networksTruncated` / `devicesTruncated` / `notificationsTruncated`). A list that fits its preview shows no control at all.
+- **The count appears in both directions**, so the label cannot lie: `Show all N` names the true total when collapsed, `Show top 5` / `Show top 6` / `Show newest 3` names the preview cap when expanded.
+- **Collapsing clears the row selection** (Wi-Fi, Bluetooth): `onShowAllNetworksChanged` / `onShowAllDevicesChanged` call `clearSelection()` when the mode returns to preview, because a detail sheet for a row that is no longer rendered would describe a vanished row. The notification card has no row-selection sheet, so its collapse rule is the reset itself.
+- **Closing the card resets to preview**: `onExpandedChanged` resets the reveal flag (and clears the selection on the radio cards), and `RightControlCenter.resetSections()` collapses every card on open, so a re-opened panel never resumes an unannounced full-list mode.
+- **The mode auto-resets when the list shrinks back inside the preview**: `onNetworksTruncatedChanged` / `onDevicesTruncatedChanged` / `onNotificationCountChanged` drop the flag, so a later scan or discovery cannot silently resume a full-list view against a now-short list.
+- **Known limitation:** the reveal control lives in the group header, which scrolls with the list inside `RightControlCenter`'s `Flickable`. When a long list is expanded, the header — and with it the collapse control — scrolls out of view, so collapsing requires scrolling back up. Accepted for now: keeping the control adjacent to the list it governs outweighs a sticky-header complication, and closing/reopening the card always returns to preview.
 
 ## First-Phase Shape
 

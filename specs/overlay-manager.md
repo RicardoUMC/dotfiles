@@ -54,7 +54,7 @@ The manager implements no group table, no group membership, and no per-group com
 
 - Same-group "coexistence" is a consequence of composition, not of group logic: `center-panel` does not open a separate visible panel but expands the bar's own center notch in place, and `right-control-center` hosts its section cards (Wi-Fi, Bluetooth, Audio, Notifications) as content inside that one surface, so switching sections is not an overlay transition.
 - `_closeActive()` clears `activeOverlay`/`activeScreenName` **before** hiding the surface, specifically so the surface's own `closed()` signal re-entering `overlayManager.close()` cannot cascade. That guard is what makes single-slot state safe with signal-driven teardown.
-- `DESIGN.md` and `AGENTS.md` now both describe the single global slot, and the former context-group table in `DESIGN.md` was replaced with an overlay-slot table that keeps Calendar and Settings GUI as `Planned` rows. Two documents still carry group-era language and are tracked as remaining cleanups rather than implemented behavior: `specs/right-island-control-center.md` (a desired contextual tree/graph) and `skills/interaction-designer/SKILL.md` (rules about incompatible groups and parent/child cascade). Neither describes what `shell.qml` does.
+- Group-era language has been purged from every live document, including the two that once described the model as if it existed: `skills/interaction-designer/SKILL.md` now states the single global slot and warns against designing for `bar-primary`/`bar-secondary`, and this spec's own tree/graph material is labelled an open proposal rather than current behavior. What remains in those files is explicit negation, not a surviving model.
 
 ### Layer policy
 

@@ -20,10 +20,16 @@ Item {
         spacing: 12
 
         // Avatar
+        // Layout.preferredWidth/Height: this Rectangle is a real ColumnLayout child
+        // and carries Layout.alignment: Qt.AlignHCenter, so the layout never stretches
+        // it on either axis - it hands the item exactly its preferred size and centers
+        // that slot. Feeding 88/88 through the preferred properties reproduces the old
+        // plain width/height pixel-for-pixel, which also keeps radius: 44 a true circle
+        // (half of 88); a stretched or collapsed slot would have broken it.
         Rectangle {
             Layout.alignment: Qt.AlignHCenter
-            width: 88
-            height: 88
+            Layout.preferredWidth: 88
+            Layout.preferredHeight: 88
             radius: 44
             color: root.colors.surface
             border.width: 2

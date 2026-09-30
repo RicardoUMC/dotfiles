@@ -18,9 +18,15 @@ Item {
         width: parent.width
         spacing: 8
 
+        // Password field box: a direct child of the ColumnLayout above, which
+        // has no height of its own (it is implicit, summed from its children) and
+        // no Layout.fillHeight anywhere. The layout therefore owns this item's
+        // vertical extent: Layout.preferredHeight feeds the same 42 into the
+        // property the layout actually reads, so the summed column height and this
+        // box's rendered height stay identical to the old plain `height: 42`.
         Rectangle {
             Layout.fillWidth: true
-            height: 42
+            Layout.preferredHeight: 42
             radius: 8
             color: root.colors.surface
             border.width: 1
@@ -98,9 +104,12 @@ Item {
             Behavior on opacity { NumberAnimation { duration: 150 } }
         }
 
+        // Sign-in button: same ColumnLayout child as the field box above, so the
+        // layout owns its height. Layout.preferredHeight: 42 keeps the button and
+        // the column's implicit height at exactly the previous 42px.
         Rectangle {
             Layout.fillWidth: true
-            height: 42
+            Layout.preferredHeight: 42
             radius: 8
             color: loginArea.containsMouse
                 ? Qt.rgba(root.colors.accent.r, root.colors.accent.g, root.colors.accent.b, 0.25)

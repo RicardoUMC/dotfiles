@@ -1,0 +1,3 @@
+singleton WifiService 1.0 WifiService.qml
+singleton BluetoothService 1.0 BluetoothService.qml
+singleton AudioService 1.0 AudioService.qml

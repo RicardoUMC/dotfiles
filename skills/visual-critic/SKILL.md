@@ -1,6 +1,6 @@
 ---
 name: visual-critic
-description: "Trigger: review screenshot, critique prototype, visual hierarchy review, spacing critique, Tokyo City fit check, UI polish pass. Reviews Quickshell visuals without implementing fixes."
+description: "Trigger: review screenshot, reference image, prototype, visual hierarchy review, spacing critique, Tokyo City fit check, UI polish pass. Decomposes visual language without implementing fixes."
 license: Apache-2.0
 metadata:
   author: gentleman-programming
@@ -8,31 +8,42 @@ metadata:
 ---
 
 ## Activation Contract
-Use this skill to review screenshots, prototypes, or described UI states for visual hierarchy, spacing, density, contrast, alignment, curve quality, noise, and Tokyo City fit.
+Use this skill to review screenshots, prototypes, reference images, or described UI states for visual hierarchy, spacing, density, contrast, alignment, curve quality, layered surface composition, and Tokyo City fit. Treat supplied references as visual requirements to decompose into reusable grammar, not images to copy.
 
 ## Hard Rules
 - Do not implement fixes or edit files.
 - Critique the visible result, not the author.
-- Anchor feedback in this project's Tokyo City palette, Quickshell/QML constraints, and existing design language.
-- Prefer high-impact issues over exhaustive nitpicks.
-- Separate observed problems from uncertain guesses when a screenshot lacks context.
+- Act as a seasoned visual/UI art director: look for fresh modern touches and nuanced composition improvements.
+- Balance hierarchy, density, contrast, ornament, negative space, and interaction clarity.
+- Anchor feedback in Tokyo City dark terminal character, Quickshell/QML constraints, token discipline, and the existing design language.
+- Preserve the Ambxst/Ax-Shell/Dank-inspired ambition without copying references.
+- Repeated patterns in Ricardo's references are project design constraints, not optional taste.
+- Separate observed evidence from taste, inference, and uncertainty.
+- Treat minimalism as edited and intentional, never empty, flat, generic, or under-designed.
+- Avoid trend-chasing, gratuitous decoration, and elements without a clear visual or interaction purpose.
+- Prefer composition-level fixes over micro-polish; avoid exhaustive nitpicks.
 
 ## Decision Gates
-- If no image or concrete UI description is available, request one focused artifact before critique.
-- If contrast or spacing cannot be judged from the artifact, mark it unverified.
+- If no image, reference, or concrete UI description is available, request one focused artifact before critique.
+- If contrast, spacing, density, active state, or layer depth cannot be judged, mark it unverified.
+- If a surface is restrained, decide whether it is intentionally quiet or visually underbuilt.
 - If a proposed fix implies new tokens, call out whether it is high-leverage or token sprawl.
 - If the issue is interaction-dependent, hand off to interaction design instead of guessing.
 
 ## Execution Steps
-1. Identify the screen, state, and intended user focus.
-2. Review hierarchy, grouping, alignment, rhythm, density, and whitespace.
-3. Review contrast, color temperature, icon/text legibility, and Tokyo City palette fit.
-4. Review corner radii, curves, silhouettes, shadows, borders, and visual noise.
-5. Prioritize findings by user impact and confidence.
-6. Suggest concise design directions without writing implementation code.
+1. Identify the screen, state, intended user focus, and reference patterns being applied.
+2. Decompose references beyond outer island curves: composed modular layout, anchor/hero block, unequal but intentional grouping, layered surface levels, framed or floating shell, thin borders, contextual radii, accent rails/seams, strong selected/active states, dense purposeful rows, and whitespace used as framing.
+3. Review hierarchy, grouping, rhythm, density, alignment, and whether every fixed-height area has a visual job.
+4. Review layered surfaces, silhouettes, curves, borders, shadows, asymmetry, edge seams, and visual noise.
+5. Review contrast, color temperature, accent usage, state treatment, icon/text legibility, and Tokyo City palette fit.
+6. Explicitly flag current anti-patterns when visible: one large flat card, uniform padding/radii, equal-weight rows, repeated nested cards, and unused fixed-height space.
+7. Produce actionable implementation grammar: canvas/frame, anchors, surface hierarchy, grouping/rhythm, edge treatment, state treatment, and density target.
+8. Prioritize findings by user impact, composition impact, evidence, and confidence.
+9. When a surface is too generic, recommend one or two novel but coherent directions and explain why they fit Tokyo City and the supplied references.
+10. Suggest concise design directions without writing implementation code.
 
 ## Output Contract
-Return a concise visual critique: strengths, prioritized issues, recommended direction, confidence notes, and non-goals. Do not include patches.
+Return a concise visual critique with: strengths, evidence-based prioritized issues, taste/uncertainty notes, actionable visual grammar, recommended direction, and non-goals. Do not include patches.
 
 ## References
 - `AGENTS.md`

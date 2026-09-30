@@ -1,0 +1,188 @@
+#!/usr/bin/env bash
+# Adjust DDC/CI brightness on the focused Hyprland monitor, then notify the shell OSD.
+#
+# /sys/class/backlight is empty on this desktop, so brightness is only reachable
+# through ddcutil. Each monitor keeps its own VCP 0x10 value, which is why the
+# target is resolved from the focused connector instead of a fixed display.
+set -euo pipefail
+
+readonly STEP=5
+readonly VCP_BRIGHTNESS='10'
+
+direction="${1:-}"
+case "${direction}" in
+    up | down) ;;
+    *)
+        printf 'usage: %s up|down\n' "$(basename "$0")" >&2
+        exit 2
+        ;;
+esac
+
+focused_monitor="$(hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused) | .name' 2>/dev/null || true)"
+if [[ -z "${focused_monitor}" || "${focused_monitor}" == 'null' ]]; then
+    printf 'brightness: could not resolve the focused monitor\n' >&2
+    exit 1
+fi
+
+# ddcutil --display takes an integer in this build, so the connector name has to
+# be mapped to the "Display N" index reported by `ddcutil detect`.
+#
+# `ddcutil detect` costs ~240 ms, which is roughly a third of the keypress
+# latency, and it is only needed for that translation. The mapping is stable
+# while the monitor set is unchanged, so it is cached per connector under
+# XDG_STATE_HOME (a state directory, not /tmp, so it survives a reboot) and
+# `ddcutil detect` is skipped entirely on a cache hit.
+#
+# The cache is invalidated by use, not by a timeout: a hot-plug or a
+# re-enumerated display makes the stored index wrong, and the first failing
+# DDC/CI access against that index (the `getvcp` read, else the `setvcp` write)
+# is the cheap signal that this happened. On that failure the entry is
+# discarded, the map is rebuilt from a fresh `ddcutil detect`, and the access is
+# retried exactly once. Rebuilding on failure is what makes the cache safe under
+# hot-plug — the worst case is one extra slow attempt on the first press after
+# the monitor set changes, never a write to the wrong panel, and never an OSD
+# report for a value that was not applied.
+cache_dir="${XDG_STATE_HOME:-$HOME/.local/state}/hyprland-brightness"
+cache_file="${cache_dir}/ddcutil-display-${focused_monitor}"
+
+# awk map: first integer on a "Display N" header line, matched against the
+# DRM connector name reported for that display.
+ddcutil_display_for() {
+    ddcutil detect 2>/dev/null |
+        awk -v want="${focused_monitor}" '
+            /^Display [0-9]+/ { n = $2 }
+            /DRM_connector/ {
+                connector = $2
+                sub(/card[0-9]+-/, "", connector)
+                if (connector == want) { print n; exit }
+            }
+        ' || true
+}
+
+cache_read() {
+    [[ -r "${cache_file}" ]] || return 1
+    local value
+    IFS= read -r value <"${cache_file}" || return 1
+    [[ "${value}" =~ ^[0-9]+$ ]] || return 1
+    printf '%s\n' "${value}"
+}
+
+cache_write() {
+    mkdir -p "${cache_dir}"
+    printf '%s\n' "$1" >"${cache_file}"
+}
+
+# Truncate rather than unlink: an empty file is a miss, and it leaves the
+# permissions of the state file we created alone.
+cache_drop() {
+    mkdir -p "${cache_dir}"
+    : >"${cache_file}"
+}
+
+set_brightness() {
+    ddcutil -d "$1" setvcp "${VCP_BRIGHTNESS}" "$2" >/dev/null 2>&1
+}
+
+# Parse `getvcp 10` into `current` and `max`. The single read supplies both, so
+# the absolute value written below is exact and clamped, and the value reported
+# to the OSD costs nothing extra.
+#   return 1 = no current value, 2 = no max value
+parse_vcp() {
+    if [[ ! "$1" =~ current\ value\ =\ +([0-9]+) ]]; then
+        return 1
+    fi
+    current="${BASH_REMATCH[1]}"
+
+    if [[ ! "$1" =~ max\ value\ =\ +([0-9]+) ]]; then
+        return 2
+    fi
+    max="${BASH_REMATCH[1]}"
+}
+
+read_vcp() {
+    ddcutil -d "$1" getvcp "${VCP_BRIGHTNESS}" 2>&1 || true
+}
+
+fail_vcp_read() {
+    if [[ "$1" == '2' ]]; then
+        printf 'brightness: could not read max VCP 0x10 on display %s (%s)\n' "${display}" "${focused_monitor}" >&2
+    else
+        printf 'brightness: could not read VCP 0x10 on display %s (%s)\n' "${display}" "${focused_monitor}" >&2
+    fi
+    printf '%s\n' "${vcp}" >&2
+    exit 1
+}
+
+# Discard the cached index and rebuild the connector map from a fresh
+# `ddcutil detect`. This is how a stale entry heals after a hot-plug.
+# Returns non-zero when no display can be mapped for the connector.
+rebuild_display_map() {
+    local rebuilt
+
+    cache_drop
+    rebuilt="$(ddcutil_display_for)"
+    if [[ -z "${rebuilt}" ]]; then
+        return 1
+    fi
+    cache_write "${rebuilt}"
+    display="${rebuilt}"
+}
+
+# Read VCP 0x10, retrying once against a rebuilt display index when the cached
+# mapping turns out to be stale.
+read_brightness() {
+    local rc=0
+
+    vcp="$(read_vcp "${display}")"
+    parse_vcp "${vcp}" || rc=$?
+    if [[ "${rc}" == '0' ]]; then
+        return 0
+    fi
+
+    # A mapping that came from this run's own `ddcutil detect` cannot be stale,
+    # so rebuild only when the index came from the cache.
+    if [[ -z "${from_cache}" ]] || ! rebuild_display_map; then
+        fail_vcp_read "${rc}"
+    fi
+
+    rc=0
+    vcp="$(read_vcp "${display}")"
+    parse_vcp "${vcp}" || rc=$?
+    if [[ "${rc}" != '0' ]]; then
+        fail_vcp_read "${rc}"
+    fi
+}
+
+display="$(cache_read || true)"
+from_cache="${display}"
+if [[ -z "${display}" ]]; then
+    display="$(ddcutil_display_for)"
+    if [[ -z "${display}" ]]; then
+        printf 'brightness: no ddcutil display for monitor %s\n' "${focused_monitor}" >&2
+        exit 1
+    fi
+    cache_write "${display}"
+fi
+
+read_brightness
+
+if [[ "${direction}" == 'up' ]]; then
+    new=$((current + STEP))
+else
+    new=$((current - STEP))
+fi
+
+(( new < 0 )) && new=0
+(( new > max )) && new="${max}"
+
+if ! set_brightness "${display}" "${new}"; then
+    # Stale cache entry (hot-plug, re-enumeration): drop it, rebuild the map
+    # once, and retry the write a single time.
+    if ! rebuild_display_map || ! set_brightness "${display}" "${new}"; then
+        printf 'brightness: could not write %s to display %s (%s)\n' "${new}" "${display}" "${focused_monitor}" >&2
+        exit 1
+    fi
+fi
+
+# Only report a value that was actually applied to the panel.
+quickshell ipc call osd showBrightness "${new}" || true

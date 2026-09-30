@@ -9,7 +9,9 @@ Keyboard-driven app launcher. A single fullscreen `PanelWindow` with one centere
 ## Behavior
 
 ### Surface
-- `PanelWindow` with `WlrLayershell.layer: WlrLayer.Top`, `exclusionMode: ExclusionMode.Ignore`, and all four anchors set — the surface always covers the whole of its pinned screen when visible (see "Screen placement"). `Top`, not `Overlay`: the Overlay layer is reserved for transient system feedback, see `specs/overlay-manager.md`
+- `PanelWindow` with `WlrLayershell.layer: WlrLayer.Top`, `exclusionMode: ExclusionMode.Ignore`, and all four anchors set — the surface spans the whole of its pinned screen when visible (see "Screen placement"). `Top`, not `Overlay`: the Overlay layer is reserved for transient system feedback, see `specs/overlay-manager.md`
+- **The bar renders above this surface.** Both live in `Top`, and Hyprland stacks the bar on top: measured by capturing the bar band with the launcher closed and open (`grim`, 900x42 px at the bar's position) — 0.0 % of pixels changed and mean brightness identical, while the desktop region behind it visibly dimmed. So the launcher's backdrop does not darken the bar, unlike the earlier Overlay-layer behavior.
+- Input follows the same order: the bar declares an input `mask` over its island hit regions, so a click landing on a chip reaches the chip directly even while the launcher is open, and the launcher stays exclusive because the chip's own request runs through `overlayManager.open()`. The launcher receives only clicks in the transparent gaps between islands, which is where its bar-band heuristic applies.
 - `visible: false` by default; the surface is mapped only while the overlay is open
 - Transparent window color; the only visible content is one centered popup card
 - Popup size is fixed by local constants `popupW: 560` / `popupH: 480` — **divergence:** these are not `Theme` tokens, so the launcher is the bar-family exception to the configurability-first rule

@@ -1,12 +1,12 @@
 import QtQuick
-import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import "../theme"
 
-RowLayout {
+// Data engine only — instantiated once in shell.qml and injected into Bar via
+// `systemStatsState` so per-monitor Bar instances never duplicate polling.
+Item {
     id: root
-    spacing: Theme.spacingMd
 
     property alias dataState: state
 
@@ -17,6 +17,13 @@ RowLayout {
         property real cpu: 0
         property real disk: 0
         property bool netUp: false
+        property string netInterface: ""
+        property real netRx: 0
+        property real netTx: 0
+        property real prevNetRxBytes: 0
+        property real prevNetTxBytes: 0
+        property real prevNetTimestamp: 0
+        property var netHistory: []
         property real prevDiskSectors: 0
         property int  volume: 0
         property bool muted: false
@@ -48,8 +55,15 @@ RowLayout {
                 "  dt=y[1]-x[1]; di=y[2]-x[2];",
                 "  printf \"%.0f\", (dt-di)/dt*100}');",
                 "disk=$(awk '$3==\"nvme0n1\"{print ($6+$10)}' /proc/diskstats);",
-                "net=$(ip route | grep -c '^default' || echo 0);",
-                "echo \"$ram|$gpu|$cpu|$disk|$net\""
+                "iface=$(ip route 2>/dev/null | awk '/^default/{print $5; exit}');",
+                "net=0; rx=0; tx=0;",
+                "if [ -n \"$iface\" ]; then",
+                "  net=1;",
+                "  vals=$(awk -v iface=\"$iface\" '$1 ~ iface\":\" {gsub(\":\", \"\", $1); print $2, $10}' /proc/net/dev);",
+                "  rx=$(echo \"$vals\" | awk '{print $1+0}');",
+                "  tx=$(echo \"$vals\" | awk '{print $2+0}');",
+                "fi;",
+                "echo \"$ram|$gpu|$cpu|$disk|$net|$iface|$rx|$tx\""
             ].join(" ")
         ]
 
@@ -79,6 +93,23 @@ RowLayout {
                 state.prevDiskSectors = sectors
 
                 state.netUp = parseInt(parts[4]) > 0
+                state.netInterface = parts.length > 5 ? parts[5] : ""
+
+                const rxBytes = parts.length > 6 ? (parseFloat(parts[6]) || 0) : 0
+                const txBytes = parts.length > 7 ? (parseFloat(parts[7]) || 0) : 0
+                const now = Date.now()
+                if (state.prevNetTimestamp > 0 && rxBytes >= state.prevNetRxBytes && txBytes >= state.prevNetTxBytes) {
+                    const seconds = Math.max(0.1, (now - state.prevNetTimestamp) / 1000)
+                    state.netRx = Math.round((rxBytes - state.prevNetRxBytes) / 1048576 / seconds * 10) / 10
+                    state.netTx = Math.round((txBytes - state.prevNetTxBytes) / 1048576 / seconds * 10) / 10
+                    state.netHistory = state.updateHistory(state.netHistory, Math.min(100, (state.netRx + state.netTx) * 10))
+                } else {
+                    state.netRx = 0
+                    state.netTx = 0
+                }
+                state.prevNetRxBytes = rxBytes
+                state.prevNetTxBytes = txBytes
+                state.prevNetTimestamp = now
 
                 poller.running = false
             }

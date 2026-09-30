@@ -10,6 +10,11 @@ Item {
 
     property real anchorX: 0
 
+    // Wayland output this overlay pins itself to, passed down from the Bar
+    // instance that owns it. An unpinned layer-shell surface sends a null
+    // wl_output to get_layer_surface, so the compositor picks the screen.
+    property var screenTarget: null
+
     signal closed()
 
     function open()   { popup.visible = true }
@@ -29,8 +34,11 @@ Item {
     PanelWindow {
         id: popup
         visible: false
+        // Null keeps the compositor-picks-output default; a screen pins it.
+        screen: root.screenTarget
         color: "transparent"
-        WlrLayershell.layer: WlrLayer.Overlay
+        // Layer rule: transient system feedback (toasts, OSD) owns Overlay; interactive panels are Top.
+        WlrLayershell.layer: WlrLayer.Top
         exclusionMode: ExclusionMode.Ignore
         anchors { top: true; bottom: true; left: true; right: true }
 
@@ -64,7 +72,7 @@ Item {
                 // Cover art
                 Rectangle {
                     Layout.fillWidth: true
-                    height: 120
+                    Layout.preferredHeight: 120
                     radius: Theme.radiusSm
                     color: Qt.rgba(Colors.base00.r, Colors.base00.g, Colors.base00.b, 0.8)
                     visible: (root.player?.trackArtUrl ?? "") !== ""
@@ -102,7 +110,7 @@ Item {
                 // Progress bar
                 Rectangle {
                     Layout.fillWidth: true
-                    height: 3
+                    Layout.preferredHeight: 3
                     radius: 2
                     color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
 
@@ -158,19 +166,22 @@ Item {
                         }
                     }
                 }
+            }
 
-                // Debug visual bounds overlay (development scaffolding)
-                Rectangle {
-                    anchors.fill: parent
-                    color: "transparent"
-                    radius: parent.radius
-                    border {
-                        width: Theme.debugBorderWidth
-                        color: Theme.debugBorderColor
-                    }
-                    visible: Theme.debugVisualBounds
-                    z: 999
+            // Debug visual bounds overlay (development scaffolding)
+            // Sibling of the ColumnLayout, filling the card Rectangle, so it
+            // does not occupy a layout slot (anchors on a layout-managed item
+            // is undefined behavior). Mirrors the popup card radius.
+            Rectangle {
+                anchors.fill: parent
+                color: "transparent"
+                radius: Theme.radiusMd
+                border {
+                    width: Theme.debugBorderWidth
+                    color: Theme.debugBorderColor
                 }
+                visible: Theme.debugVisualBounds
+                z: 999
             }
         }
     }

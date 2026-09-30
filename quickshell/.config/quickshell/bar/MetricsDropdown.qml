@@ -16,6 +16,11 @@ Item {
 
     property QtObject systemStatsState: null
 
+    // Wayland output this overlay pins itself to, passed down from the Bar
+    // instance that owns it. An unpinned layer-shell surface sends a null
+    // wl_output to get_layer_surface, so the compositor picks the screen.
+    property var screenTarget: null
+
     signal opened()
     signal closed()
 
@@ -34,8 +39,11 @@ Item {
     PanelWindow {
         id: popup
         visible: false
+        // Null keeps the compositor-picks-output default; a screen pins it.
+        screen: root.screenTarget
         color: "transparent"
-        WlrLayershell.layer: WlrLayer.Overlay
+        // Layer rule: transient system feedback (toasts, OSD) owns Overlay; interactive panels are Top.
+        WlrLayershell.layer: WlrLayer.Top
         WlrLayershell.keyboardFocus: visible ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
         anchors { top: true; bottom: true; left: true; right: true }

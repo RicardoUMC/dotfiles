@@ -144,7 +144,7 @@ Item {
 
                     Rectangle {
                         Layout.fillWidth: true
-                        height: 3
+                        Layout.preferredHeight: 3
                         radius: 2
                         visible: root.mediaPlayer !== null
                         color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)

@@ -2,13 +2,47 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import "../theme"
 
 PanelWindow {
     id: root
     color: "transparent"
 
-    WlrLayershell.layer: WlrLayer.Overlay
+    // Screen targeting is explicit. An unpinned layer-shell surface sends a null
+    // wl_output to get_layer_surface and lets the compositor choose, and the
+    // launcher is opened by IPC/keybind rather than by a click on a given
+    // monitor, so it resolves its own screen: the focused monitor, matched by
+    // Hyprland.focusedMonitor.name against ShellScreen.name — never by list
+    // index, never assuming a monitor count.
+    //
+    // targetScreen is a plain property written imperatively instead of `screen`
+    // binding to focused-monitor state, and that ordering is the point:
+    // ProxyWindowBase::setScreen unmaps and re-maps a surface whose output
+    // changes while it is mapped, so re-resolving focus mid-display would
+    // rebuild a live layer surface. Assignment happens only while this surface is
+    // unmapped, immediately before it is shown. When focus cannot be matched (no
+    // focused monitor yet, or a hot-plug race with no ShellScreen for it) the
+    // previous pin is kept, so the surface can neither throw nor vanish.
+    property ShellScreen targetScreen: null
+    screen: root.targetScreen
+
+    function resolveTargetScreen() {
+        const focused = Hyprland.focusedMonitor
+        if (!focused) return
+        const screens = Quickshell.screens
+        for (let i = 0; i < screens.length; i++) {
+            if (screens[i].name === focused.name) {
+                root.targetScreen = screens[i]
+                return
+            }
+        }
+        // Focused monitor with no live ShellScreen: stay on the current screen.
+    }
+
+    // Layer rule: transient system feedback (toasts, OSD) owns Overlay; interactive panels are Top.
+    // The launcher shares Top with the bar and wins coverage by mapping later.
+    WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.keyboardFocus: visible
         ? WlrKeyboardFocus.OnDemand
         : WlrKeyboardFocus.None
@@ -31,6 +65,10 @@ PanelWindow {
         if (visible) {
             visible = false
         } else {
+            // Safe moment to change output: the surface is still unmapped, so
+            // pinning the screen costs no re-map and the surface is created
+            // directly on the monitor that is focused now.
+            resolveTargetScreen()
             mode = "search"
             filterText = ""
             selectedRow = 0
@@ -108,9 +146,12 @@ PanelWindow {
             spacing: Theme.spacingSm + 2
 
             // ── Buscador ─────────────────────────────────────────
+            // Layout.preferredHeight: this Rectangle is a direct child of the
+            // ColumnLayout, so the layout owns its height; a plain `height` here
+            // was the Quick.layout-positioning defect, not a different size.
             Rectangle {
                 Layout.fillWidth: true
-                height: 38
+                Layout.preferredHeight: 38
                 radius: Theme.radiusSm + 2
                 color: Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b, 0.8)
                 border {
@@ -130,9 +171,12 @@ PanelWindow {
                         font { family: Colors.monoFont; pixelSize: Theme.fontSizeBodyLg }
                     }
 
+                    // Layout.preferredHeight: a real layout child of the
+                    // RowLayout, so the layout sizes this slot while fillWidth
+                    // keeps it taking the remaining row width.
                     Item {
                         Layout.fillWidth: true
-                        height: 24
+                        Layout.preferredHeight: 24
 
                         Text {
                             anchors.verticalCenter: parent.verticalCenter

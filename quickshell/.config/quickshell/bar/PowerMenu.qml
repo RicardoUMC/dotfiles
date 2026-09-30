@@ -11,10 +11,15 @@ Item {
     implicitWidth: btn.width
     implicitHeight: btn.height
 
-    signal onOpened()
+    // Wayland output this overlay pins itself to, passed down from the Bar
+    // instance that owns it. An unpinned layer-shell surface sends a null
+    // wl_output to get_layer_surface, so the compositor picks the screen.
+    property var screenTarget: null
+
+    signal opened()
     signal closed()
     function close() { popup.visible = false; closed() }
-    function open() { popup.selectedIndex = 0; popup.visible = true; onOpened() }
+    function open() { popup.selectedIndex = 0; popup.visible = true; opened() }
     readonly property bool isOpen: popup.visible
 
     Rectangle {
@@ -47,13 +52,16 @@ Item {
         }
     }
 
-    // Fullscreen PanelWindow in Overlay — manages its own outside-click dismissal.
+    // Fullscreen PanelWindow in Top — manages its own outside-click dismissal.
     // No external backdrop needed for the PowerMenu.
     PanelWindow {
         id: popup
         visible: false
+        // Null keeps the compositor-picks-output default; a screen pins it.
+        screen: root.screenTarget
         color: "transparent"
-        WlrLayershell.layer: WlrLayer.Overlay
+        // Layer rule: transient system feedback (toasts, OSD) owns Overlay; interactive panels are Top.
+        WlrLayershell.layer: WlrLayer.Top
         WlrLayershell.keyboardFocus: visible ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
         anchors { top: true; bottom: true; left: true; right: true }
@@ -141,7 +149,7 @@ Item {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    height: 1
+                    Layout.preferredHeight: 1
                     color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.2)
                 }
 

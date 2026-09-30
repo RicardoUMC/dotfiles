@@ -5,11 +5,12 @@
   "bar": {
     "height": 37,
     "style": "silhouette",
+    "screens": "all",
     "notchGapWidth": 30,
     "notchDepthRatio": 0.2,
     "curveRadius": 16,
     "wrapDepth": 12,
-    "chipHeight": 26
+    "chipHeight": 30
   },
   "dashboard": {
     "railWidth": 44,
@@ -27,12 +28,18 @@
     "sparklineHeight": 32,
     "footerHeight": 18
   },
+  "panel": {
+    "accentSeamWidth": 4,
+    "volumeTrackHeight": 8,
+    "secondarySeamWidth": 2
+  },
   "anim": { "fast": 180, "normal": 300, "slow": 500 },
-  "font": { "caption": 10, "label": 11, "body": 13, "bodyLg": 14, "icon": 18 },
+  "font": { "caption": 12, "label": 13, "body": 15, "bodyLg": 17, "icon": 22 },
+  "rightPanel": { "opacity": 0.94 },
   "debug": {
     "visualBounds": false,
     "borderColor": "#ff3344",
     "borderWidth": 1,
-    "barSilhouette": true
+    "barSilhouette": false
   }
 }

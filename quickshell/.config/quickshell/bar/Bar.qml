@@ -3,11 +3,18 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.Mpris
 import Quickshell.Wayland
+import "../services"
 import "../theme"
 
 PanelWindow {
     id: root
 
+    // Interactive panel surface: explicitly Top, never the Quickshell default.
+    // Toasts and the OSD own WlrLayer.Overlay so system feedback always draws
+    // above every panel; relying on the default here would let a future
+    // Quickshell default change silently reorder the bar against the panels
+    // that now declare Top by hand. See specs/overlay-manager.md.
+    WlrLayershell.layer: WlrLayer.Top
     anchors { top: true; left: true; right: true }
     readonly property real sideTabHeight: Math.max(leftTab.implicitHeight, rightTab.implicitHeight)
     readonly property real stableSurfaceContentHeight: Math.max(sideTabHeight, Theme.centerExpandedHeight)
@@ -32,17 +39,37 @@ PanelWindow {
         ]
     }
 
+    property var notificationsState: null
+    // Injected from shell.qml (single SystemStats engine instance). Null until wired.
+    property var systemStatsState: null
+    // Name of the screen this instance is bound to, sourced from
+    // modelData.name by the shell.qml Variants delegate. Overlay routing
+    // uses it as the screen identity; signals from this bar are handled
+    // per instance so the coordinator knows which screen emitted them.
+    property string screenName: ""
+    // Injected from shell.qml: the Hyprland monitor this bar's screen maps to,
+    // or null during startup / hot-plug until the monitor appears. Resolved
+    // once centrally so no per-screen component probes the compositor itself.
+    property var hyprlandMonitor: null
+    // Injected from shell.qml: bumped on every workspace-to-monitor move, the
+    // event that mutates HyprlandWorkspace.monitor without notifying the global
+    // workspace model. Forwarded to the workspace island so its monitor filter
+    // re-evaluates instead of going stale.
+    property int workspaceMonitorTick: 0
+
     // IPC signals
     signal powerMenuOpened()
     signal powerMenuClosed()
-    signal mprisToggleRequested()
     signal mprisClosed()
     signal metricsOpened()
     signal metricsClosed()
-    signal metricsToggleRequested()
     signal centerPanelToggleRequested()
     signal centerPanelOpened()
     signal centerPanelClosed()
+    signal rightControlCenterToggleRequested()
+    signal rightControlCenterSectionRequested(string section)
+    signal rightControlCenterOpened()
+    signal rightControlCenterClosed()
 
     // IPC functions
     function closePowerMenu() { powerMenu.close() }
@@ -51,19 +78,56 @@ PanelWindow {
     function openMetrics()    { metricsDropdown.open() }
     function closeMetrics()   { metricsDropdown.close() }
     function openMpris() {
-        mprisPopup.anchorX = centerTab.x + centerTab.width / 2
+        mprisPopup.anchorX = root.mprisChipGlobalX
         mprisPopup.open()
     }
     function setMprisAnchor() {
-        mprisPopup.anchorX = centerTab.x + centerTab.width / 2
+        mprisPopup.anchorX = root.mprisChipGlobalX
     }
     function openCenterPanel()  { centerPanel.open() }
     function closeCenterPanel() { centerPanel.close() }
+    function openRightControlCenter()  { rightControlCenter.open() }
+    function openRightControlCenterSection(section) { rightControlCenter.openSection(section) }
+    function closeRightControlCenter() { rightControlCenter.close() }
 
     // IPC readonly properties
     readonly property bool powerMenuVisible: powerMenu.isOpen
     readonly property real powerBtnGlobalX:  rightTab.x + rightTab.width - powerMenu.implicitWidth - Theme.tabPaddingH
-    readonly property real mprisChipGlobalX: centerTab.x + centerTab.width / 2
+    // Horizontal center of the media chip, in this bar's window coordinates.
+    // The collapsed header is [fill, ClockChip, MprisIndicator, fill] with two
+    // equal Layout.fillWidth items, so clock and chip are centered as a PAIR:
+    // the chip's center sits (clockWidth + headerSpacing) / 2 right of the
+    // center tab's midpoint. That offset is independent of the chip's own
+    // width — widening the title moves both edges equally, so the midpoint
+    // stays put. Measured here: (88.5 + 8) / 2 ≈ 48 px, observed 49 px after
+    // RowLayout's integer rounding. Using the tab midpoint instead left only
+    // the chip's left third clickable and let clicks over the clock's right
+    // side open the popup. mapToItem() is a plain function call, so the
+    // binding also reads mprisChip.x to observe the chip actually moving.
+    // Deriving the value from the chip's own geometry, rather than from
+    // hand-computed width offsets, keeps it correct when the header composition
+    // changes. mapToItem(null, ...) yields window-relative coordinates, and this
+    // bar surface spans the full screen width at x = 0, so bar-local x and the
+    // launcher's outside-click x agree on the same monitor.
+    readonly property real mprisChipGlobalX: {
+        // mprisChip.x is read for two reasons: it is a monotonicity sanity
+        // check (window x cannot sit left of the chip's own x, since every
+        // ancestor offset here is non-negative), and it registers a binding
+        // dependency. mapToItem() is a function call, so the engine cannot see
+        // that the chip moved when the fillers re-center the clock/chip pair;
+        // without this read the value would go stale on a clock-width change.
+        const localX = mprisChip.x
+        const origin = mprisChip.mapToItem(null, 0, 0)
+        const center = origin.x + mprisChip.width / 2
+        // Degenerate states: the chip is `visible: active` and animates its
+        // width, so an inactive or not-yet-mapped chip has no meaningful
+        // geometry. Those must never reach MprisPopup.anchorX (a stale zero
+        // would clamp the popup to the far left of the screen), so fall back to
+        // the center-tab midpoint. Consumers still gate on mprisChipActive.
+        if (!Number.isFinite(center) || mprisChip.width <= 0 || center < localX)
+            return centerTab.x + centerTab.width / 2
+        return center
+    }
     readonly property real mprisChipWidth:   mprisChip.width
     readonly property bool mprisChipActive:  mprisChip.active
     readonly property bool mprisVisible:     mprisPopup.isOpen
@@ -128,7 +192,10 @@ PanelWindow {
             topMargin: 0
         }
 
-        Workspaces {}
+        Workspaces {
+            monitor: root.hyprlandMonitor
+            workspaceMonitorTick: root.workspaceMonitorTick
+        }
     }
 
     // Center tab — grows in place into the dashboard body.
@@ -208,7 +275,7 @@ PanelWindow {
                     id: dashboard
                     anchors { fill: parent; margins: Theme.dashboardBodyPadding }
                     mediaPlayer: root.mediaPlayer
-                    systemStatsState: statsEngine.dataState
+                    systemStatsState: root.systemStatsState
                 }
             }
         }
@@ -221,7 +288,7 @@ PanelWindow {
         onClicked: root.centerPanelToggleRequested()
     }
 
-    // Right tab — MetricsButton + PowerMenu button
+    // Right tab — compact control-center entries + PowerMenu button
     BarTab {
         id: rightTab
         z: 1
@@ -233,37 +300,84 @@ PanelWindow {
             topMargin: 0
         }
 
-        SystemStats { id: statsEngine }
+        RightIslandIconButton {
+            icon: WifiService.wifiEnabled ? "󰤨" : "󰤭"
+            label: "Wi-Fi"
+            active: WifiService.wifiEnabled && WifiService.activeSsid.length > 0
+            onClicked: root.rightControlCenterSectionRequested("wifi")
+        }
 
-        MetricsButton {
-            onClicked: root.metricsToggleRequested()
+        RightIslandIconButton {
+            icon: BluetoothService.bluetoothEnabled ? "󰂯" : "󰂲"
+            label: "Bluetooth"
+            active: BluetoothService.bluetoothEnabled && (BluetoothService.connectedDevices || []).length > 0
+            onClicked: root.rightControlCenterSectionRequested("bluetooth")
+        }
+
+        RightIslandIconButton {
+            icon: AudioService.outputMuted ? "󰝟" : "󰕾"
+            label: "Audio"
+            active: !AudioService.outputMuted
+            warning: AudioService.outputMuted
+            onClicked: root.rightControlCenterSectionRequested("audio")
+        }
+
+        RightIslandIconButton {
+            icon: root.notificationsState && root.notificationsState.doNotDisturb ? "󰂛" : "󰂚"
+            label: "Notifications"
+            active: root.notificationsState && root.notificationsState.recentModel && root.notificationsState.recentModel.count > 0
+            warning: root.notificationsState && (root.notificationsState.doNotDisturb || root.notificationsState.soundMuted)
+            onClicked: root.rightControlCenterSectionRequested("notifications")
         }
 
         PowerMenu {
             id: powerMenu
-            onOnOpened: root.powerMenuOpened()
-            onOnClosed: root.powerMenuClosed()
+            // Pin to this bar's screen; an unpinned layer-shell surface lets
+            // the compositor choose the output.
+            screenTarget: root.screen
+            onOpened: root.powerMenuOpened()
+            onClosed: root.powerMenuClosed()
         }
     }
 
     MetricsDropdown {
         id: metricsDropdown
-        systemStatsState: statsEngine.dataState
+        // Pin to this bar's screen; an unpinned layer-shell surface lets
+        // the compositor choose the output.
+        screenTarget: root.screen
+        systemStatsState: root.systemStatsState
         onOpened: root.metricsOpened()
         onClosed: root.metricsClosed()
     }
 
     MprisPopup {
         id: mprisPopup
+        // Pin to this bar's screen; an unpinned layer-shell surface lets
+        // the compositor choose the output.
+        screenTarget: root.screen
         onClosed: root.mprisClosed()
     }
 
     CenterPanel {
         id: centerPanel
+        // Pin to this bar's screen; an unpinned layer-shell surface lets
+        // the compositor choose the output.
+        screenTarget: root.screen
         centerX: centerSection.centerX
         centerWidth: centerSection.centerWidth
         centerHeight: centerSection.centerHeight
         onOpened: root.centerPanelOpened()
         onClosed: root.centerPanelClosed()
+    }
+
+    RightControlCenter {
+        id: rightControlCenter
+        // Pin to this bar's screen; an unpinned layer-shell surface lets
+        // the compositor choose the output.
+        screenTarget: root.screen
+        notificationsState: root.notificationsState
+        systemStatsState: root.systemStatsState
+        onOpened: root.rightControlCenterOpened()
+        onClosed: root.rightControlCenterClosed()
     }
 }

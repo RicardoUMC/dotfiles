@@ -25,7 +25,7 @@ QtObject {
 
     // Bar
     property int barHeight: 37
-    property int barChipHeight: 26
+    property int barChipHeight: 30
     property int barCurveRadius: 14
     property int barWrapDepth: 14
     property int centerCollapsedWidth: 360
@@ -34,6 +34,7 @@ QtObject {
     property int dashboardRailWidth: 44
     property int dashboardBodyRadius: 10
     property real dashboardBodyOpacity: 0.35
+    property real rightPanelOpacity: 0.94
     property int dashboardBodyBorderWidth: 1
     property int dashboardBodyPadding: 12
     property int dashboardTabHeight: 40
@@ -45,6 +46,17 @@ QtObject {
     property int dashboardSparklineWidth: 80
     property int dashboardSparklineHeight: 32
     property int dashboardFooterHeight: 18
+
+    // Panel chrome (control-center specialty cards; intentionally separate
+    // from the dashboard progress tokens above)
+    property int accentSeamWidth: 4              // hero accent seam width
+    property int panelVolumeTrackHeight: 8       // Audio volume track and knob thickness
+    property int panelSecondarySeamWidth: 2      // nested-panel seam; deliberately thinner than the accentSeamWidth hero seam - do not merge them
+
+    // Which screens get a bar: "all", or an array of monitor names
+    // (e.g. ["DP-1"]). Matched by ShellScreen.name only, never by index.
+    property var barScreens: "all"
+
     property string barStyle: "silhouette"         // "silhouette" | "plain"
     property real barCurveDepthRatio: 0.2           // concave depth = height × ratio (legacy, use barNotchDepthRatio)
     property real barNotchGapWidth: 30              // px gap at each section boundary
@@ -78,11 +90,11 @@ QtObject {
     property int animSlow:   500
 
     // Font sizes
-    property int fontSizeCaption: 10
-    property int fontSizeLabel:   11
-    property int fontSizeBody:    13
-    property int fontSizeBodyLg:  14
-    property int fontSizeIcon:    18
+    property int fontSizeCaption: 12
+    property int fontSizeLabel:   13
+    property int fontSizeBody:    15
+    property int fontSizeBodyLg:  17
+    property int fontSizeIcon:    22
 
     // Debug / Visual Bounds (development scaffolding)
     // Set debugVisualBounds: false in config.json before final polish
@@ -129,7 +141,8 @@ QtObject {
             if (cfg.bar?.centerCollapsedWidth !== undefined) centerCollapsedWidth = cfg.bar.centerCollapsedWidth
             if (cfg.bar?.centerExpandedWidth  !== undefined) centerExpandedWidth  = cfg.bar.centerExpandedWidth
             if (cfg.bar?.centerExpandedHeight !== undefined) centerExpandedHeight = cfg.bar.centerExpandedHeight
-            if (cfg.bar?.style !== undefined) {
+            if (cfg.bar && cfg.bar.screens !== undefined) barScreens = cfg.bar.screens
+            if (cfg.bar && cfg.bar.style !== undefined) {
                 barStyle = cfg.bar.style
             } else if (cfg.bar?.outerFrame !== undefined) {
                 barStyle = cfg.bar.outerFrame ? "silhouette" : "plain"
@@ -176,6 +189,11 @@ QtObject {
             if (cfg.dashboard?.sparklineWidth   !== undefined) dashboardSparklineWidth   = cfg.dashboard.sparklineWidth
             if (cfg.dashboard?.sparklineHeight  !== undefined) dashboardSparklineHeight  = cfg.dashboard.sparklineHeight
             if (cfg.dashboard?.footerHeight     !== undefined) dashboardFooterHeight     = cfg.dashboard.footerHeight
+            if (cfg.rightPanel?.opacity !== undefined) rightPanelOpacity = cfg.rightPanel.opacity
+            const panel = cfg.panel
+            if (panel && panel.accentSeamWidth   !== undefined) accentSeamWidth        = panel.accentSeamWidth
+            if (panel && panel.volumeTrackHeight !== undefined) panelVolumeTrackHeight = panel.volumeTrackHeight
+            if (panel && panel.secondarySeamWidth !== undefined) panelSecondarySeamWidth = panel.secondarySeamWidth
             if (cfg.debug?.visualBounds  !== undefined) debugVisualBounds  = cfg.debug.visualBounds
             if (cfg.debug?.borderColor   !== undefined) debugBorderColor   = cfg.debug.borderColor
             if (cfg.debug?.borderWidth   !== undefined) debugBorderWidth   = cfg.debug.borderWidth

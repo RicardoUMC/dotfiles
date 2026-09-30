@@ -1,0 +1,863 @@
+import QtQuick
+import QtQuick.Layouts
+import "../services"
+import "../theme"
+
+// Bluetooth specialty module.
+//
+// Layered composition (same grammar as the Wi-Fi card):
+//   Layer 1 — hero block anchored on adapter state: powered flag, connected
+//             count and discovery state, with the module's only accent seam
+//             and a dedicated state puck.
+//   Layer 2 — primary "Connected devices" group, visually dominant, with
+//             battery as a compact secondary readout.
+//   Layer 3 — quiet "Available devices" group; discovery lives in its header.
+//   Layer 4 — accent-tinted detail sheet for pair / connect / disconnect /
+//             forget / cancel, using borderless pill actions.
+//
+// Geometry comes from Theme.qml, color and type from Colors.qml.
+Rectangle {
+    id: root
+
+    Layout.fillWidth: true
+    implicitHeight: cardColumn.implicitHeight + Theme.spacingSm * 2
+    radius: Theme.radiusLg
+    color: Qt.rgba(Colors.backgroundAlt.r, Colors.backgroundAlt.g, Colors.backgroundAlt.b,
+                   BluetoothService.bluetoothEnabled ? 0.30 : 0.18)
+    border.width: 0
+
+    property bool expanded: false
+    property bool standalone: false
+    property string selectedAddress: ""
+    property string detailMode: "" // "connected" | "available" | "forget" | "pair" | "pairing"
+    property string forgetReturnMode: ""
+
+    readonly property int visibleDeviceCount: 6
+    readonly property int connectedCount: (BluetoothService.connectedDevices || []).length
+    readonly property var availableDevices: availableDeviceList()
+    readonly property var visibleAvailableDevices: availableDevices.slice(0, visibleDeviceCount)
+    readonly property var selectedDevice: selectedAddress.length > 0 ? deviceByAddress(selectedAddress) : null
+    readonly property bool selectionConnected: selectedDevice !== null && !!selectedDevice.connected
+    readonly property bool selectionPaired: selectedDevice !== null
+                                            && (!!selectedDevice.paired || !!selectedDevice.trusted)
+
+    // Single source of truth for "state color": seam, status label and puck.
+    readonly property color heroStateColor: {
+        if (BluetoothService.errorMessage.length > 0)
+            return Colors.red
+        if (!BluetoothService.bluetoothEnabled)
+            return Colors.muted
+        if (root.connectedCount > 0)
+            return Colors.green
+        return Colors.accent
+    }
+
+    readonly property string heroTitle: {
+        if (!BluetoothService.bluetoothEnabled)
+            return "Bluetooth off"
+        if (root.connectedCount > 0)
+            return root.deviceName(BluetoothService.connectedDevices[0])
+        if (BluetoothService.discovering)
+            return "Searching…"
+        return "Not connected"
+    }
+
+    readonly property string heroStatusText: {
+        if (!BluetoothService.bluetoothEnabled)
+            return "Adapter off"
+        if (root.connectedCount > 1)
+            return root.connectedCount + " Connected"
+        if (root.connectedCount > 0)
+            return "Connected"
+        if (BluetoothService.discovering)
+            return "Discovering"
+        return "Ready"
+    }
+
+    readonly property string heroMetaText: {
+        if (BluetoothService.errorMessage.length > 0)
+            return "Last action failed"
+        if (!BluetoothService.bluetoothEnabled)
+            return "Turn Bluetooth on to manage devices"
+        if (root.connectedCount > 1)
+            return "+" + (root.connectedCount - 1) + " more connected"
+        if (root.connectedCount === 1) {
+            const battery = root.batteryText(BluetoothService.connectedDevices[0])
+            return battery.length > 0 ? "Battery " + battery : "Tap to manage this device"
+        }
+        if (BluetoothService.discovering)
+            return "Scanning for nearby devices"
+        if (root.availableDevices.length > 0)
+            return root.availableDevices.length + " devices available"
+        return "No devices found yet"
+    }
+
+    function availableDeviceList() {
+        const connected = BluetoothService.connectedDevices || []
+        const items = (BluetoothService.availableDevices || []).slice()
+        const filtered = []
+        for (let i = 0; i < items.length; i++) {
+            let item = items[i]
+            if (!item || !item.address)
+                continue
+            let isConnected = false
+            for (let j = 0; j < connected.length; j++) {
+                if (connected[j] && connected[j].address === item.address) {
+                    isConnected = true
+                    break
+                }
+            }
+            if (!isConnected)
+                filtered.push(item)
+        }
+        return filtered.sort((a, b) => {
+            if (!!a.paired !== !!b.paired)
+                return a.paired ? -1 : 1
+            if (!!a.trusted !== !!b.trusted)
+                return a.trusted ? -1 : 1
+            return root.deviceName(a).localeCompare(root.deviceName(b))
+        })
+    }
+
+    function deviceByAddress(address) {
+        const allDevices = (BluetoothService.connectedDevices || []).concat(BluetoothService.availableDevices || [])
+        for (let i = 0; i < allDevices.length; i++) {
+            if (allDevices[i] && allDevices[i].address === address)
+                return allDevices[i]
+        }
+        return null
+    }
+
+    function deviceName(device) {
+        if (device && device.name && String(device.name).length > 0)
+            return device.name
+        return "Bluetooth device"
+    }
+
+    function deviceIcon(device) {
+        const icon = String((device && device.icon) ? device.icon : "").toLowerCase()
+        if (icon.indexOf("head") >= 0 || icon.indexOf("audio") >= 0)
+            return "󰋋"
+        if (icon.indexOf("input") >= 0 || icon.indexOf("keyboard") >= 0)
+            return "󰌌"
+        if (icon.indexOf("mouse") >= 0)
+            return "󰍽"
+        if (icon.indexOf("phone") >= 0)
+            return "󰏲"
+        if (icon.indexOf("computer") >= 0)
+            return "󰍹"
+        return "󰂯"
+    }
+
+    function batteryText(device) {
+        if (!device || device.battery === null || device.battery === undefined)
+            return ""
+        return Number(device.battery) + "%"
+    }
+
+    function batteryGlyph(batteryText) {
+        const value = Math.max(0, Number(String(batteryText || "").replace("%", "")))
+        if (value < 20)
+            return "󰂎"
+        if (value < 40)
+            return "󰁺"
+        if (value < 60)
+            return "󰁻"
+        if (value < 80)
+            return "󰁼"
+        return "󰁹"
+    }
+
+    function stateText(device) {
+        if (!device)
+            return "Unknown"
+        if (device.connected)
+            return "Connected"
+        if (root.selectedAddress === device.address && root.detailMode === "pairing")
+            return "Pairing…"
+        if (device.paired)
+            return "Paired"
+        if (device.trusted)
+            return "Trusted"
+        return "Not paired"
+    }
+
+    function selectConnected(device) {
+        selectedAddress = device.address || ""
+        detailMode = "connected"
+    }
+
+    function selectAvailable(device) {
+        selectedAddress = device.address || ""
+        if (device.paired || device.trusted) {
+            BluetoothService.connectDevice(selectedAddress)
+            clearSelection()
+        } else {
+            detailMode = "pair"
+        }
+    }
+
+    function requestForget() {
+        forgetReturnMode = detailMode.length > 0 ? detailMode : "connected"
+        detailMode = "forget"
+    }
+
+    function keepDevice() {
+        detailMode = forgetReturnMode.length > 0 ? forgetReturnMode : "connected"
+        forgetReturnMode = ""
+    }
+
+    function startPairing() {
+        if (!selectedDevice)
+            return
+        detailMode = "pairing"
+        BluetoothService.pairDevice(selectedDevice.address)
+    }
+
+    function clearSelection() {
+        selectedAddress = ""
+        detailMode = ""
+        forgetReturnMode = ""
+    }
+
+    onExpandedChanged: if (!expanded) clearSelection()
+    onStandaloneChanged: if (standalone) expanded = true
+    onVisibleChanged: {
+        if (!visible)
+            clearSelection()
+        else if (standalone)
+            expanded = true
+    }
+
+    ColumnLayout {
+        id: cardColumn
+        anchors.fill: parent
+        anchors.margins: Theme.spacingSm
+        spacing: Theme.spacingSm
+
+        // ── Layer 1 — hero: adapter state owns this block ─────────────────
+        Rectangle {
+            id: heroBlock
+            Layout.fillWidth: true
+            implicitHeight: heroRow.implicitHeight + Theme.spacingSm * 2
+            radius: Theme.radiusLg
+            color: heroClickArea.containsMouse
+                   ? Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b, 0.60)
+                   : Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b,
+                             BluetoothService.bluetoothEnabled ? 0.44 : 0.24)
+            border.width: 0
+
+            // Click/hover surface sits below the content so the chevron keeps its
+            // own affordance while the rest of the hero toggles the module.
+            MouseArea {
+                id: heroClickArea
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    if (root.standalone)
+                        root.expanded = true
+                    else
+                        root.expanded = !root.expanded
+                }
+            }
+
+            // Accent seam — the only rail in this module.
+            Rectangle {
+                anchors {
+                    left: parent.left
+                    top: parent.top
+                    bottom: parent.bottom
+                    topMargin: Theme.radiusLg
+                    bottomMargin: Theme.radiusLg
+                }
+                width: Theme.accentSeamWidth
+                radius: Theme.radiusPill
+                color: root.heroStateColor
+                opacity: BluetoothService.bluetoothEnabled ? 0.95 : 0.55
+            }
+
+            RowLayout {
+                id: heroRow
+                anchors {
+                    fill: parent
+                    leftMargin: Theme.spacingLg
+                    rightMargin: Theme.spacingSm
+                    topMargin: Theme.spacingSm
+                    bottomMargin: Theme.spacingSm
+                }
+                spacing: Theme.spacingMd
+
+                Rectangle {
+                    id: adapterPuck
+                    Layout.preferredWidth: Math.max(puckColumn.implicitWidth, puckColumn.implicitHeight)
+                    Layout.preferredHeight: Math.max(puckColumn.implicitWidth, puckColumn.implicitHeight)
+                    Layout.alignment: Qt.AlignVCenter
+                    radius: Theme.radiusMd
+                    color: Qt.rgba(root.heroStateColor.r, root.heroStateColor.g, root.heroStateColor.b, 0.14)
+                    border.width: 0
+
+                    ColumnLayout {
+                        id: puckColumn
+                        anchors.centerIn: parent
+                        spacing: 0
+
+                        Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: BluetoothService.bluetoothEnabled ? "󰂯" : "󰂲"
+                            color: root.heroStateColor
+                            font { family: Colors.monoFont; pixelSize: Theme.fontSizeIcon }
+                        }
+
+                        Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            visible: root.connectedCount > 0 && BluetoothService.bluetoothEnabled
+                            text: root.connectedCount + ""
+                            color: root.heroStateColor
+                            font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
+                        }
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignVCenter
+                    spacing: Theme.spacingXs
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: root.heroStatusText
+                        elide: Text.ElideRight
+                        color: root.heroStateColor
+                        font {
+                            family: Colors.uiFont
+                            pixelSize: Theme.fontSizeCaption
+                            capitalization: Font.AllUppercase
+                        }
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: root.heroTitle
+                        elide: Text.ElideRight
+                        color: Colors.textBright
+                        font { family: Colors.displayFont; pixelSize: Theme.fontSizeBodyLg; weight: Font.DemiBold }
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: root.heroMetaText
+                        elide: Text.ElideRight
+                        color: Colors.textDim
+                        font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
+                    }
+                }
+
+                Rectangle {
+                    id: chevronButton
+                    visible: !root.standalone && BluetoothService.bluetoothEnabled
+                    Layout.preferredWidth: 28
+                    Layout.preferredHeight: 28
+                    Layout.alignment: Qt.AlignVCenter
+                    radius: Theme.radiusPill
+                    color: chevronClickArea.containsMouse || root.expanded
+                           ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
+                           : "transparent"
+                    border.width: 0
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: root.expanded ? "⌃" : "⌄"
+                        color: Colors.textDim
+                        font { family: Colors.uiFont; pixelSize: Theme.fontSizeBody }
+                    }
+
+                    MouseArea {
+                        id: chevronClickArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.expanded = !root.expanded
+                    }
+                }
+            }
+        }
+
+        Text {
+            Layout.fillWidth: true
+            visible: BluetoothService.errorMessage.length > 0
+            text: BluetoothService.errorMessage
+            wrapMode: Text.WordWrap
+            color: Colors.red
+            font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
+        }
+
+        // ── Layer 2 — connected devices: the primary group ───────────────
+        ColumnLayout {
+            id: connectedGroup
+            Layout.fillWidth: true
+            visible: root.expanded && BluetoothService.bluetoothEnabled && root.connectedCount > 0
+            spacing: Theme.spacingXs
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 1
+                Layout.bottomMargin: Theme.spacingXs
+                color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
+                radius: Theme.radiusPill
+                border.width: 0
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.bottomMargin: Theme.spacingXs
+                spacing: Theme.spacingSm
+
+                Text {
+                    text: "Connected devices"
+                    color: Colors.textDim
+                    font {
+                        family: Colors.uiFont
+                        pixelSize: Theme.fontSizeCaption
+                        capitalization: Font.AllUppercase
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 1
+                }
+
+                Text {
+                    Layout.alignment: Qt.AlignVCenter
+                    text: root.connectedCount + " active"
+                    color: Colors.green
+                    font {
+                        family: Colors.uiFont
+                        pixelSize: Theme.fontSizeCaption
+                        capitalization: Font.AllUppercase
+                    }
+                }
+            }
+
+            Repeater {
+                model: BluetoothService.connectedDevices || []
+
+                delegate: BtDeviceRow {
+                    Layout.fillWidth: true
+                    primary: true
+                    glyphText: root.deviceIcon(modelData)
+                    titleText: root.deviceName(modelData)
+                    metaText: root.stateText(modelData)
+                    batteryText: root.batteryText(modelData)
+                    batteryGlyphText: root.batteryGlyph(root.batteryText(modelData))
+                    isConnected: true
+                    isSelected: root.selectedAddress === modelData.address
+                    onRowSelected: root.selectConnected(modelData)
+                }
+            }
+        }
+
+        // ── Layer 3 — available devices: secondary, denser, quieter ──────
+        ColumnLayout {
+            id: availableGroup
+            Layout.fillWidth: true
+            visible: root.expanded && BluetoothService.bluetoothEnabled
+            spacing: Theme.spacingXs
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 1
+                Layout.bottomMargin: Theme.spacingXs
+                color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
+                radius: Theme.radiusPill
+                border.width: 0
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.bottomMargin: Theme.spacingXs
+                spacing: Theme.spacingSm
+
+                Text {
+                    text: "Available devices"
+                    color: Colors.textDim
+                    font {
+                        family: Colors.uiFont
+                        pixelSize: Theme.fontSizeCaption
+                        capitalization: Font.AllUppercase
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 1
+                }
+
+                // Discovery trigger: the pill starts the service's bounded
+                // bluetoothctl scan; the label and enabled state follow the
+                // optimistic discovering flag while that scan is in flight.
+                BtPillAction {
+                    Layout.alignment: Qt.AlignVCenter
+                    label: BluetoothService.discovering ? "Scanning…" : "Scan"
+                    glyph: "󰑓"
+                    accentColor: Colors.accent
+                    quiet: true
+                    enabled: !BluetoothService.discovering
+                    onTriggered: BluetoothService.scan()
+                }
+            }
+
+            Text {
+                Layout.fillWidth: true
+                Layout.topMargin: Theme.spacingXs
+                visible: root.visibleAvailableDevices.length === 0
+                text: BluetoothService.discovering ? "Searching for devices…" : "No devices found"
+                color: Colors.textDim
+                font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
+            }
+
+            Repeater {
+                model: root.visibleAvailableDevices
+
+                delegate: BtDeviceRow {
+                    Layout.fillWidth: true
+                    glyphText: root.deviceIcon(modelData)
+                    titleText: root.deviceName(modelData)
+                    metaText: root.stateText(modelData) + (modelData.paired ? " • Saved" : "")
+                    batteryText: root.batteryText(modelData)
+                    batteryGlyphText: root.batteryGlyph(root.batteryText(modelData))
+                    isSelected: root.selectedAddress === modelData.address
+                    onRowSelected: root.selectAvailable(modelData)
+                }
+            }
+
+            Text {
+                Layout.fillWidth: true
+                Layout.topMargin: Theme.spacingXs
+                visible: root.availableDevices.length > root.visibleDeviceCount
+                text: "+" + (root.availableDevices.length - root.visibleDeviceCount) + " more devices available"
+                color: Colors.muted
+                font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
+            }
+        }
+
+        // ── Layer 4 — selection detail sheet ─────────────────────────────
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.topMargin: Theme.spacingSm
+            visible: root.expanded && BluetoothService.bluetoothEnabled && root.selectedDevice !== null
+            implicitHeight: detailColumn.implicitHeight + Theme.spacingMd * 2
+            radius: Theme.radiusLg
+            color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.10)
+            border.width: 0
+
+            ColumnLayout {
+                id: detailColumn
+                anchors.fill: parent
+                anchors.margins: Theme.spacingMd
+                spacing: Theme.spacingSm
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.spacingSm
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: root.selectedDevice ? root.deviceName(root.selectedDevice) : "Bluetooth device"
+                            elide: Text.ElideRight
+                            color: Colors.textBright
+                            font { family: Colors.displayFont; pixelSize: Theme.fontSizeBodyLg; weight: Font.DemiBold }
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: root.selectedDevice
+                                  ? (root.stateText(root.selectedDevice)
+                                     + (root.batteryText(root.selectedDevice).length > 0
+                                        ? " • Battery " + root.batteryText(root.selectedDevice) : ""))
+                                  : ""
+                            elide: Text.ElideRight
+                            color: Colors.textDim
+                            font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: root.selectedDevice ? String(root.selectedDevice.address || "") : ""
+                            elide: Text.ElideRight
+                            color: Colors.muted
+                            font { family: Colors.monoFont; pixelSize: Theme.fontSizeCaption }
+                        }
+                    }
+
+                    BtPillAction {
+                        Layout.alignment: Qt.AlignVCenter
+                        label: "Cancel"
+                        accentColor: Colors.muted
+                        quiet: true
+                        onTriggered: root.clearSelection()
+                    }
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    visible: root.detailMode === "pairing" && !root.selectionConnected
+                    text: "Pairing… check the device for confirmation."
+                    color: Colors.accent
+                    font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    visible: root.detailMode === "forget"
+                    text: "Forget this Bluetooth device?"
+                    color: Colors.orange
+                    font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.topMargin: Theme.spacingXs
+                    spacing: Theme.spacingSm
+
+                    BtPillAction {
+                        visible: root.detailMode !== "forget" && root.detailMode !== "pairing"
+                                 && !root.selectionConnected && !root.selectionPaired
+                        Layout.fillWidth: true
+                        label: "Pair"
+                        accentColor: Colors.accent
+                        onTriggered: root.startPairing()
+                    }
+
+                    BtPillAction {
+                        visible: root.detailMode !== "forget" && root.selectionPaired && !root.selectionConnected
+                        Layout.fillWidth: true
+                        label: "Connect"
+                        accentColor: Colors.accent
+                        onTriggered: {
+                            if (root.selectedDevice)
+                                BluetoothService.connectDevice(root.selectedDevice.address)
+                            root.clearSelection()
+                        }
+                    }
+
+                    BtPillAction {
+                        visible: root.detailMode !== "forget" && root.selectionConnected
+                        Layout.fillWidth: true
+                        label: "Disconnect"
+                        accentColor: Colors.yellow
+                        onTriggered: {
+                            if (root.selectedDevice)
+                                BluetoothService.disconnectDevice(root.selectedDevice.address)
+                            root.clearSelection()
+                        }
+                    }
+
+                    BtPillAction {
+                        visible: root.detailMode !== "forget" && (root.selectionConnected || root.selectionPaired)
+                        Layout.fillWidth: true
+                        label: "Forget"
+                        accentColor: Colors.orange
+                        onTriggered: root.requestForget()
+                    }
+
+                    BtPillAction {
+                        visible: root.detailMode === "forget"
+                        Layout.fillWidth: true
+                        label: "Confirm forget"
+                        accentColor: Colors.red
+                        onTriggered: {
+                            if (root.selectedDevice)
+                                BluetoothService.forgetDevice(root.selectedDevice.address)
+                            root.clearSelection()
+                        }
+                    }
+
+                    BtPillAction {
+                        visible: root.detailMode === "forget"
+                        Layout.fillWidth: true
+                        label: "Keep"
+                        accentColor: Colors.muted
+                        onTriggered: root.keepDevice()
+                    }
+                }
+            }
+        }
+    }
+
+    // Device row: dominant when primary (connected), quiet otherwise.
+    component BtDeviceRow: Rectangle {
+        id: deviceRow
+
+        property bool primary: false
+        property string glyphText: "󰂯"
+        property string titleText: "Bluetooth device"
+        property string metaText: ""
+        property string batteryText: ""
+        property string batteryGlyphText: "󰁹"
+        property bool isConnected: false
+        property bool isSelected: false
+
+        signal rowSelected()
+
+        Layout.fillWidth: true
+        implicitHeight: rowContent.implicitHeight + (deviceRow.primary ? Theme.spacingSm * 2 : Theme.spacingXs * 2)
+        radius: Theme.radiusMd
+        color: deviceRow.isSelected
+               ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
+               : (deviceRow.isConnected
+                  ? Qt.rgba(Colors.green.r, Colors.green.g, Colors.green.b, 0.10)
+                  : (rowClickArea.containsMouse ? Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b, 0.40) : "transparent"))
+        border.width: 0
+
+        RowLayout {
+            id: rowContent
+            anchors.fill: parent
+            anchors.leftMargin: Theme.spacingSm
+            anchors.rightMargin: Theme.spacingSm
+            anchors.topMargin: deviceRow.primary ? Theme.spacingSm : Theme.spacingXs
+            anchors.bottomMargin: deviceRow.primary ? Theme.spacingSm : Theme.spacingXs
+            spacing: Theme.spacingSm
+
+            Rectangle {
+                Layout.preferredWidth: deviceRow.primary ? Theme.fontSizeIcon + Theme.spacingMd : Theme.fontSizeBody + Theme.spacingXs
+                Layout.preferredHeight: deviceRow.primary ? Theme.fontSizeIcon + Theme.spacingMd : Theme.fontSizeBody + Theme.spacingXs
+                Layout.alignment: Qt.AlignVCenter
+                radius: Theme.radiusMd
+                color: Qt.rgba(deviceRow.isConnected ? Colors.green.r : Colors.muted.r,
+                               deviceRow.isConnected ? Colors.green.g : Colors.muted.g,
+                               deviceRow.isConnected ? Colors.green.b : Colors.muted.b,
+                               deviceRow.primary ? 0.14 : 0.08)
+                border.width: 0
+
+                Text {
+                    anchors.centerIn: parent
+                    text: deviceRow.glyphText
+                    color: deviceRow.isConnected ? Colors.green : (deviceRow.primary ? Colors.text : Colors.muted)
+                    font {
+                        family: Colors.monoFont
+                        pixelSize: deviceRow.primary ? Theme.fontSizeBodyLg : Theme.fontSizeBody
+                    }
+                }
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
+                spacing: 0
+
+                Text {
+                    Layout.fillWidth: true
+                    text: deviceRow.titleText
+                    elide: Text.ElideRight
+                    color: deviceRow.isConnected ? Colors.textBright : (deviceRow.primary ? Colors.text : Colors.textDim)
+                    font {
+                        family: Colors.uiFont
+                        pixelSize: deviceRow.primary ? Theme.fontSizeBody : Theme.fontSizeLabel
+                        weight: deviceRow.primary ? Font.DemiBold : Font.Normal
+                    }
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    visible: deviceRow.metaText.length > 0
+                    text: deviceRow.metaText
+                    elide: Text.ElideRight
+                    color: deviceRow.primary ? Colors.textDim : Colors.muted
+                    font {
+                        family: Colors.uiFont
+                        pixelSize: deviceRow.primary ? Theme.fontSizeLabel : Theme.fontSizeCaption
+                        capitalization: deviceRow.primary ? Font.MixedCase : Font.AllUppercase
+                    }
+                }
+            }
+
+            // Battery is a compact secondary readout, never a headline.
+            ColumnLayout {
+                Layout.alignment: Qt.AlignVCenter
+                visible: deviceRow.batteryText.length > 0
+                spacing: 0
+
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: deviceRow.batteryGlyphText
+                    color: deviceRow.primary ? Colors.textDim : Colors.muted
+                    font { family: Colors.monoFont; pixelSize: Theme.fontSizeLabel }
+                }
+
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: deviceRow.batteryText
+                    color: deviceRow.primary ? Colors.textDim : Colors.muted
+                    font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
+                }
+            }
+        }
+
+        MouseArea {
+            id: rowClickArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: deviceRow.rowSelected()
+        }
+    }
+
+    // Borderless tinted pill: quiet variant for secondary actions.
+    component BtPillAction: Rectangle {
+        id: pillAction
+
+        property string label: ""
+        property string glyph: ""
+        property color accentColor: Colors.accent
+        property bool quiet: false
+
+        signal triggered()
+
+        implicitWidth: pillRow.implicitWidth + Theme.spacingMd
+        implicitHeight: 26
+        radius: Theme.radiusPill
+        opacity: enabled ? 1.0 : 0.55
+        color: pillAction.quiet
+               ? (pillClickArea.containsMouse
+                  ? Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, 0.16)
+                  : "transparent")
+               : (pillClickArea.containsMouse
+                  ? Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, 0.24)
+                  : Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, 0.14))
+        border.width: 0
+
+        RowLayout {
+            id: pillRow
+            anchors.centerIn: parent
+            spacing: Theme.spacingXs
+
+            Text {
+                visible: pillAction.glyph.length > 0
+                text: pillAction.glyph
+                color: pillAction.quiet ? pillAction.accentColor : Colors.text
+                font { family: Colors.monoFont; pixelSize: Theme.fontSizeLabel }
+            }
+
+            Text {
+                text: pillAction.label
+                color: pillAction.quiet ? pillAction.accentColor : Colors.text
+                font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
+            }
+        }
+
+        MouseArea {
+            id: pillClickArea
+            anchors.fill: parent
+            enabled: pillAction.enabled
+            hoverEnabled: enabled
+            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+            onClicked: pillAction.triggered()
+        }
+    }
+}

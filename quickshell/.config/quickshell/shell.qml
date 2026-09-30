@@ -266,7 +266,7 @@ ShellRoot {
             required property ShellScreen modelData
 
             screen: modelData
-            screenName: modelData.name
+            screenName: modelData === null ? "" : modelData.name
             // Hyprland monitor behind this bar's screen, injected so no
             // per-screen component resolves compositor identity itself.
             // Hyprland.monitorFor() is a plain invokable that emits nothing,
@@ -274,7 +274,11 @@ ShellRoot {
             // publish a screen before Hyprland publishes its monitor list
             // (startup) or replace it during a hot-plug, and this binding must
             // re-resolve when that happens instead of sticking at null.
+            // modelData itself can still be unassigned while the delegate is
+            // being created, which logged a TypeError here once per startup, so
+            // both dereferences below are guarded.
             hyprlandMonitor: {
+                if (modelData === null) return null
                 const knownMonitors = Hyprland.monitors.values
                 if (knownMonitors.length === 0) return null
                 return Hyprland.monitorFor(modelData)

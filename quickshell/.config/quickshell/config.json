@@ -40,6 +40,6 @@
     "visualBounds": false,
     "borderColor": "#ff3344",
     "borderWidth": 1,
-    "barSilhouette": false
+    "barSilhouette": true
   }
 }

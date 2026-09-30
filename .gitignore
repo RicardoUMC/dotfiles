@@ -7,3 +7,6 @@ __pycache__/
 .sdd/
 .atl/
 openspec/
+
+# CodeGraph local index
+.codegraph/

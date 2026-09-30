@@ -8,10 +8,16 @@ import "../theme"
 // Layered composition (same grammar as the Wi-Fi card):
 //   Layer 1 — hero block anchored on adapter state: powered flag, connected
 //             count and discovery state, with the module's only accent seam
-//             and a dedicated state puck.
+//             and a dedicated state puck. The hero's trailing edge carries the
+//             adapter power switch, which changes weight with adapter state:
+//               on  — quiet borderless rail control, secondary to identity.
+//               off — the hero itself becomes the action and the switch is
+//                     emphasized, so powering the adapter back up is reachable
+//                     without a list that cannot render.
 //   Layer 2 — primary "Connected devices" group, visually dominant, with
 //             battery as a compact secondary readout.
-//   Layer 3 — quiet "Available devices" group; discovery lives in its header.
+//   Layer 3 — quiet "Available devices" group; discovery and the overflow
+//             reveal live in its header.
 //   Layer 4 — accent-tinted detail sheet for pair / connect / disconnect /
 //             forget / cancel, using borderless pill actions.
 //
@@ -31,11 +37,38 @@ Rectangle {
     property string selectedAddress: ""
     property string detailMode: "" // "connected" | "available" | "forget" | "pair" | "pairing"
     property string forgetReturnMode: ""
+    // Adapter power is requested through the service, which refreshes on its
+    // own cadence; these track the outstanding request so the affordance never
+    // reads as dead and never queues a second call while one is running.
+    property bool powerPending: false
+    property bool powerPendingTarget: false
 
     readonly property int visibleDeviceCount: 6
+    // Overflow is a view mode, not a different list: the preview slice stays
+    // the default and the group-header control reveals the rest in place.
+    property bool showAllDevices: false
+    readonly property int hiddenDeviceCount: Math.max(0, availableDevices.length - visibleDeviceCount)
+    readonly property bool devicesTruncated: hiddenDeviceCount > 0
+
+    // A power change is not instant: `bluetoothctl power` answers, then the
+    // service refresh has to observe it. Settle window is three refresh cycles,
+    // derived from Theme.animSlow so it stays inside the shell's timing tokens.
+    readonly property int powerSettleMs: Theme.animSlow * 30
+
+    function requestPower(nextState) {
+        if (powerPending)
+            return
+        powerPendingTarget = nextState
+        powerPending = true
+        clearSelection()
+        BluetoothService.setBluetoothEnabled(nextState)
+        powerSettleTimer.restart()
+    }
     readonly property int connectedCount: (BluetoothService.connectedDevices || []).length
     readonly property var availableDevices: availableDeviceList()
-    readonly property var visibleAvailableDevices: availableDevices.slice(0, visibleDeviceCount)
+    readonly property var visibleAvailableDevices: showAllDevices
+                                                   ? availableDevices
+                                                   : availableDevices.slice(0, visibleDeviceCount)
     readonly property var selectedDevice: selectedAddress.length > 0 ? deviceByAddress(selectedAddress) : null
     readonly property bool selectionConnected: selectedDevice !== null && !!selectedDevice.connected
     readonly property bool selectionPaired: selectedDevice !== null
@@ -77,6 +110,8 @@ Rectangle {
     readonly property string heroMetaText: {
         if (BluetoothService.errorMessage.length > 0)
             return "Last action failed"
+        if (root.powerPending)
+            return root.powerPendingTarget ? "Turning Bluetooth on…" : "Turning Bluetooth off…"
         if (!BluetoothService.bluetoothEnabled)
             return "Turn Bluetooth on to manage devices"
         if (root.connectedCount > 1)
@@ -220,7 +255,18 @@ Rectangle {
         forgetReturnMode = ""
     }
 
-    onExpandedChanged: if (!expanded) clearSelection()
+    // A detail sheet for a row that is no longer rendered would describe
+    // nothing, so any collapse back to the preview clears the selection.
+    onShowAllDevicesChanged: if (!showAllDevices) clearSelection()
+    // Once the list fits in the preview there is nothing left to reveal; drop
+    // the mode so a later discovery cannot silently re-expand a stale view.
+    onDevicesTruncatedChanged: if (!devicesTruncated) showAllDevices = false
+    onExpandedChanged: {
+        if (expanded)
+            return
+        clearSelection()
+        showAllDevices = false
+    }
     onStandaloneChanged: if (standalone) expanded = true
     onVisibleChanged: {
         if (!visible)
@@ -255,6 +301,13 @@ Rectangle {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
+                    // With the adapter off the hero has no device list to reveal,
+                    // so the whole block is the power action instead of the
+                    // expander.
+                    if (!BluetoothService.bluetoothEnabled) {
+                        root.requestPower(true)
+                        return
+                    }
                     if (root.standalone)
                         root.expanded = true
                     else
@@ -351,6 +404,16 @@ Rectangle {
                         color: Colors.textDim
                         font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
                     }
+                }
+
+                // Adapter power — the module's system switch. Quiet while the
+                // adapter is on, emphasized as the hero action while it is off.
+                BtPowerSwitch {
+                    radioOn: BluetoothService.bluetoothEnabled
+                    pending: root.powerPending
+                    emphasis: !BluetoothService.bluetoothEnabled
+                    actionLabel: root.powerPendingTarget ? "Turn on" : "Turn off"
+                    onActivated: root.requestPower(!BluetoothService.bluetoothEnabled)
                 }
 
                 Rectangle {
@@ -494,6 +557,17 @@ Rectangle {
                     Layout.preferredHeight: 1
                 }
 
+                BtPillAction {
+                    Layout.alignment: Qt.AlignVCenter
+                    label: root.showAllDevices
+                           ? "Show top " + root.visibleDeviceCount
+                           : "Show all " + root.availableDevices.length
+                    accentColor: Colors.accent
+                    quiet: true
+                    visible: root.devicesTruncated
+                    onTriggered: root.showAllDevices = !root.showAllDevices
+                }
+
                 // Discovery trigger: the pill starts the service's bounded
                 // bluetoothctl scan; the label and enabled state follow the
                 // optimistic discovering flag while that scan is in flight.
@@ -530,15 +604,6 @@ Rectangle {
                     isSelected: root.selectedAddress === modelData.address
                     onRowSelected: root.selectAvailable(modelData)
                 }
-            }
-
-            Text {
-                Layout.fillWidth: true
-                Layout.topMargin: Theme.spacingXs
-                visible: root.availableDevices.length > root.visibleDeviceCount
-                text: "+" + (root.availableDevices.length - root.visibleDeviceCount) + " more devices available"
-                color: Colors.muted
-                font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
             }
         }
 
@@ -805,6 +870,152 @@ Rectangle {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: deviceRow.rowSelected()
+        }
+    }
+
+    // Clear the outstanding power request as soon as the service reports the
+    // state we asked for; the timer is the fallback when it never arrives.
+    Connections {
+        target: BluetoothService
+        function onBluetoothEnabledChanged() {
+            if (!root.powerPending || BluetoothService.bluetoothEnabled !== root.powerPendingTarget)
+                return
+            root.powerPending = false
+            powerSettleTimer.stop()
+        }
+    }
+
+    Timer {
+        id: powerSettleTimer
+        interval: root.powerSettleMs
+        onTriggered: root.powerPending = false
+    }
+
+    // Adapter power — the module's system switch.
+    //
+    // One control at two weights, so power is always reachable and never reads
+    // as a toggle bolted onto a card:
+    //   quiet    — adapter on: power glyph over a thin accent rail, secondary
+    //              to device identity and borderless like the rest of the
+    //              panel chrome.
+    //   emphasis — adapter off: the same rail widens under a labelled accent
+    //              slab, because powering the adapter back up is the only
+    //              action this panel has left.
+    // While a request is in flight the rail turns into a sweeping track and the
+    // control stops accepting clicks.
+    component BtPowerSwitch: Rectangle {
+        id: powerSwitch
+
+        property bool radioOn: false
+        property bool pending: false
+        property bool emphasis: false
+        property string actionLabel: "Power"
+
+        signal activated()
+
+        Layout.alignment: Qt.AlignVCenter
+        implicitWidth: powerContent.implicitWidth + Theme.spacingMd
+        implicitHeight: powerContent.implicitHeight + Theme.spacingXs * 2
+        radius: powerSwitch.emphasis ? Theme.radiusMd : Theme.radiusPill
+        opacity: powerSwitch.pending ? 0.72 : 1.0
+        color: powerSwitch.emphasis
+               ? (powerClickArea.containsMouse
+                  ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.24)
+                  : Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.14))
+               : (powerClickArea.containsMouse
+                  ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.10)
+                  : "transparent")
+        border.width: 0
+
+        RowLayout {
+            id: powerContent
+            anchors.centerIn: parent
+            spacing: Theme.spacingXs
+
+            ColumnLayout {
+                id: powerStack
+                Layout.alignment: Qt.AlignVCenter
+                spacing: Theme.spacingXs
+
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: "󰐥"
+                    color: powerSwitch.emphasis
+                           ? Colors.accent
+                           : (powerSwitch.radioOn ? Colors.textDim : Colors.muted)
+                    font { family: Colors.monoFont; pixelSize: Theme.fontSizeBody }
+                }
+
+                // The rail: this module's single "system switch" signature.
+                Rectangle {
+                    id: powerRail
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.preferredWidth: powerSwitch.emphasis
+                                           ? Theme.fontSizeIcon + Theme.spacingMd
+                                           : Theme.fontSizeBody + Theme.spacingXs
+                    Layout.preferredHeight: Theme.accentSeamWidth
+                    radius: Theme.radiusPill
+                    color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
+                    border.width: 0
+
+                    Rectangle {
+                        visible: !powerSwitch.pending
+                        anchors.fill: parent
+                        radius: Theme.radiusPill
+                        color: powerSwitch.radioOn ? Colors.accent : Colors.muted
+                        opacity: powerSwitch.radioOn ? 0.95 : 0.55
+                    }
+
+                    // In-flight sweep: the request is running, not dead.
+                    Rectangle {
+                        id: powerRailSweep
+                        visible: powerSwitch.pending
+                        width: Theme.spacingSm
+                        height: powerRail.height
+                        radius: Theme.radiusPill
+                        color: Colors.accent
+
+                        SequentialAnimation on x {
+                            running: powerRailSweep.visible
+                            loops: Animation.Infinite
+                            NumberAnimation {
+                                from: 0
+                                to: Math.max(0, powerRail.width - powerRailSweep.width)
+                                duration: Theme.animNormal
+                                easing.type: Easing.InOutSine
+                            }
+                            NumberAnimation {
+                                from: Math.max(0, powerRail.width - powerRailSweep.width)
+                                to: 0
+                                duration: Theme.animNormal
+                                easing.type: Easing.InOutSine
+                            }
+                        }
+                    }
+                }
+            }
+
+            Text {
+                Layout.alignment: Qt.AlignVCenter
+                visible: powerSwitch.emphasis
+                text: powerSwitch.actionLabel
+                color: Colors.accent
+                font {
+                    family: Colors.uiFont
+                    pixelSize: Theme.fontSizeCaption
+                    capitalization: Font.AllUppercase
+                    weight: Font.DemiBold
+                }
+            }
+        }
+
+        MouseArea {
+            id: powerClickArea
+            anchors.fill: parent
+            enabled: !powerSwitch.pending
+            hoverEnabled: true
+            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+            onClicked: powerSwitch.activated()
         }
     }
 

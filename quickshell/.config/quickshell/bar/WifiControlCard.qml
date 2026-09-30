@@ -7,8 +7,14 @@ import "../theme"
 //
 // Layered composition:
 //   Layer 1 — hero block for the connected network identity, with a
-//             state-colored accent seam and a dedicated signal puck.
-//   Layer 2 — quiet, dense "Nearby networks" group; Scan lives in its header.
+//             state-colored accent seam and a dedicated signal puck. The
+//             hero's trailing edge carries the radio power switch, which
+//             changes weight with the radio state:
+//               on  — quiet borderless rail control, secondary to identity.
+//               off — the hero itself becomes the action and the switch is
+//                     emphasized so "turn it back on" is the one move left.
+//   Layer 2 — quiet, dense "Nearby networks" group; Scan and the overflow
+//             reveal live in its header, so the list body stays pure content.
 //   Layer 3 — accent-tinted detail sheet for connect / password / forget.
 //
 // Geometry comes from Theme.qml, color and type from Colors.qml.
@@ -27,11 +33,38 @@ Rectangle {
     property var selectedNetwork: null
     property string detailMode: "" // "known" | "password" | "open" | "forget"
     property string passwordText: ""
+    // Radio power is requested through the service, which refreshes on its own
+    // cadence; these track the outstanding request so the affordance never
+    // reads as dead and never queues a second call while one is running.
+    property bool powerPending: false
+    property bool powerPendingTarget: false
 
     readonly property int visibleNetworkCount: 5
+    // Overflow is a view mode, not a different list: the preview slice stays
+    // the default and the group-header control reveals the rest in place.
+    property bool showAllNetworks: false
+    readonly property int hiddenNetworkCount: Math.max(0, sortedNetworks.length - visibleNetworkCount)
+    readonly property bool networksTruncated: hiddenNetworkCount > 0
+
+    // A radio toggle is not instant: `nmcli radio` answers, then the service
+    // refresh has to observe it. Settle window is three refresh cycles, derived
+    // from Theme.animSlow so it stays inside the shell's timing tokens.
+    readonly property int powerSettleMs: Theme.animSlow * 30
+
+    function requestPower(nextState) {
+        if (powerPending)
+            return
+        powerPendingTarget = nextState
+        powerPending = true
+        clearSelection()
+        WifiService.setWifiEnabled(nextState)
+        powerSettleTimer.restart()
+    }
     readonly property bool connected: WifiService.activeSsid.length > 0
     readonly property var sortedNetworks: sortedNetworkList()
-    readonly property var visibleNetworks: sortedNetworks.slice(0, visibleNetworkCount)
+    readonly property var visibleNetworks: showAllNetworks
+                                           ? sortedNetworks
+                                           : sortedNetworks.slice(0, visibleNetworkCount)
 
     // Single source of truth for "state color": seam, status label and puck.
     readonly property color heroStateColor: {
@@ -67,8 +100,10 @@ Rectangle {
     readonly property string heroMetaText: {
         if (WifiService.errorMessage.length > 0)
             return "Last action failed"
+        if (root.powerPending)
+            return root.powerPendingTarget ? "Turning Wi-Fi on…" : "Turning Wi-Fi off…"
         if (!WifiService.wifiEnabled)
-            return "Wi-Fi is off"
+            return "Select to turn Wi-Fi on"
         if (root.connected)
             return "Signal " + root.signalText(WifiService.activeSignal)
         return "Select a network to connect"
@@ -127,7 +162,18 @@ Rectangle {
         passwordText = ""
     }
 
-    onExpandedChanged: if (!expanded) clearSelection()
+    // A detail sheet for a row that is no longer rendered would describe
+    // nothing, so any collapse back to the preview clears the selection.
+    onShowAllNetworksChanged: if (!showAllNetworks) clearSelection()
+    // Once the list fits in the preview there is nothing left to reveal; drop
+    // the mode so a later scan cannot silently re-expand a stale view.
+    onNetworksTruncatedChanged: if (!networksTruncated) showAllNetworks = false
+    onExpandedChanged: {
+        if (expanded)
+            return
+        clearSelection()
+        showAllNetworks = false
+    }
     onStandaloneChanged: if (standalone) expanded = true
     onVisibleChanged: if (visible && standalone) expanded = true
 
@@ -157,6 +203,12 @@ Rectangle {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
+                    // With the radio off the hero has no list to reveal, so the
+                    // whole block is the power action instead of the expander.
+                    if (!WifiService.wifiEnabled) {
+                        root.requestPower(true)
+                        return
+                    }
                     if (root.standalone)
                         root.expanded = true
                     else
@@ -255,6 +307,16 @@ Rectangle {
                     }
                 }
 
+                // Radio power — the module's system switch. Quiet while the
+                // radio is on, emphasized as the hero action while it is off.
+                WifiPowerSwitch {
+                    radioOn: WifiService.wifiEnabled
+                    pending: root.powerPending
+                    emphasis: !WifiService.wifiEnabled
+                    actionLabel: root.powerPendingTarget ? "Turn on" : "Turn off"
+                    onActivated: root.requestPower(!WifiService.wifiEnabled)
+                }
+
                 Rectangle {
                     id: chevronButton
                     visible: !root.standalone && WifiService.wifiEnabled
@@ -332,6 +394,17 @@ Rectangle {
 
                 WifiPillAction {
                     Layout.alignment: Qt.AlignVCenter
+                    label: root.showAllNetworks
+                           ? "Show top " + root.visibleNetworkCount
+                           : "Show all " + root.sortedNetworks.length
+                    accentColor: Colors.accent
+                    quiet: true
+                    visible: root.networksTruncated
+                    onTriggered: root.showAllNetworks = !root.showAllNetworks
+                }
+
+                WifiPillAction {
+                    Layout.alignment: Qt.AlignVCenter
                     label: WifiService.scanning ? "Scanning…" : "Scan"
                     glyph: "󰑓"
                     accentColor: Colors.accent
@@ -365,15 +438,6 @@ Rectangle {
                                 && root.selectedNetwork.ssid === modelData.ssid
                     onRowSelected: root.selectNetwork(modelData)
                 }
-            }
-
-            Text {
-                Layout.fillWidth: true
-                Layout.topMargin: Theme.spacingXs
-                visible: root.sortedNetworks.length > root.visibleNetworkCount
-                text: "+" + (root.sortedNetworks.length - root.visibleNetworkCount) + " more networks available"
-                color: Colors.muted
-                font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
             }
 
             // ── Layer 3 — selection detail sheet ───────────────────────
@@ -607,6 +671,152 @@ Rectangle {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: networkRow.rowSelected()
+        }
+    }
+
+    // Clear the outstanding power request as soon as the service reports the
+    // state we asked for; the timer is the fallback when it never arrives.
+    Connections {
+        target: WifiService
+        function onWifiEnabledChanged() {
+            if (!root.powerPending || WifiService.wifiEnabled !== root.powerPendingTarget)
+                return
+            root.powerPending = false
+            powerSettleTimer.stop()
+        }
+    }
+
+    Timer {
+        id: powerSettleTimer
+        interval: root.powerSettleMs
+        onTriggered: root.powerPending = false
+    }
+
+    // Radio power — the module's system switch.
+    //
+    // One control at two weights, so power is always reachable and never reads
+    // as a toggle bolted onto a card:
+    //   quiet    — radio on: power glyph over a thin accent rail, secondary to
+    //              the hero's network identity and borderless like the rest of
+    //              the panel chrome.
+    //   emphasis — radio off: the same rail widens under a labelled accent
+    //              slab, because powering the radio back up is the only action
+    //              this panel has left.
+    // While a request is in flight the rail turns into a sweeping track and
+    // the control stops accepting clicks.
+    component WifiPowerSwitch: Rectangle {
+        id: powerSwitch
+
+        property bool radioOn: false
+        property bool pending: false
+        property bool emphasis: false
+        property string actionLabel: "Power"
+
+        signal activated()
+
+        Layout.alignment: Qt.AlignVCenter
+        implicitWidth: powerContent.implicitWidth + Theme.spacingMd
+        implicitHeight: powerContent.implicitHeight + Theme.spacingXs * 2
+        radius: powerSwitch.emphasis ? Theme.radiusMd : Theme.radiusPill
+        opacity: powerSwitch.pending ? 0.72 : 1.0
+        color: powerSwitch.emphasis
+               ? (powerClickArea.containsMouse
+                  ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.24)
+                  : Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.14))
+               : (powerClickArea.containsMouse
+                  ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.10)
+                  : "transparent")
+        border.width: 0
+
+        RowLayout {
+            id: powerContent
+            anchors.centerIn: parent
+            spacing: Theme.spacingXs
+
+            ColumnLayout {
+                id: powerStack
+                Layout.alignment: Qt.AlignVCenter
+                spacing: Theme.spacingXs
+
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: "󰐥"
+                    color: powerSwitch.emphasis
+                           ? Colors.accent
+                           : (powerSwitch.radioOn ? Colors.textDim : Colors.muted)
+                    font { family: Colors.monoFont; pixelSize: Theme.fontSizeBody }
+                }
+
+                // The rail: this module's single "system switch" signature.
+                Rectangle {
+                    id: powerRail
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.preferredWidth: powerSwitch.emphasis
+                                           ? Theme.fontSizeIcon + Theme.spacingMd
+                                           : Theme.fontSizeBody + Theme.spacingXs
+                    Layout.preferredHeight: Theme.accentSeamWidth
+                    radius: Theme.radiusPill
+                    color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
+                    border.width: 0
+
+                    Rectangle {
+                        visible: !powerSwitch.pending
+                        anchors.fill: parent
+                        radius: Theme.radiusPill
+                        color: powerSwitch.radioOn ? Colors.accent : Colors.muted
+                        opacity: powerSwitch.radioOn ? 0.95 : 0.55
+                    }
+
+                    // In-flight sweep: the request is running, not dead.
+                    Rectangle {
+                        id: powerRailSweep
+                        visible: powerSwitch.pending
+                        width: Theme.spacingSm
+                        height: powerRail.height
+                        radius: Theme.radiusPill
+                        color: Colors.accent
+
+                        SequentialAnimation on x {
+                            running: powerRailSweep.visible
+                            loops: Animation.Infinite
+                            NumberAnimation {
+                                from: 0
+                                to: Math.max(0, powerRail.width - powerRailSweep.width)
+                                duration: Theme.animNormal
+                                easing.type: Easing.InOutSine
+                            }
+                            NumberAnimation {
+                                from: Math.max(0, powerRail.width - powerRailSweep.width)
+                                to: 0
+                                duration: Theme.animNormal
+                                easing.type: Easing.InOutSine
+                            }
+                        }
+                    }
+                }
+            }
+
+            Text {
+                Layout.alignment: Qt.AlignVCenter
+                visible: powerSwitch.emphasis
+                text: powerSwitch.actionLabel
+                color: Colors.accent
+                font {
+                    family: Colors.uiFont
+                    pixelSize: Theme.fontSizeCaption
+                    capitalization: Font.AllUppercase
+                    weight: Font.DemiBold
+                }
+            }
+        }
+
+        MouseArea {
+            id: powerClickArea
+            anchors.fill: parent
+            enabled: !powerSwitch.pending
+            hoverEnabled: true
+            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+            onClicked: powerSwitch.activated()
         }
     }
 

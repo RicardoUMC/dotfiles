@@ -18,8 +18,14 @@ Rectangle {
     property bool expanded: false
     property bool standalone: false
     readonly property int maxVisibleNotifications: 3
+    // The preview stays the default view; the group-header control reveals the
+    // retained history in place and hands the overflow back to the panel scroll.
+    property bool showAllNotifications: false
     readonly property int notificationCount: notificationsState && notificationsState.recentModel ? notificationsState.recentModel.count : 0
-    readonly property int visibleNotificationCount: Math.min(maxVisibleNotifications, notificationCount)
+    readonly property int visibleNotificationCount: showAllNotifications
+                                                    ? notificationCount
+                                                    : Math.min(maxVisibleNotifications, notificationCount)
+    readonly property bool notificationsTruncated: notificationCount > maxVisibleNotifications
     readonly property bool soundMuted: notificationsState ? notificationsState.soundMuted : false
     readonly property bool doNotDisturb: notificationsState ? notificationsState.doNotDisturb : false
 
@@ -53,6 +59,15 @@ Rectangle {
     }
 
     onStandaloneChanged: if (standalone) expanded = true
+    // Collapse back to the newest-N preview whenever the section closes, so a
+    // re-opened panel never resumes in an unannounced full-history mode.
+    onExpandedChanged: if (!expanded) showAllNotifications = false
+    // History retention only grows the preview until it overflows it; once the
+    // store fits the preview again the mode has nothing left to reveal.
+    onNotificationCountChanged: {
+        if (!notificationsTruncated)
+            showAllNotifications = false
+    }
     onVisibleChanged: {
         if (!visible)
             expanded = false
@@ -184,6 +199,19 @@ Rectangle {
                     font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
                 }
 
+                // Group-level reveal for the retained history that the preview
+                // hides. Borderless pill, same weight as the other cards'
+                // header actions; `Clear all` stays the quieter destructive text.
+                NotificationPillAction {
+                    Layout.alignment: Qt.AlignVCenter
+                    visible: root.notificationsTruncated
+                    label: root.showAllNotifications
+                           ? "Show newest " + root.maxVisibleNotifications
+                           : "Show all " + root.notificationCount
+                    accentColor: Colors.accent
+                    onTriggered: root.showAllNotifications = !root.showAllNotifications
+                }
+
                 Text {
                     visible: root.notificationCount > 0
                     text: "Clear all"
@@ -308,13 +336,50 @@ Rectangle {
                 }
             }
 
+            // Overflow is now reachable through the `Recent` header control, so
+            // no remainder row is rendered here: the list either shows the
+            // preview or shows everything.
+        }
+    }
+
+    // Borderless tinted pill: the notification card's group-action vocabulary,
+    // transparent until hovered or pressed, tinted by the passed intent color.
+    component NotificationPillAction: Rectangle {
+        id: pillAction
+
+        property string label: ""
+        property color accentColor: Colors.accent
+
+        signal triggered()
+
+        implicitWidth: pillRow.implicitWidth + Theme.spacingMd
+        implicitHeight: 26
+        radius: Theme.radiusPill
+        opacity: enabled ? 1.0 : 0.55
+        color: pillClickArea.containsMouse
+               ? Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, 0.16)
+               : "transparent"
+        border.width: 0
+
+        RowLayout {
+            id: pillRow
+            anchors.centerIn: parent
+            spacing: Theme.spacingXs
+
             Text {
-                Layout.fillWidth: true
-                visible: root.notificationCount > root.maxVisibleNotifications
-                text: "+" + (root.notificationCount - root.maxVisibleNotifications) + " more recent notifications"
-                color: Colors.textDim
-                font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
+                text: pillAction.label
+                color: pillAction.accentColor
+                font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
             }
+        }
+
+        MouseArea {
+            id: pillClickArea
+            anchors.fill: parent
+            enabled: pillAction.enabled
+            hoverEnabled: enabled
+            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+            onClicked: pillAction.triggered()
         }
     }
 

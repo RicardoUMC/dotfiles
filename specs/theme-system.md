@@ -2,7 +2,7 @@
 
 ## Description
 
-Mutable `Theme.qml` singleton providing structural design tokens (radius, spacing, opacity, bar geometry, dashboard geometry, tab geometry, debug scaffolding, animation durations, font sizes) with hot-reload via `config.json`. Complements the static `Colors.qml` palette — colors are not part of this system.
+Mutable `Theme.qml` singleton providing structural design tokens (radius, spacing, opacity, bar geometry, bar screen selection, dashboard geometry, control-center panel chrome, tab geometry, debug scaffolding, animation durations, font sizes) with hot-reload via `config.json`. Complements the static `Colors.qml` palette — colors are not part of this system.
 
 ---
 
@@ -32,7 +32,7 @@ Core structural tokens with their defaults:
 | Opacity | `opacityBorder` | `0.30` | `real` |
 | Opacity | `opacityDim` | `0.15` | `real` |
 | Bar | `barHeight` | `37` | `int` |
-| Bar | `barChipHeight` | `26` | `int` |
+| Bar | `barChipHeight` | `30` | `int` |
 | Bar | `barCurveRadius` | `14` | `int` |
 | Bar | `barWrapDepth` | `14` | `int` |
 | Bar | `centerCollapsedWidth` | `360` | `int` |
@@ -53,14 +53,23 @@ Core structural tokens with their defaults:
 | Bar | `dashboardSparklineHeight` | `32` | `int` |
 | Bar | `dashboardFooterHeight` | `18` | `int` |
 | Bar | `barStyle` | `"silhouette"` | `string` |
+| Bar | `barScreens` | `"all"` | `var` |
+| Bar | `barNotchGapWidth` | `30` | `real` |
+| Bar | `barNotchDepthRatio` | `0.2` | `real` |
+| Panel chrome | `accentSeamWidth` | `4` | `int` |
+| Panel chrome | `panelSecondarySeamWidth` | `2` | `int` |
+| Panel chrome | `panelVolumeTrackHeight` | `8` | `int` |
+| Panel chrome | `rightPanelOpacity` | `0.94` | `real` |
 | Animation | `animFast` | `180` | `int` (ms) |
 | Animation | `animNormal` | `300` | `int` (ms) |
 | Animation | `animSlow` | `500` | `int` (ms) |
-| Font size | `fontSizeCaption` | `10` | `int` |
-| Font size | `fontSizeLabel` | `11` | `int` |
-| Font size | `fontSizeBody` | `13` | `int` |
-| Font size | `fontSizeBodyLg` | `14` | `int` |
-| Font size | `fontSizeIcon` | `18` | `int` |
+| Font size | `fontSizeCaption` | `12` | `int` |
+| Font size | `fontSizeLabel` | `13` | `int` |
+| Font size | `fontSizeBody` | `15` | `int` |
+| Font size | `fontSizeBodyLg` | `17` | `int` |
+| Font size | `fontSizeIcon` | `22` | `int` |
+
+Panel-chrome tokens map to `config.json` keys as follows: `accentSeamWidth` ← `panel.accentSeamWidth`, `panelSecondarySeamWidth` ← `panel.secondarySeamWidth`, `panelVolumeTrackHeight` ← `panel.volumeTrackHeight`, `rightPanelOpacity` ← `rightPanel.opacity`. `barScreens` ← `bar.screens`, `barNotchGapWidth` ← `bar.notchGapWidth`, `barNotchDepthRatio` ← `bar.notchDepthRatio`. A legacy `bar.curveDepthRatio` key still feeds the deprecated `barCurveDepthRatio` alias and acts as a fallback for `barNotchDepthRatio`.
 
 Additional implemented groups include tab geometry (`tabPaddingH`, `tabPaddingV`, `tabRadius`, `tabMaxHeight`, `tabCollapsedHeight`, `tabBgOpacity`), island/ornament experimental tokens, and debug scaffolding (`debugVisualBounds`, `debugBorderColor`, `debugBorderWidth`, `debugBarSilhouette`).
 
@@ -76,6 +85,30 @@ All migrated components produce stable visual output with default token values. 
 
 `Bar.qml` uses `barCurveRadius` as the shared corner curvature source and `barWrapDepth` as an independent decorative downward wrap depth. The panel `exclusiveZone` reserves only the measured interactive content height, not the full decorative silhouette height. The center notch uses `centerCollapsedWidth`, `centerExpandedWidth`, and `centerExpandedHeight` to grow in place into a dashboard without increasing reserved Hyprland space. `Bar.qml` uses dashboard body tokens for the expanded body radius, opacity, border width, and padding. `CenterDashboard.qml` uses dashboard rail/tab tokens. `MetricsPane.qml` and `MetricCard.qml` use dashboard card, progress, sparkline, and footer tokens.
 
+### Requirement: Panel Chrome Seam Separation
+
+The control-center panel-chrome family has three deliberately distinct seam/track tokens. They must not be merged with each other or with dashboard geometry:
+
+- `accentSeamWidth` (`4`, `panel.accentSeamWidth`) — the hero accent seam of the three specialty cards (`WifiControlCard.qml`, `BluetoothControlCard.qml`, `AudioControlCard.qml` hero blocks).
+- `panelSecondarySeamWidth` (`2`, `panel.secondarySeamWidth`) — the accent seam of the nested audio device panel (`AudioControlPanel.qml`), intentionally thinner than the hero seam.
+- `panelVolumeTrackHeight` (`8`, `panel.volumeTrackHeight`) — the Audio card volume track thickness and knob diameter (`AudioControlCard.qml`).
+
+`dashboardProgressHeight` belongs to center-dashboard metric bars (`MetricCard.qml`) only and is no longer reused as seam geometry anywhere. The hero seam sharing the numeric value `4` with `dashboardProgressHeight` is coincidence, not coupling.
+
+`rightPanelOpacity` (`0.94`, `rightPanel.opacity`) drives only the outer background of the right control-center surface (`RightControlCenter.qml`); inner specialty cards and slabs keep their own subtle translucency and are NOT bound to this token.
+
+### Requirement: Bar Screen Selection
+
+`barScreens` (`var`, default `"all"`, `config.json` key `bar.screens`) resolves which connected screens get a `Bar` instance. The selector lives in `shell.qml` (`screenSelector.enabledScreens`), which feeds the per-screen `Variants { model: ... }` that instantiates `Bar.qml`.
+
+- Accepted values: the string `"all"`, or an array of `ShellScreen.name` strings (e.g. `["DP-1"]`).
+- Matching is by screen **name only** — never by index or ordering.
+- Names that match no connected screen are ignored.
+- If the resolved set comes out empty (typo'd or unplugged name), the shell falls back to ALL screens so a session is never left without a bar.
+- The binding re-evaluates on `Quickshell.screens` changes, so hot-plug adds and removes bar instances without a reload.
+
+One-bar-per-screen architecture, per-screen surface ownership, and overlay coordination are specified in `specs/multi-monitor.md`; this spec covers only the token contract.
+
 ### Requirement: Hot-Reload via config.json
 
 `Theme.qml` watches `~/.config/quickshell/config.json` via `FileView` with `watchChanges: true`. On file change, `FileView.reload()` refreshes the text content before a 100ms debounce `Timer` fires and re-parses the config, preventing reactions to partial writes while still applying live edits. Missing file uses defaults silently.
@@ -88,20 +121,24 @@ All migrated components produce stable visual output with default token values. 
 
 ## config.json Schema
 
-All fields optional. Missing fields keep defaults.
+Every key `Theme.applyConfig()` accepts, with the value it currently resolves to in this repo (defaults where `config.json` omits the key):
 
 ```json
 {
-  "radius":  { "sm": 6,    "md": 10,   "lg": 12  },
+  "radius":  { "sm": 6,    "md": 10,   "lg": 12,   "pill": 999 },
   "spacing": { "xs": 4,    "sm": 8,    "md": 12,  "lg": 16, "xl": 24 },
   "opacity": { "surface": 0.97, "overlay": 0.33, "border": 0.30, "dim": 0.15 },
-  "bar":     { "height": 37, "style": "silhouette", "chipHeight": 26, "curveRadius": 14, "wrapDepth": 14, "centerCollapsedWidth": 360, "centerExpandedWidth": 520, "centerExpandedHeight": 260 },
+  "bar":     { "height": 37, "style": "silhouette", "screens": "all", "chipHeight": 30, "curveRadius": 16, "wrapDepth": 12, "notchGapWidth": 30, "notchDepthRatio": 0.2, "centerCollapsedWidth": 360, "centerExpandedWidth": 520, "centerExpandedHeight": 260 },
   "dashboard": { "railWidth": 44, "bodyRadius": 10, "bodyOpacity": 0.35, "bodyBorderWidth": 1, "bodyPadding": 12, "tabHeight": 40, "tabSpacing": 8, "cardHeight": 42, "cardGap": 4, "progressHeight": 4, "progressRadius": 2, "sparklineWidth": 80, "sparklineHeight": 32, "footerHeight": 18 },
+  "panel":   { "accentSeamWidth": 4, "secondarySeamWidth": 2, "volumeTrackHeight": 8 },
+  "rightPanel": { "opacity": 0.94 },
   "anim":    { "fast": 180, "normal": 300, "slow": 500 },
-  "font":    { "caption": 10, "label": 11, "body": 13, "bodyLg": 14, "icon": 18 },
+  "font":    { "caption": 12, "label": 13, "body": 15, "bodyLg": 17, "icon": 22 },
   "debug":   { "visualBounds": false, "borderColor": "#ff3344", "borderWidth": 1, "barSilhouette": false }
 }
 ```
+
+The committed `config.json` currently overrides only two tokens away from their `Theme.qml` defaults: `bar.curveRadius` `14` → `16` and `bar.wrapDepth` `14` → `12`. It omits the `bar.center*` keys, which therefore resolve to their inline defaults shown above.
 
 Location in this stow-managed repo: `quickshell/.config/quickshell/config.json`, which maps to `~/.config/quickshell/config.json`.
 
@@ -167,6 +204,18 @@ Dashboard overrides are grouped under `dashboard.*` in `config.json` but exposed
 - **GIVEN** a component is bound to a token (e.g., `Theme.radiusSm`)
 - **WHEN** the token updates via hot-reload
 - **THEN** the component immediately receives and applies the new value
+
+### Scenario: Bar Screen Selection By Name
+
+- **GIVEN** `config.json` sets `bar.screens` to an array such as `["DP-1"]`
+- **WHEN** `shell.qml` resolves `screenSelector.enabledScreens`
+- **THEN** exactly the connected screens whose `ShellScreen.name` matches get a `Bar` instance, regardless of monitor index or ordering, and unmatched names are ignored
+
+### Scenario: Bar Screen Selection Falls Back To All
+
+- **GIVEN** `config.json` sets `bar.screens` to an array whose names match no connected screen
+- **WHEN** the resolved set comes out empty
+- **THEN** every connected screen gets a bar, so the session is never left without one
 
 ### Scenario: Dashboard Structural Overrides
 

@@ -94,6 +94,18 @@ Design tokens are split across two QML singletons:
 
 **Rule:** always use tokens — never hardcode font family names in components.
 
+**Size scale.** Text and icon sizes are structural values in `Theme.qml` and are hot-reloadable through the `font.*` group in `config.json`:
+
+| Token | Default | Config key | Role |
+| ----- | ------- | ---------- | ---- |
+| `Theme.fontSizeCaption` | `12` | `font.caption` | Eyebrow labels, secondary readouts, dense metadata |
+| `Theme.fontSizeLabel` | `13` | `font.label` | Chip labels, buttons, compact control text |
+| `Theme.fontSizeBody` | `15` | `font.body` | Default body and control text |
+| `Theme.fontSizeBodyLg` | `17` | `font.bodyLg` | Prominent values, section titles |
+| `Theme.fontSizeIcon` | `22` | `font.icon` | Nerd Font glyphs in bar and panel controls |
+
+Current `config.json` keeps the scale at its defaults (`12 / 13 / 15 / 17 / 22`).
+
 **Why SF Pro:** chosen over Geist and Outfit for the "premium software" feel. SF Pro Text for UI consistency, SF Pro Display for typographic hierarchy. Geist is installed but not used in the UI.
 
 ### Mutable structural tokens
@@ -103,7 +115,7 @@ Design tokens are split across two QML singletons:
 | Token | Default | Current config | Use |
 | ----- | ------- | -------------- | --- |
 | `Theme.barHeight` | `37` | `37` | Base top-bar offset used by overlays. |
-| `Theme.barChipHeight` | `26` | `26` | Uniform chip height for workspace pills, metrics, and power button. |
+| `Theme.barChipHeight` | `30` | `30` | Uniform chip height for workspace pills, metrics, power button, and right-island icon buttons. |
 | `Theme.barCurveRadius` | `14` | `16` | Shared silhouette/notch curvature source. |
 | `Theme.barWrapDepth` | `14` | `12` | Decorative downward wrap depth below the interactive bar content. |
 | `Theme.centerCollapsedWidth` | `360` | `360` | Collapsed center notch width. |
@@ -123,11 +135,26 @@ Design tokens are split across two QML singletons:
 | `Theme.dashboardSparklineWidth` | `80` | `80` | Metrics card sparkline width. |
 | `Theme.dashboardSparklineHeight` | `32` | `32` | Metrics card sparkline height. |
 | `Theme.dashboardFooterHeight` | `18` | `18` | Metrics pane footer row height. |
+| `Theme.rightPanelOpacity` | `0.94` | `0.94` | Outer background opacity of the right-island control-center surface (`rightPanel.opacity`). |
+| `Theme.accentSeamWidth` | `4` | `4` | Hero accent seam width inside the three control-center specialty cards — Wi-Fi, Bluetooth, and Audio hero blocks (`panel.accentSeamWidth`). |
+| `Theme.panelSecondarySeamWidth` | `2` | `2` | Accent seam of the nested audio device panel; deliberately thinner than the `accentSeamWidth` hero seam — do not merge them (`panel.secondarySeamWidth`). |
+| `Theme.panelVolumeTrackHeight` | `8` | `8` | Audio card volume track and knob thickness (`panel.volumeTrackHeight`). |
 | `Theme.barStyle` | `"silhouette"` | `"silhouette"` | Enables the masked wrapped silhouette; `"plain"` disables it. |
+| `Theme.barScreens` | `"all"` | `"all"` | Which screens get a bar: `"all"`, or an array of `ShellScreen.name` strings (`bar.screens`). Matching is by name only — never index or order; unmatched names are ignored; a resolved-empty set falls back to all screens so a session is never left without a bar. Architecture: `specs/multi-monitor.md`. |
+| `Theme.barNotchGapWidth` | `30` | `30` | Horizontal gap at each section boundary of the silhouette (`bar.notchGapWidth`). |
+| `Theme.barNotchDepthRatio` | `0.2` | `0.2` | Shared notch depth for all segments: depth = bar height × ratio (`bar.notchDepthRatio`). |
 
 Debug scaffolding is also configurable through `debug.*` keys. `debug.barSilhouette` intentionally remains available for high-contrast silhouette tuning and should only be disabled when Ricardo explicitly requests it.
 
 Dashboard body, rail, card, progress, sparkline, and footer geometry is configurable through the flat `Theme.dashboardXxx` properties above and the `dashboard.*` group in `config.json`. Defaults intentionally preserve the current center-dashboard visuals; large overrides may need proportional width/height tuning because the expanded notch remains bounded by `Theme.centerExpandedWidth` and `Theme.centerExpandedHeight`.
+
+Control-center panel chrome is a separate group: `Theme.accentSeamWidth`, `Theme.panelSecondarySeamWidth`, and `Theme.panelVolumeTrackHeight` are read from the `panel.*` group, and `Theme.rightPanelOpacity` from `rightPanel.opacity`. Within that family the seams are deliberately distinct and must not be merged:
+
+- `Theme.accentSeamWidth` (`4`) is the hero accent seam of the three specialty cards (Wi-Fi, Bluetooth, Audio hero blocks).
+- `Theme.panelSecondarySeamWidth` (`2`) is the seam of the nested audio device panel — intentionally thinner than the hero seam.
+- `Theme.panelVolumeTrackHeight` (`8`) is the Audio card volume track and knob thickness.
+
+The hero seam is **deliberately decoupled** from `Theme.dashboardProgressHeight`; the two happen to share the value `4` but answer to different design decisions. `Theme.dashboardProgressHeight` remains the center-dashboard metric-bar token only — it is no longer reused as seam geometry anywhere, and panel seams never read from it.
 
 ---
 
@@ -153,6 +180,7 @@ Mixed system — radius is contextual:
 - **Default**: semi-transparent surfaces with moderate blur (glassmorphism light)
 - **Configurable**: blur intensity exposed as a design token — user can increase to full glassmorphism
 - Surface opacity roughly `0.93–0.97` for panels, `0.30–0.40` for background tints
+- The right control-center outer surface is driven by `Theme.rightPanelOpacity` (default `0.94`, `rightPanel.opacity`) so the panel reads as one solid sheet; inner specialty cards and slabs stay subtly translucent and are not tied to that token.
 
 ### Accent Borders
 
@@ -181,20 +209,22 @@ The accepted silhouette design uses independent per-section surfaces coordinated
 
 ## Overlay System
 
-Full spec: overlays follow a **contextual focus and exclusivity** model.
+Full spec: `specs/overlay-manager.md`. Overlays follow a **session-global exclusivity** model.
 
 ### Exclusivity rules
 
-- Overlays from **different context groups** close automatically when another incompatible overlay opens
-- Overlays from the **same context group** (e.g. a submenu inside a panel) can coexist
-- Secondary overlays inherit their parent's context — opening them does not close the parent
+- Exclusivity is **one global slot**: `shell.qml` owns a single `activeOverlay` plus the single `activeScreenName` that requested it. There is no overlay stack and no list of open surfaces.
+- **At most one overlay is open in the whole session, across all screens.** Opening any overlay closes whatever was active, including an overlay owned by a different monitor.
+- The overlay renders on the screen whose `Bar` instance requested it; bar-owned surfaces pin their `PanelWindow` to that screen explicitly (`screenTarget` → inner `screen`).
+- There are **no context groups**. The `bar-primary` / `bar-secondary` grouping older drafts of this document described was never implemented; nothing in `shell.qml` stores or compares group membership.
+- Nested surfaces are **content, not overlays**. The audio device panel (`AudioControlPanel.qml`) lives inside the `RightControlCenter` surface, and the control-center section cards live inside that same surface, so opening or switching them is not an overlay transition and cannot close a parent. That composition — not a group table — is what lets a nested panel stay open without a second slot.
 
 ### Close triggers
 
-An exclusive overlay must close when:
+The active overlay must close when:
 
 - Click outside its interactive area
-- Another incompatible overlay takes focus
+- Another overlay opens (the slot is singular — see above)
 - `Escape` is pressed
 - Global focus is lost (workspace change, window switch)
 - Explicit close action
@@ -207,22 +237,32 @@ An exclusive overlay must close when:
 
 ### Hierarchy
 
-- Closing a parent overlay closes **all its descendants**
-- Opening sibling overlays closes only the incompatible subtree
-- Keyboard navigation respects the contextual hierarchy
+- With one slot there is no subtree to walk: closing the active overlay tears down the **entire surface**, including any expanded child content mounted inside it
+- Child content resets itself on invisibility (`NotificationControlCard` collapses its expansion; `RightControlCenter.open()` calls `resetSections()`), so a fresh open never restores a previously expanded child
+- Keyboard navigation acts on the single active surface
 
 ### Implementation
 
 - Coordination lives in `shell.qml` — components signal up, never communicate directly
-- A **50ms Timer** before opening a new overlay avoids Wayland serial conflicts
+- **Layer reservation:** the compositor's highest layer belongs to transient system feedback — notification toasts and the volume/brightness OSD. Everything the user opens and interacts with sits one layer below it, so feedback is never hidden behind a panel and panels never compete with it for attention. This is a protocol constraint rather than a visual preference: the compositor has no "bring to front" for shell surfaces, so the only reliable ordering is the layer each surface is born in.
+- A **50ms Timer** before opening a new overlay avoids Wayland serial conflicts — exactly one shared timer for the session, never one per bar
 - `Escape` closes the currently active overlay
+- Notification toasts and the OSD are **not** managed overlays: passive `Overlay`-layer surfaces that never take keyboard focus
 
-### Context groups (current)
+### The overlay slot (current and planned)
 
-| Group           | Members                                                                  |
-| --------------- | ------------------------------------------------------------------------ |
-| `bar-primary`   | Launcher, PowerMenu, MPRIS popup, Calendar (planned), Settings (planned) |
-| `bar-secondary` | Submenus and nested panels within a primary overlay                      |
+One slot, many requesters. These are surfaces that would occupy the slot, not groups that share it.
+
+| Surface | State | Notes |
+| ------- | ----- | ----- |
+| Launcher | Implemented | Opens on the focused monitor; dismiss-click routing can hand off to PowerMenu or the MPRIS popup |
+| PowerMenu | Implemented | Pinned to the requesting bar's screen |
+| MPRIS popup | Implemented | Reachable only through launcher outside-click routing |
+| Center dashboard (`center-panel`) | Implemented | Expands the bar's own center notch in place |
+| Right control center | Implemented | One surface hosting the Wi-Fi / Bluetooth / Audio / Notifications cards and the nested audio device panel |
+| Calendar | Planned | Would request the slot like any other overlay; see `specs/calendar.md` |
+| Settings GUI | Planned | Same; see `specs/settings-gui.md` |
+| Metrics dropdown | Dormant | Instantiated per bar with no open trigger |
 
 ---
 
@@ -257,10 +297,12 @@ Sound can be muted independently of notifications via IPC: `quickshell ipc call 
 Theme.radius.sm / md / lg / pill
 Theme.spacing.xs / sm / md / lg
 Theme.opacity.surface / overlay / dim
-Theme.bar.height / chipHeight / curveRadius / wrapDepth / style
+Theme.bar.height / chipHeight / curveRadius / wrapDepth / style / screens / notchGapWidth / notchDepthRatio
 Theme.dashboard.railWidth / bodyRadius / bodyOpacity / bodyBorderWidth / bodyPadding
 Theme.dashboard.tabHeight / tabSpacing
 Theme.dashboard.cardHeight / cardGap / progressHeight / progressRadius / sparklineWidth / sparklineHeight / footerHeight
+Theme.panel.accentSeamWidth / secondarySeamWidth / volumeTrackHeight
+Theme.rightPanel.opacity
 Theme.tab.paddingH / paddingV / radius / collapsedHeight
 Theme.font.caption / label / body / bodyLg / icon
 Theme.debug.visualBounds / borderColor / borderWidth / barSilhouette

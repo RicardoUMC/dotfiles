@@ -2,11 +2,15 @@
 
 ## Status
 
-Planned / Requirements discovery
+In Progress
+
+Implemented and lint-verified: `services/` Wi-Fi, Bluetooth and Audio singletons; the specialty cards (`WifiControlCard`, `BluetoothControlCard`, `AudioControlCard`/`AudioControlPanel`, `NotificationControlCard`, `MetricsControlCard`); the `RightControlCenter` host with per-section specialty routing; and compact right-island icons. Not yet verified at runtime on the live compositor, so this is `In Progress` rather than `Implemented`.
 
 ## Purpose
 
-The right bar island should become the shell's primary system-control entry point: compact in the bar, rich when opened. It should combine quick status, device controls, notifications, and advanced but well-organized device metrics while preserving the shell's clean Tokyo City visual language.
+The right bar island is the shell's primary system-control entry point: compact status in the bar, with each icon opening **its own specialty surface** rather than routing through a shared aggregate panel. It combines quick status, device controls, notifications, and organized device metrics while preserving the shell's Tokyo City visual language.
+
+The aggregate control center remains implemented as the neutral landing composition (no section selected), but the compact icons deep-link to a single specialty surface; see [Collapsed Right Island](#collapsed-right-island) for the routing and [Multi-Monitor](multi-monitor.md) for placement.
 
 ## Product Direction
 
@@ -156,17 +160,18 @@ Each style should eventually expose independent parameters through config and la
 
 ## Overlay Model
 
-The existing centralized overlay coordination in `shell.qml` should remain the authority. The desired model can be described as a contextual tree/graph:
+The existing centralized overlay coordination in `shell.qml` remains the authority. What it actually does today is a **single global slot**: one `activeOverlay` plus one `activeScreenName`, so opening any overlay closes the active one on any screen, with the surface pinned to the screen that requested it.
 
-- Opening an incompatible primary panel closes the previous primary panel.
-- Child panels can exist under their parent context.
-- Closing a parent closes all descendants.
-- The right control center and the center dashboard should be mutually exclusive: opening one should close the other because they are competing system focus surfaces.
+That model already satisfies most of what a tree would provide here, because nested panels in the control center are **content inside one surface**, not separate overlays: the Bluetooth detail pane, the audio secondary panel, and the notification mini panel all live within `RightControlCenter.qml`. There is nothing to cascade — closing the control center removes its expanded section with it.
+
+The requirements that remain true regardless of the model:
+
+- The right control center and the center dashboard are mutually exclusive, because they are competing members of the one slot. Opening one closes the other. This is implemented.
 - Hover never opens, closes, or replaces panels.
 - Explicit user actions drive panel transitions.
-- A short delay before opening remains useful to avoid Wayland serial conflicts.
+- A short delay before opening remains useful to avoid Wayland serial conflicts — one shared 50 ms timer for the session, never one per bar instance.
 
-For implementation, this does not require changing to a literal tree data structure immediately. The current context-group model may be extended with parent/child metadata when nested control-center panels require it.
+**Open proposal, not implemented:** an explicit parent/child or depth-aware tree, with group membership and descendant cascade. There are no context groups in the codebase; the `bar-primary` / `bar-secondary` grouping that earlier revisions of this spec assumed was never implemented. Revisit the proposal only if a future surface genuinely needs two overlays open at once, and treat that as a change to the exclusivity rule rather than metadata on top of it. See `specs/overlay-manager.md`.
 
 ## Collapsed Right Island
 
@@ -178,6 +183,17 @@ The compact right-island state should support two design modes:
 
 The user should eventually be able to choose between these modes and configure visible compact icons through configuration and later the Settings GUI. The first implementation may choose one default, but should avoid hardcoding assumptions that prevent the other.
 
+Compact icon entries should open independent specialty surfaces rather than requiring the full control center as a parent:
+
+- Wi-Fi icon opens the standalone Wi-Fi panel with its inline network details.
+- Bluetooth icon opens the standalone Bluetooth detail pane.
+- Audio icon opens the standalone Audio secondary surface.
+- Notifications icon opens the standalone notification mini panel.
+- Power remains a direct PowerMenu action.
+- Metrics should not have a dedicated compact-island icon; metrics remain available from a future aggregate surface and/or dashboard.
+
+The aggregate control center may remain as a future composition surface, but compact island icons must not force users through it to reach everyday specialty controls.
+
 Adaptive status priority should eventually be configurable. Default priority should surface problems first, such as disconnected Wi-Fi, muted/failed audio, Bluetooth errors, or other actionable system issues. Activity and notification prioritization can be configured later.
 
 ## Wi-Fi
@@ -187,9 +203,10 @@ Wi-Fi uses the inline expander prototype inside the right dropdown. Expanded Wi-
 Initial direction:
 
 - Collapsed Wi-Fi card shows icon, current SSID or disconnected label, signal strength, and connection state.
-- Collapsed Wi-Fi card uses two interaction zones while Wi-Fi is on: the main/left zone toggles Wi-Fi off directly, while the right chevron zone expands/collapses the network list.
-- Make the split interaction visually clear enough to avoid confusing the Wi-Fi power action with expansion.
-- When Wi-Fi is off, the whole card should simply communicate `Wi-Fi off`; it should not show the network-list affordance or expand into an empty list. The available action is turning Wi-Fi back on from the card.
+- The collapsed Wi-Fi entry is a single interaction surface that opens the standalone Wi-Fi panel; it should not use a left-side power toggle.
+- The previous split toggle/chevron interaction is intentionally retired because it was not practical in use.
+- The Wi-Fi panel itself may show power state and future power control, but opening details is the primary compact-island action.
+- When Wi-Fi is off, the panel communicates `Wi-Fi off` without expanding an empty network list.
 - When Wi-Fi is on but not connected, show `Searching…` while scanning and `Not connected` when idle.
 - When Wi-Fi is connected, show SSID, signal strength, and a small `Connected` state label if it fits cleanly.
 - Use an available-height-aware maximum with a strict cap.
@@ -213,9 +230,10 @@ Bluetooth uses the nested/detail-pane prototype inside the same floating surface
 Initial direction:
 
 - Collapsed Bluetooth card shows icon, primary connected device name, and connected-device count when more than one device is connected.
-- Collapsed Bluetooth card follows the same split interaction model as Wi-Fi while Bluetooth is on: the main/left zone toggles Bluetooth off directly, while the right chevron zone enters the Bluetooth detail pane.
+- The collapsed Bluetooth entry is a single interaction surface that opens the standalone Bluetooth detail pane; it should not use a left-side power toggle.
+- The previous split toggle/chevron interaction is intentionally retired because it was not practical in use.
 - Collapsed fallback states: `No devices` when Bluetooth is on with no connected devices, and `Bluetooth off` when the adapter is off.
-- When Bluetooth is off, the whole card should communicate `Bluetooth off`; it should not show the detail-pane affordance. The available action is turning Bluetooth back on from the card.
+- When Bluetooth is off, the standalone panel communicates `Bluetooth off` without opening an empty device list.
 - Separate devices into `Connected` and `Available` sections.
 - Device rows show name, connection/pairing state, device-type icon where available, and battery level where available.
 - Keep always-visible actions minimal. Selecting a connected device expands its row inline with `Disconnect` and `Forget` actions instead of immediately disconnecting or navigating to a separate device detail view.
@@ -283,7 +301,7 @@ Initial panel target:
 - Preferred config shape: a list of section objects, e.g. `rightPanel.sections: [{ "id": "primaryControls", "visible": true }, { "id": "metrics", "visible": true }, { "id": "secondaryToggles", "visible": true }]`. This supports ordering, visibility toggles, and future per-section options without a parallel Settings GUI model.
 - Quick toggles near the top by default.
 - Metrics area with compact graphs and grouped summaries, visually secondary to the primary controls.
-- Existing `MetricsDropdown`/metrics button may remain temporarily during migration. Once the new control center has sufficient compact metrics, metrics should be integrated into the control center and the dedicated metrics entry can be retired or repurposed.
+- Existing `MetricsDropdown` may remain available as an internal/fallback surface during migration, but the dedicated Metrics button should be removed from the compact right island. Metrics are integrated into the control center and can remain available from its expanded metrics row.
 - Secondary toggles such as VPN, recording, night light, and power profile are out of scope for the first version.
 - Visual density: adaptive, with simple defaults and expanded detail on demand.
 

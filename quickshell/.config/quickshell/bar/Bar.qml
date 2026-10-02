@@ -15,10 +15,11 @@ PanelWindow {
     // Quickshell default change silently reorder the bar against the panels
     // that now declare Top by hand. See specs/overlay-manager.md.
     WlrLayershell.layer: WlrLayer.Top
-    // Keyboard focus follows the in-surface right control center: only while
-    // it is open does this surface need key events (Escape-to-close). None is
-    // the PanelWindow default and keeps the bar inert when the RCC is closed.
-    WlrLayershell.keyboardFocus: rightControlCenter.isOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+    // The in-surface right control center needs deterministic keyboard focus
+    // for Escape while open. OnDemand lets the compositor retain another
+    // surface's focus when this Bar is already mapped; Exclusive transfers
+    // focus for the open interval, while None keeps the bar inert when closed.
+    WlrLayershell.keyboardFocus: rightControlCenter.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     anchors { top: true; left: true; right: true }
     readonly property real sideTabHeight: Math.max(leftTab.implicitHeight, rightTab.implicitHeight)
     readonly property real stableSurfaceContentHeight: Math.max(sideTabHeight, Theme.centerExpandedHeight)

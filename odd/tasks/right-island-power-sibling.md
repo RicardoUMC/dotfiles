@@ -62,8 +62,11 @@ Child components emit intent upward; the owning local controller and `shell.qml`
 - Soft reload: terminal `Reloading configuration...` → `Configuration Loaded`, no post-reload ERROR.
 - Hard reload: terminal `Reloading configuration...` → `Configuration Loaded`, no post-reload ERROR.
 - Pointer behavior remains pending live confirmation: power toggle, power→Wi-Fi switch, Wi-Fi→power switch, outside click, Escape, keyboard actions, and unrelated-root replacement.
+- Escape focus follow-up: `Bar.qml` uses `WlrKeyboardFocus.Exclusive` while the RCC is open and `None` while closed; Qt6 lint and soft/hard reload passed. Live keypress remains pending physical confirmation.
 
 ## Delivery
 - Work-unit commit: `6c25a3a` (`feat(quickshell): make power a right-island sibling`) on `fix/right-island-input-ownership`.
-- Merge that commit into `main` after verification.
+- Escape fix commit: `71b4142` (`fix(quickshell): restore right-island escape focus`).
+- Documentation commit: recorded after the implementation commits.
+- Merge these commits into `main` after verification.
 - No push unless separately requested.

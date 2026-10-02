@@ -46,5 +46,5 @@ Compact Power verification:
 - Verify that non-Power sections retain their existing width and that the compact panel does not introduce output-specific offsets.
 
 ## Delivery
-- Work-unit commit: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`) on `main`.
+- Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`) and `df64eb5` (`feat(quickshell): compact right-panel power mode`) on `main`.
 - No push unless separately requested.

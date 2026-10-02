@@ -87,5 +87,5 @@ Direct mute dispatch verification:
 - Backend `wpctl set-mute` was validated for both default sink and source without changing either current state; live pointer confirmation remains pending.
 
 ## Delivery
-- Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`), `df64eb5` (`feat(quickshell): compact right-panel power mode`), `a80d9a9` (`fix(quickshell): open audio control center collapsed`), `bafc01b` (`feat(quickshell): simplify compact audio controls`), and `356fec9` (`fix(quickshell): restore compact audio mute clicks`) on `main`.
+- Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`), `df64eb5` (`feat(quickshell): compact right-panel power mode`), `a80d9a9` (`fix(quickshell): open audio control center collapsed`), `bafc01b` (`feat(quickshell): simplify compact audio controls`), `356fec9` (`fix(quickshell): restore compact audio mute clicks`), and `277ee7b` (`fix(quickshell): dispatch compact audio mute directly`) on `main`.
 - No push unless separately requested.

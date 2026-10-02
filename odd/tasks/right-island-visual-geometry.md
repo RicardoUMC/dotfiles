@@ -36,5 +36,5 @@ Improve the right control-center's visual proportions and user configurability w
 - Pointer behavior remains pending live confirmation: closed-state pass-through, sibling switching, Escape, and N-monitor anchoring.
 
 ## Delivery
-- One Conventional Commit on `main` containing only this unit and its task evidence.
+- Work-unit commit: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`) on `main`.
 - No push unless separately requested.

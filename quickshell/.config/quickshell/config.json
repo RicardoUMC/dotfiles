@@ -38,6 +38,7 @@
   "rightPanel": {
     "opacity": 0.94,
     "width": 420,
+    "powerWidth": 160,
     "maxHeight": 600,
     "topMargin": 12,
     "rightMargin": 12,

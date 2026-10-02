@@ -174,7 +174,9 @@ Item {
         // Above the backdrop so the body consumes its own clicks instead of
         // the outside-click dismiss.
         z: 1
-        width: Theme.rightPanelWidth
+        width: root.activeSection === "power"
+            ? Theme.rightPanelPowerWidth + Theme.rightPanelPadding * 2
+            : Theme.rightPanelWidth
         property bool revealActive: false
         readonly property real contentAwareHeight: contentColumn.implicitHeight + Theme.rightPanelPadding * 2
         readonly property real aggregateMinimumHeight: root.activeSection === "" ? Math.min(Theme.rightPanelMaxHeight, root.height * 0.6) : 0
@@ -261,9 +263,10 @@ Item {
                 }
 
                 // Power section content, moved here from the former standalone
-                // PowerMenu surface. It keeps the original card dimensions,
-                // palette, border, and debug bounds; the RCC body reveals it in
-                // place instead of mapping a second fullscreen surface.
+                // PowerMenu surface. The RCC body reveals it in place instead
+                // of mapping a second fullscreen surface. In power mode the
+                // panel narrows to rightPanelPowerWidth and the card fills that
+                // compact width.
                 Rectangle {
                     id: powerCard
                     visible: root.activeSection === "power"

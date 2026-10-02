@@ -37,6 +37,7 @@ QtObject {
     property real rightPanelOpacity: 0.94
     // Right control-center panel geometry (high-leverage structural tokens).
     property int rightPanelWidth: 420
+    property int rightPanelPowerWidth: 160
     property int rightPanelMaxHeight: 600
     property int rightPanelTopMargin: 12
     property int rightPanelRightMargin: 12
@@ -199,6 +200,7 @@ QtObject {
             if (cfg.dashboard?.footerHeight     !== undefined) dashboardFooterHeight     = cfg.dashboard.footerHeight
             if (cfg.rightPanel?.opacity !== undefined) rightPanelOpacity = cfg.rightPanel.opacity
             if (cfg.rightPanel?.width       !== undefined) rightPanelWidth       = cfg.rightPanel.width
+            if (cfg.rightPanel?.powerWidth  !== undefined) rightPanelPowerWidth  = cfg.rightPanel.powerWidth
             if (cfg.rightPanel?.maxHeight   !== undefined) rightPanelMaxHeight   = cfg.rightPanel.maxHeight
             if (cfg.rightPanel?.topMargin   !== undefined) rightPanelTopMargin   = cfg.rightPanel.topMargin
             if (cfg.rightPanel?.rightMargin !== undefined) rightPanelRightMargin = cfg.rightPanel.rightMargin

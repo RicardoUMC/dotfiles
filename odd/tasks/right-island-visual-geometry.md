@@ -35,6 +35,16 @@ Improve the right control-center's visual proportions and user configurability w
 - Full compositor screenshot captured after reload at 4480x1440; Power opened through IPC and visually inspected as a full-width card inside the panel. Closed-state screenshot preserved both outputs and the bar composition.
 - Pointer behavior remains pending live confirmation: closed-state pass-through, sibling switching, Escape, and N-monitor anchoring.
 
+Compact Power verification:
+- Qt6 lint, JSON parse, and `git diff --check` passed; only the same pre-existing Theme style warnings remain.
+- Soft and hard reload both ended with `Configuration Loaded` and no post-reload errors.
+- Open Power capture at 4480x1440 confirms the panel narrows to the former compact scale while remaining right-anchored; non-Power panel geometry is unchanged.
+
+## Follow-up: compact Power mode
+- Keep the general RCC at `rightPanel.width`, but make the Power section use a configurable compact card width matching its former scale.
+- Derive the RCC width in Power mode from `rightPanel.powerWidth + 2 * rightPanel.padding`, preserving the right edge and existing input/focus ownership.
+- Verify that non-Power sections retain their existing width and that the compact panel does not introduce output-specific offsets.
+
 ## Delivery
 - Work-unit commit: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`) on `main`.
 - No push unless separately requested.

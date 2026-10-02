@@ -67,5 +67,5 @@ Audio hierarchy verification:
 - Compact output and microphone sliders share one visual/interaction component; expanded Audio renders only the detailed panel. Direct pointer confirmation remains pending.
 
 ## Delivery
-- Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`), `df64eb5` (`feat(quickshell): compact right-panel power mode`), and `a80d9a9` (`fix(quickshell): open audio control center collapsed`) on `main`.
+- Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`), `df64eb5` (`feat(quickshell): compact right-panel power mode`), `a80d9a9` (`fix(quickshell): open audio control center collapsed`), and `bafc01b` (`feat(quickshell): simplify compact audio controls`) on `main`.
 - No push unless separately requested.

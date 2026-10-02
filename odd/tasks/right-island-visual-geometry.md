@@ -45,6 +45,16 @@ Compact Power verification:
 - Derive the RCC width in Power mode from `rightPanel.powerWidth + 2 * rightPanel.padding`, preserving the right edge and existing input/focus ownership.
 - Verify that non-Power sections retain their existing width and that the compact panel does not introduce output-specific offsets.
 
+## Follow-up: collapsed Audio entry flow
+- Opening Audio from the right-island chip must show the summary card first; routing and the attached device panel open only after a second interaction with the Audio card.
+- Preserve the existing Audio volume controls, service actions, Escape/focus ownership, and sibling routing.
+
+Audio flow verification:
+- Qt6 lint passed for `RightControlCenter.qml`; `AudioControlCard.qml` retains only pre-existing `[unqualified]` warnings in its repeater delegate.
+- `git diff --check` passed.
+- Soft and hard reload both ended with `Configuration Loaded` and no post-reload errors.
+- The interactive visual click path remains pending direct pointer confirmation; the state transition is now explicit in `RightControlCenter.qml` and the Audio card's second-step controls remain intact.
+
 ## Delivery
 - Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`) and `df64eb5` (`feat(quickshell): compact right-panel power mode`) on `main`.
 - No push unless separately requested.

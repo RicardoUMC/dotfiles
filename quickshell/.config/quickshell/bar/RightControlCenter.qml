@@ -55,8 +55,6 @@ Item {
             wifiCard.expanded = true
         else if (section === "bluetooth")
             bluetoothCard.expanded = true
-        else if (section === "audio")
-            audioCard.panelOpen = true
         else if (section === "notifications")
             notificationCard.expanded = true
         // Power has no service-card expansion state; resetSections() already
@@ -244,7 +242,9 @@ Item {
                     id: audioCard
                     visible: root.activeSection !== "power" && (root.activeSection === "" || root.activeSection === "audio")
                     Layout.fillWidth: true
-                    standalone: root.activeSection === "audio"
+                    // Audio opens in its summary state; the hero/chevron
+                    // performs the second-step expansion for routing/details.
+                    standalone: false
                 }
 
                 NotificationControlCard {

@@ -55,6 +55,17 @@ Audio flow verification:
 - Soft and hard reload both ended with `Configuration Loaded` and no post-reload errors.
 - The interactive visual click path remains pending direct pointer confirmation; the state transition is now explicit in `RightControlCenter.qml` and the Audio card's second-step controls remain intact.
 
+## Follow-up: Audio hierarchy and compact input control
+- Compact Audio should show one summary hero plus two distinct controls: output volume and microphone gain.
+- Expanded Audio should hide the compact summary controls and show only the detailed device/routing panel, avoiding duplicate output/input controls and duplicate routing rows.
+- Preserve output/input selection, mute actions, attached-panel Back behavior, Escape/focus ownership, and sibling routing.
+
+Audio hierarchy verification:
+- `AudioControlCard.qml` passes Qt6 lint with no diagnostics; `AudioControlPanel.qml` retains only its existing `[unqualified]` warnings.
+- `git diff --check` passed.
+- Soft and hard reload both ended with `Configuration Loaded` and no post-reload errors.
+- Compact output and microphone sliders share one visual/interaction component; expanded Audio renders only the detailed panel. Direct pointer confirmation remains pending.
+
 ## Delivery
 - Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`), `df64eb5` (`feat(quickshell): compact right-panel power mode`), and `a80d9a9` (`fix(quickshell): open audio control center collapsed`) on `main`.
 - No push unless separately requested.

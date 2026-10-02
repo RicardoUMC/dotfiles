@@ -28,19 +28,10 @@ Rectangle {
     property bool standalone: false
 
     readonly property var defaultOutput: deviceById(AudioService.outputs || [], AudioService.defaultOutputId)
-    readonly property var defaultInput: deviceById(AudioService.inputs || [], AudioService.defaultInputId)
     readonly property string outputName: defaultOutput
                                          ? defaultOutput.name
                                          : ((AudioService.outputs || []).length > 0
                                             ? AudioService.outputs[0].name : "No output device")
-    readonly property string inputName: defaultInput
-                                        ? defaultInput.name
-                                        : ((AudioService.inputs || []).length > 0
-                                           ? AudioService.inputs[0].name : "No input device")
-
-    // Dense routing list: inputs first, then the outputs that are not active.
-    readonly property int routingRowCount: 5
-    readonly property var routingRows: routingRowList()
 
     // Single source of truth for "state color": seam, puck, eyebrow and glyph.
     readonly property color heroStateColor: {
@@ -96,16 +87,6 @@ Rectangle {
         return percentText(AudioService.outputVolume)
     }
 
-    function muteText() {
-        return AudioService.outputMuted ? "Muted" : "Output active"
-    }
-
-    function displayName(device, fallback) {
-        if (device && device.name && String(device.name).length > 0)
-            return device.name
-        return fallback
-    }
-
     function kindText(device, fallback) {
         const kind = String((device && device.type) ? device.type : "").toLowerCase()
         if (kind.length === 0)
@@ -125,52 +106,6 @@ Rectangle {
         return fallbackIcon
     }
 
-    function outputPercentFromX(trackWidth, clickX) {
-        const usableWidth = Math.max(1, trackWidth)
-        return Math.max(0, Math.min(100, Math.round((clickX / usableWidth) * 100)))
-    }
-
-    function routingRowList() {
-        const items = []
-        const inputs = AudioService.inputs || []
-        for (let i = 0; i < inputs.length; i++) {
-            if (inputs[i])
-                items.push(makeRoutingRow(inputs[i], "Input"))
-        }
-        const outputs = AudioService.outputs || []
-        for (let i = 0; i < outputs.length; i++) {
-            if (outputs[i] && outputs[i].id !== AudioService.defaultOutputId)
-                items.push(makeRoutingRow(outputs[i], "Output"))
-        }
-        return items.slice(0, root.routingRowCount)
-    }
-
-    function makeRoutingRow(device, kind) {
-        const isInput = kind === "Input"
-        const activeId = isInput ? AudioService.defaultInputId : AudioService.defaultOutputId
-        const isDeviceMuted = !!(device && device.muted)
-        return {
-            rowId: String(device && device.id ? device.id : ""),
-            kind: kind,
-            glyphText: root.deviceIcon(device, isInput ? "󰍬" : "󰕾"),
-            titleText: root.displayName(device, isInput ? "Input device" : "Output device"),
-            metaText: root.kindText(device, isInput ? "Source" : "Sink")
-                      + (isDeviceMuted ? " • Muted" : " • " + root.percentText(device.volume)),
-            isActive: String(device && device.id ? device.id : "") === String(activeId || ""),
-            isMuted: isDeviceMuted,
-            levelText: root.percentText(device.volume)
-        }
-    }
-
-    function selectRoutingRow(row) {
-        if (!row || row.rowId.length === 0)
-            return
-        if (row.kind === "Input")
-            AudioService.setDefaultInput(row.rowId)
-        else
-            AudioService.setDefaultOutput(row.rowId)
-    }
-
     onStandaloneChanged: if (standalone) panelOpen = true
     onVisibleChanged: {
         if (!visible)
@@ -188,6 +123,7 @@ Rectangle {
         // ── Layer 1 — hero: the active output device owns this block ──────
         Rectangle {
             id: heroBlock
+            visible: !root.panelOpen
             Layout.fillWidth: true
             implicitHeight: heroRow.implicitHeight + Theme.spacingSm * 2
             radius: Theme.radiusLg
@@ -346,212 +282,29 @@ Rectangle {
             font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
         }
 
-        // ── Layer 2 — primary control: output volume, inset, no borders ───
-        RowLayout {
-            id: volumeGroup
+        // Compact state: keep the two directly actionable levels together.
+        CompactLevelControl {
+            visible: !root.panelOpen
             Layout.fillWidth: true
-            spacing: Theme.spacingMd
-
-            Rectangle {
-                id: volumeSlab
-                Layout.fillWidth: true
-                implicitHeight: volumeRow.implicitHeight + Theme.spacingSm * 2
-                radius: Theme.radiusMd
-                color: Qt.rgba(Colors.background.r, Colors.background.g, Colors.background.b, 0.45)
-                border.width: 0
-
-                RowLayout {
-                    id: volumeRow
-                    anchors.fill: parent
-                    anchors.margins: Theme.spacingSm
-                    spacing: Theme.spacingMd
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignVCenter
-                        spacing: Theme.spacingXs
-
-                        Text {
-                            Layout.fillWidth: true
-                            text: "Volume"
-                            elide: Text.ElideRight
-                            color: Colors.textDim
-                            font {
-                                family: Colors.uiFont
-                                pixelSize: Theme.fontSizeCaption
-                                capitalization: Font.AllUppercase
-                            }
-                        }
-
-                        // Inset track; height is one doubled progress token so
-                        // the primary control reads heavier than the seam.
-                        Rectangle {
-                            id: volumeTrack
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: Theme.panelVolumeTrackHeight
-                            radius: Theme.radiusPill
-                            color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.28)
-
-                            Rectangle {
-                                id: volumeFill
-                                anchors {
-                                    left: parent.left
-                                    top: parent.top
-                                    bottom: parent.bottom
-                                }
-                                width: parent.width * Math.max(0, Math.min(100, Number(AudioService.outputVolume || 0))) / 100
-                                radius: parent.radius
-                                color: root.volumeStateColor
-                                opacity: AudioService.outputMuted ? 0.55 : 0.90
-
-                                Behavior on width {
-                                    enabled: !volumeMouseArea.pressed
-                                    NumberAnimation { duration: Theme.animFast }
-                                }
-                            }
-
-                            Rectangle {
-                                id: volumeKnob
-                                anchors.verticalCenter: parent.verticalCenter
-                                x: Math.max(0, Math.min(parent.width - width, volumeFill.width - width / 2))
-                                width: Theme.panelVolumeTrackHeight
-                                height: Theme.panelVolumeTrackHeight
-                                radius: Theme.radiusPill
-                                color: Colors.textBright
-                                opacity: volumeMouseArea.containsMouse || volumeMouseArea.pressed ? 1.0 : 0.80
-                            }
-
-                            MouseArea {
-                                id: volumeMouseArea
-                                anchors.fill: parent
-                                anchors.topMargin: -Theme.spacingXs
-                                anchors.bottomMargin: -Theme.spacingXs
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onPressed: mouse => AudioService.setOutputVolume(
-                                    root.outputPercentFromX(volumeTrack.width, mouse.x))
-                                onPositionChanged: mouse => {
-                                    if (pressed)
-                                        AudioService.setOutputVolume(
-                                            root.outputPercentFromX(volumeTrack.width, mouse.x))
-                                }
-                            }
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.alignment: Qt.AlignVCenter
-                        spacing: 0
-
-                        Text {
-                            Layout.alignment: Qt.AlignHCenter
-                            text: root.volumeText()
-                            color: AudioService.outputMuted ? Colors.orange : Colors.textBright
-                            font {
-                                family: Colors.displayFont
-                                pixelSize: Theme.fontSizeBodyLg
-                                weight: AudioService.outputMuted ? Font.Normal : Font.DemiBold
-                            }
-                        }
-
-                        Text {
-                            Layout.alignment: Qt.AlignHCenter
-                            text: root.muteText()
-                            color: Colors.textDim
-                            font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
-                        }
-                    }
-                }
-            }
-
-            AudioPillAction {
-                Layout.alignment: Qt.AlignVCenter
-                label: AudioService.outputMuted ? "Unmute" : "Mute"
-                glyph: AudioService.outputMuted ? "󰝟" : "󰕾"
-                accentColor: Colors.orange
-                active: AudioService.outputMuted
-                onTriggered: AudioService.setOutputMuted(!AudioService.outputMuted)
-            }
+            label: "Output"
+            glyph: "󰕾"
+            value: AudioService.outputVolume
+            muted: AudioService.outputMuted
+            accentColor: root.volumeStateColor
+            onValueCommitted: value => AudioService.setOutputVolume(value)
+            onMuteRequested: AudioService.setOutputMuted(!AudioService.outputMuted)
         }
 
-        // ── Layer 3 — routing: secondary, denser, quieter ─────────────────
-        ColumnLayout {
-            id: routingGroup
+        CompactLevelControl {
+            visible: !root.panelOpen
             Layout.fillWidth: true
-            visible: root.panelOpen
-            spacing: Theme.spacingXs
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 1
-                Layout.bottomMargin: Theme.spacingXs
-                color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
-                radius: Theme.radiusPill
-                border.width: 0
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.bottomMargin: Theme.spacingXs
-                spacing: Theme.spacingSm
-
-                Text {
-                    text: "Routing"
-                    color: Colors.textDim
-                    font {
-                        family: Colors.uiFont
-                        pixelSize: Theme.fontSizeCaption
-                        capitalization: Font.AllUppercase
-                    }
-                }
-
-                Item {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 1
-                }
-
-                Text {
-                    Layout.maximumWidth: 160
-                    text: "Input " + root.inputName
-                    elide: Text.ElideRight
-                    color: root.defaultInput ? Colors.textDim : Colors.muted
-                    font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
-                }
-            }
-
-            Text {
-                Layout.fillWidth: true
-                visible: root.routingRows.length === 0
-                text: "No additional devices found"
-                color: Colors.textDim
-                font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
-            }
-
-            Repeater {
-                model: root.routingRows
-
-                delegate: AudioRoutingRow {
-                    Layout.fillWidth: true
-                    glyphText: modelData.glyphText
-                    titleText: modelData.titleText
-                    metaText: modelData.kind + " • " + modelData.metaText
-                    trailingText: modelData.isActive
-                                  ? "Active"
-                                  : (modelData.isMuted ? "Muted" : modelData.levelText)
-                    isActive: modelData.isActive
-                    isMuted: modelData.isMuted
-                    onRowSelected: root.selectRoutingRow(modelData)
-                }
-            }
-
-            Text {
-                Layout.fillWidth: true
-                Layout.topMargin: Theme.spacingXs
-                visible: root.routingRows.length >= root.routingRowCount
-                text: "More devices are listed in the panel below"
-                color: Colors.muted
-                font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
-            }
+            label: "Microphone"
+            glyph: "󰍬"
+            value: AudioService.inputVolume
+            muted: AudioService.inputMuted
+            accentColor: AudioService.inputMuted ? Colors.orange : Colors.accent
+            onValueCommitted: value => AudioService.setInputVolume(value)
+            onMuteRequested: AudioService.setInputMuted(!AudioService.inputMuted)
         }
 
         // Keep audio detail as an attached secondary surface instead of a
@@ -563,88 +316,106 @@ Rectangle {
         }
     }
 
-    // Secondary routing row: dense, quiet, tint only on hover/active.
-    component AudioRoutingRow: Rectangle {
-        id: routingRow
+    component CompactLevelControl: Rectangle {
+        id: compactControl
 
-        property string glyphText: "󰕾"
-        property string titleText: "Device"
-        property string metaText: ""
-        property string trailingText: ""
-        property bool isActive: false
-        property bool isMuted: false
+        property string label: "Level"
+        property string glyph: "󰕾"
+        property int value: 0
+        property bool muted: false
+        property color accentColor: Colors.accent
 
-        signal rowSelected()
+        signal valueCommitted(int value)
+        signal muteRequested()
 
-        Layout.fillWidth: true
-        implicitHeight: rowContent.implicitHeight + Theme.spacingXs * 2
+        implicitHeight: compactColumn.implicitHeight + Theme.spacingSm * 2
         radius: Theme.radiusMd
-        color: routingRow.isActive
-               ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
-               : (routingRowClickArea.containsMouse
-                  ? Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b, 0.40)
-                  : "transparent")
+        color: Qt.rgba(Colors.background.r, Colors.background.g, Colors.background.b, 0.45)
         border.width: 0
 
-        RowLayout {
-            id: rowContent
+        function valueFromX(clickX) {
+            return Math.max(0, Math.min(100,
+                Math.round((clickX / Math.max(1, compactTrack.width)) * 100)))
+        }
+
+        function percentText(value) {
+            return Math.max(0, Math.min(100, Math.round(Number(value || 0)))) + "%"
+        }
+
+        ColumnLayout {
+            id: compactColumn
             anchors.fill: parent
-            anchors.leftMargin: Theme.spacingSm
-            anchors.rightMargin: Theme.spacingSm
-            anchors.topMargin: Theme.spacingXs
-            anchors.bottomMargin: Theme.spacingXs
-            spacing: Theme.spacingSm
+            anchors.margins: Theme.spacingSm
+            spacing: Theme.spacingXs
 
-            Text {
-                Layout.alignment: Qt.AlignVCenter
-                text: routingRow.glyphText
-                color: routingRow.isActive ? Colors.accent : Colors.muted
-                font { family: Colors.monoFont; pixelSize: Theme.fontSizeBody }
-            }
-
-            ColumnLayout {
+            RowLayout {
                 Layout.fillWidth: true
-                Layout.alignment: Qt.AlignVCenter
-                spacing: 0
+                spacing: Theme.spacingSm
+
+                Text {
+                    text: compactControl.glyph
+                    color: compactControl.muted ? Colors.orange : compactControl.accentColor
+                    font { family: Colors.monoFont; pixelSize: Theme.fontSizeBody }
+                }
 
                 Text {
                     Layout.fillWidth: true
-                    text: routingRow.titleText
-                    elide: Text.ElideRight
-                    color: routingRow.isActive ? Colors.textBright : Colors.text
+                    text: compactControl.label
+                    color: Colors.textDim
+                    font {
+                        family: Colors.uiFont
+                        pixelSize: Theme.fontSizeCaption
+                        capitalization: Font.AllUppercase
+                    }
+                }
+
+                Text {
+                    text: compactControl.percentText(compactControl.value)
+                    color: compactControl.muted ? Colors.orange : Colors.textBright
                     font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel; weight: Font.DemiBold }
                 }
 
-                Text {
-                    Layout.fillWidth: true
-                    visible: routingRow.metaText.length > 0
-                    text: routingRow.metaText
-                    elide: Text.ElideRight
-                    color: Colors.textDim
-                    font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
+                AudioPillAction {
+                    label: compactControl.muted ? "Unmute" : "Mute"
+                    glyph: compactControl.muted ? "󰝟" : "󰕾"
+                    accentColor: Colors.orange
+                    active: compactControl.muted
+                    onTriggered: compactControl.muteRequested()
                 }
             }
 
-            Text {
-                Layout.alignment: Qt.AlignVCenter
-                text: routingRow.trailingText
-                color: routingRow.isActive
-                       ? Colors.accent
-                       : (routingRow.isMuted ? Colors.orange : Colors.textDim)
-                font {
-                    family: Colors.uiFont
-                    pixelSize: Theme.fontSizeCaption
-                    weight: routingRow.isActive || routingRow.isMuted ? Font.DemiBold : Font.Normal
+            Rectangle {
+                id: compactTrack
+                Layout.fillWidth: true
+                Layout.preferredHeight: Theme.panelVolumeTrackHeight
+                radius: Theme.radiusPill
+                color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.28)
+
+                Rectangle {
+                    anchors {
+                        left: parent.left
+                        top: parent.top
+                        bottom: parent.bottom
+                    }
+                    width: parent.width * Math.max(0, Math.min(100, compactControl.value)) / 100
+                    radius: parent.radius
+                    color: compactControl.muted ? Colors.orange : compactControl.accentColor
+                    opacity: compactControl.muted ? 0.55 : 0.90
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    anchors.topMargin: -Theme.spacingXs
+                    anchors.bottomMargin: -Theme.spacingXs
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onPressed: mouse => compactControl.valueCommitted(compactControl.valueFromX(mouse.x))
+                    onPositionChanged: mouse => {
+                        if (pressed)
+                            compactControl.valueCommitted(compactControl.valueFromX(mouse.x))
+                    }
                 }
             }
-        }
-
-        MouseArea {
-            id: routingRowClickArea
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: routingRow.rowSelected()
         }
     }
 

@@ -66,6 +66,16 @@ Audio hierarchy verification:
 - Soft and hard reload both ended with `Configuration Loaded` and no post-reload errors.
 - Compact output and microphone sliders share one visual/interaction component; expanded Audio renders only the detailed panel. Direct pointer confirmation remains pending.
 
+## Follow-up: compact mute hit targets
+- Make compact output/microphone mute controls own explicit click targets inside `CompactLevelControl`, while preserving the existing visual pill grammar and AudioService actions.
+- Verify both compact mute paths after reload.
+
+Mute hit-target verification:
+- `AudioControlCard.qml` passes Qt6 lint with no diagnostics.
+- `git diff --check` passed.
+- Soft and hard reload both ended with `Configuration Loaded` and no post-reload errors.
+- Compact mute buttons now own explicit `MouseArea`s; direct pointer confirmation remains pending.
+
 ## Delivery
 - Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`), `df64eb5` (`feat(quickshell): compact right-panel power mode`), `a80d9a9` (`fix(quickshell): open audio control center collapsed`), and `bafc01b` (`feat(quickshell): simplify compact audio controls`) on `main`.
 - No push unless separately requested.

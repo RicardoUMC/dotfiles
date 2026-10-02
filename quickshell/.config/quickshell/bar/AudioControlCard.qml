@@ -375,12 +375,46 @@ Rectangle {
                     font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel; weight: Font.DemiBold }
                 }
 
-                AudioPillAction {
-                    label: compactControl.muted ? "Unmute" : "Mute"
-                    glyph: compactControl.muted ? "󰝟" : "󰕾"
-                    accentColor: Colors.orange
-                    active: compactControl.muted
-                    onTriggered: compactControl.muteRequested()
+                Rectangle {
+                    id: compactMuteButton
+                    Layout.preferredWidth: compactMuteLabel.implicitWidth + Theme.spacingMd
+                    Layout.preferredHeight: 26
+                    radius: Theme.radiusPill
+                    color: compactMuteArea.containsMouse || compactControl.muted
+                           ? Qt.rgba(Colors.orange.r, Colors.orange.g, Colors.orange.b,
+                                     compactControl.muted ? 0.28 : 0.24)
+                           : Qt.rgba(Colors.orange.r, Colors.orange.g, Colors.orange.b, 0.14)
+                    border.width: 0
+
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: Theme.spacingXs
+
+                        Text {
+                            text: compactControl.muted ? "󰝟" : "󰕾"
+                            color: Colors.text
+                            font { family: Colors.monoFont; pixelSize: Theme.fontSizeLabel }
+                        }
+
+                        Text {
+                            id: compactMuteLabel
+                            text: compactControl.muted ? "Unmute" : "Mute"
+                            color: compactControl.muted ? Colors.orange : Colors.text
+                            font {
+                                family: Colors.uiFont
+                                pixelSize: Theme.fontSizeLabel
+                                weight: compactControl.muted ? Font.DemiBold : Font.Normal
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        id: compactMuteArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: compactControl.muteRequested()
+                    }
                 }
             }
 

@@ -77,5 +77,5 @@ Mute hit-target verification:
 - Compact mute buttons now own explicit `MouseArea`s; direct pointer confirmation remains pending.
 
 ## Delivery
-- Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`), `df64eb5` (`feat(quickshell): compact right-panel power mode`), `a80d9a9` (`fix(quickshell): open audio control center collapsed`), and `bafc01b` (`feat(quickshell): simplify compact audio controls`) on `main`.
+- Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`), `df64eb5` (`feat(quickshell): compact right-panel power mode`), `a80d9a9` (`fix(quickshell): open audio control center collapsed`), `bafc01b` (`feat(quickshell): simplify compact audio controls`), and `356fec9` (`fix(quickshell): restore compact audio mute clicks`) on `main`.
 - No push unless separately requested.

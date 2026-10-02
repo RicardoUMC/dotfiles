@@ -76,6 +76,16 @@ Mute hit-target verification:
 - Soft and hard reload both ended with `Configuration Loaded` and no post-reload errors.
 - Compact mute buttons now own explicit `MouseArea`s; direct pointer confirmation remains pending.
 
+## Follow-up: direct audio mute dispatch
+- Remove the remaining compact mute signal hop; each compact level control dispatches directly to the appropriate AudioService output/input mute method.
+- Preserve the existing visual button and explicit hit target.
+
+Direct mute dispatch verification:
+- `AudioControlCard.qml` passes Qt6 lint with no diagnostics.
+- `git diff --check` passed.
+- Soft and hard reload both ended with `Configuration Loaded` and no post-reload errors.
+- Backend `wpctl set-mute` was validated for both default sink and source without changing either current state; live pointer confirmation remains pending.
+
 ## Delivery
 - Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`), `df64eb5` (`feat(quickshell): compact right-panel power mode`), `a80d9a9` (`fix(quickshell): open audio control center collapsed`), `bafc01b` (`feat(quickshell): simplify compact audio controls`), and `356fec9` (`fix(quickshell): restore compact audio mute clicks`) on `main`.
 - No push unless separately requested.

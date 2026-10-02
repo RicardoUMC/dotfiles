@@ -292,7 +292,6 @@ Rectangle {
             muted: AudioService.outputMuted
             accentColor: root.volumeStateColor
             onValueCommitted: value => AudioService.setOutputVolume(value)
-            onMuteRequested: AudioService.setOutputMuted(!AudioService.outputMuted)
         }
 
         CompactLevelControl {
@@ -302,9 +301,9 @@ Rectangle {
             glyph: "󰍬"
             value: AudioService.inputVolume
             muted: AudioService.inputMuted
+            inputChannel: true
             accentColor: AudioService.inputMuted ? Colors.orange : Colors.accent
             onValueCommitted: value => AudioService.setInputVolume(value)
-            onMuteRequested: AudioService.setInputMuted(!AudioService.inputMuted)
         }
 
         // Keep audio detail as an attached secondary surface instead of a
@@ -323,10 +322,10 @@ Rectangle {
         property string glyph: "󰕾"
         property int value: 0
         property bool muted: false
+        property bool inputChannel: false
         property color accentColor: Colors.accent
 
         signal valueCommitted(int value)
-        signal muteRequested()
 
         implicitHeight: compactColumn.implicitHeight + Theme.spacingSm * 2
         radius: Theme.radiusMd
@@ -413,7 +412,12 @@ Rectangle {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: compactControl.muteRequested()
+                        onClicked: {
+                            if (compactControl.inputChannel)
+                                AudioService.setInputMuted(!AudioService.inputMuted)
+                            else
+                                AudioService.setOutputMuted(!AudioService.outputMuted)
+                        }
                     }
                 }
             }

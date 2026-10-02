@@ -1,0 +1,40 @@
+# Right-island visual geometry and configurability
+
+Status: approved for implementation as a focused visual work unit.
+
+## Goal
+Improve the right control-center's visual proportions and user configurability without changing the single-surface input authority, sibling routing, N-monitor behavior, or Tokyo City palette.
+
+## Evidence
+- Recording: `/tmp/quickshell-recordings/screen_20261002_005554.mp4`.
+- The panel body is currently hardcoded to width 420 and max height 600.
+- Panel edge offsets contain `-1` visual fudges.
+- Panel title uses `fontSizeBody` while card hero typography uses `fontSizeBodyLg`.
+- Power is a 160px bordered mini-card inside a 420px body, unlike the full-width borderless specialty cards.
+- Section switches reset the full body reveal even while the RCC remains open.
+
+## Scope
+1. Add only high-leverage `rightPanel.*` structural tokens to `Theme.qml` and `config.json`: width, maxHeight, topMargin, rightMargin, padding, cardGap, cardFillOpacity (or equivalent shared card surface opacity), radius/border opacity only if needed by existing geometry.
+2. Replace RCC hardcoded panel geometry with those tokens; preserve output-local anchoring and geometry-driven backdrop mask.
+3. Use `Theme.fontSizeBodyLg` for the panel title.
+4. Make Power composition consistent with sibling cards: use the panel width rather than an orphan 160px fragment, remove its unique border grammar, and retain destructive tint/state semantics through existing tokens.
+5. Keep fresh-open reveal animation, but do not collapse and regrow the full panel on an already-open sibling switch. Preserve content-driven max-height behavior and clamp against the owning screen's local `root.height`.
+6. Keep all service/back-end behavior, input routing, Escape/focus, and N-monitor logic unchanged.
+
+## Configurability rules
+- Structural values belong in `Theme.qml` and `config.json`.
+- Colors/fonts remain in `Colors.qml` or existing font tokens.
+- Do not add per-row/per-label/per-card micro-tokens; reuse spacing/radius/opacity tokens where possible.
+- Preserve all pre-existing dirty changes in `Theme.qml`, `config.json`, and unrelated files.
+
+## Verification
+- Qt6 qmllint on every touched QML file.
+- `git diff --check`.
+- Soft and hard reload with terminal `Configuration Loaded` and no post-reload `ERROR`.
+- Qt6 lint/JSON/diff verification passed; only documented Theme style warnings remain.
+- Full compositor screenshot captured after reload at 4480x1440; Power opened through IPC and visually inspected as a full-width card inside the panel. Closed-state screenshot preserved both outputs and the bar composition.
+- Pointer behavior remains pending live confirmation: closed-state pass-through, sibling switching, Escape, and N-monitor anchoring.
+
+## Delivery
+- One Conventional Commit on `main` containing only this unit and its task evidence.
+- No push unless separately requested.

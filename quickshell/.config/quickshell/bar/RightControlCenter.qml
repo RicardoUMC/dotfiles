@@ -98,9 +98,10 @@ Item {
             isOpen = true
             opened()
             restartPanelReveal()
-        } else {
-            restartPanelReveal()
         }
+        // Already open: keep the reveal state intact so a sibling switch only
+        // re-resolves content and lets height transition naturally, instead of
+        // collapsing and re-growing the whole panel.
         keyHandler.forceActiveFocus()
     }
 
@@ -167,27 +168,26 @@ Item {
         anchors {
             top: parent.top
             right: parent.right
-            topMargin: Theme.barHeight + Theme.spacingMd - 1
-            rightMargin: Theme.spacingMd - 1
+            topMargin: Theme.barHeight + Theme.rightPanelTopMargin
+            rightMargin: Theme.rightPanelRightMargin
         }
         // Above the backdrop so the body consumes its own clicks instead of
         // the outside-click dismiss.
         z: 1
-        // TODO(right-control-center): promote width/height to Theme/config tokens
-        // when this panel graduates from structural shell to configurable UI.
-        width: 420
+        width: Theme.rightPanelWidth
         property bool revealActive: false
-        readonly property real contentAwareHeight: contentColumn.implicitHeight + Theme.spacingMd * 2
-        readonly property real aggregateMinimumHeight: root.activeSection === "" ? Math.min(600, root.height * 0.6) : 0
-        readonly property real targetHeight: Math.min(600, Math.max(aggregateMinimumHeight, contentAwareHeight))
+        readonly property real contentAwareHeight: contentColumn.implicitHeight + Theme.rightPanelPadding * 2
+        readonly property real aggregateMinimumHeight: root.activeSection === "" ? Math.min(Theme.rightPanelMaxHeight, root.height * 0.6) : 0
+        readonly property real targetHeight: Math.min(Theme.rightPanelMaxHeight, Math.max(aggregateMinimumHeight, contentAwareHeight))
         height: revealActive ? targetHeight : 0
 
         // The body height is content-driven: expanding a specialty card or
-        // switching sections re-resolves targetHeight. Each open/section
-        // change explicitly resets revealActive, so the body always grows
-        // from zero instead of reusing the previous card's height. Spatial
-        // intent handles the mapped transition; close() clears revealActive
-        // synchronously so the body collapses with the backdrop.
+        // switching sections re-resolves targetHeight. A fresh open resets
+        // revealActive so the body grows from zero; an already-open sibling
+        // switch keeps revealActive intact and lets the Spatial transition
+        // move between the old and new content heights directly. close()
+        // clears revealActive synchronously so the body collapses with the
+        // backdrop.
         Behavior on height {
             Motion.Spatial { }
         }
@@ -205,7 +205,7 @@ Item {
 
         Flickable {
             id: contentScroller
-            anchors { fill: parent; margins: Theme.spacingMd }
+            anchors { fill: parent; margins: Theme.rightPanelPadding }
             clip: true
             contentWidth: width
             contentHeight: contentColumn.implicitHeight
@@ -214,14 +214,14 @@ Item {
             ColumnLayout {
                 id: contentColumn
                 width: contentScroller.width
-                spacing: Theme.spacingSm
+                spacing: Theme.rightPanelCardGap
 
                 Text {
                     Layout.fillWidth: true
-                    Layout.bottomMargin: Theme.spacingXs
+                    Layout.bottomMargin: Theme.spacingSm
                     text: root.titleText()
                     color: Colors.text
-                    font { family: Colors.displayFont; pixelSize: Theme.fontSizeBody }
+                    font { family: Colors.displayFont; pixelSize: Theme.fontSizeBodyLg }
                 }
 
                 WifiControlCard {
@@ -267,15 +267,10 @@ Item {
                 Rectangle {
                     id: powerCard
                     visible: root.activeSection === "power"
-                    Layout.alignment: Qt.AlignRight
-                    Layout.preferredWidth: 160
+                    Layout.fillWidth: true
                     Layout.preferredHeight: powerColumn.implicitHeight + Theme.spacingLg
-                    radius: Theme.radiusMd
-                    color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacitySurface)
-                    border {
-                        width: 1
-                        color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.35)
-                    }
+                    radius: Theme.radiusLg
+                    color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.rightPanelCardFillOpacity)
 
                     property int selectedIndex: 0
                     readonly property int itemCount: 3

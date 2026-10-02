@@ -35,6 +35,14 @@ QtObject {
     property int dashboardBodyRadius: 10
     property real dashboardBodyOpacity: 0.35
     property real rightPanelOpacity: 0.94
+    // Right control-center panel geometry (high-leverage structural tokens).
+    property int rightPanelWidth: 420
+    property int rightPanelMaxHeight: 600
+    property int rightPanelTopMargin: 12
+    property int rightPanelRightMargin: 12
+    property int rightPanelPadding: 12
+    property int rightPanelCardGap: 8
+    property real rightPanelCardFillOpacity: 0.18
     property int dashboardBodyBorderWidth: 1
     property int dashboardBodyPadding: 12
     property int dashboardTabHeight: 40
@@ -190,6 +198,13 @@ QtObject {
             if (cfg.dashboard?.sparklineHeight  !== undefined) dashboardSparklineHeight  = cfg.dashboard.sparklineHeight
             if (cfg.dashboard?.footerHeight     !== undefined) dashboardFooterHeight     = cfg.dashboard.footerHeight
             if (cfg.rightPanel?.opacity !== undefined) rightPanelOpacity = cfg.rightPanel.opacity
+            if (cfg.rightPanel?.width       !== undefined) rightPanelWidth       = cfg.rightPanel.width
+            if (cfg.rightPanel?.maxHeight   !== undefined) rightPanelMaxHeight   = cfg.rightPanel.maxHeight
+            if (cfg.rightPanel?.topMargin   !== undefined) rightPanelTopMargin   = cfg.rightPanel.topMargin
+            if (cfg.rightPanel?.rightMargin !== undefined) rightPanelRightMargin = cfg.rightPanel.rightMargin
+            if (cfg.rightPanel?.padding     !== undefined) rightPanelPadding     = cfg.rightPanel.padding
+            if (cfg.rightPanel?.cardGap     !== undefined) rightPanelCardGap     = cfg.rightPanel.cardGap
+            if (cfg.rightPanel?.cardFillOpacity !== undefined) rightPanelCardFillOpacity = cfg.rightPanel.cardFillOpacity
             const panel = cfg.panel
             if (panel && panel.accentSeamWidth   !== undefined) accentSeamWidth        = panel.accentSeamWidth
             if (panel && panel.volumeTrackHeight !== undefined) panelVolumeTrackHeight = panel.volumeTrackHeight

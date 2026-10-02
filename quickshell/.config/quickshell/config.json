@@ -35,7 +35,16 @@
   },
   "anim": { "fast": 180, "normal": 300, "slow": 500 },
   "font": { "caption": 12, "label": 13, "body": 15, "bodyLg": 17, "icon": 22 },
-  "rightPanel": { "opacity": 0.94 },
+  "rightPanel": {
+    "opacity": 0.94,
+    "width": 420,
+    "maxHeight": 600,
+    "topMargin": 12,
+    "rightMargin": 12,
+    "padding": 12,
+    "cardGap": 8,
+    "cardFillOpacity": 0.18
+  },
   "debug": {
     "visualBounds": false,
     "borderColor": "#ff3344",

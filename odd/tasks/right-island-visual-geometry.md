@@ -97,5 +97,5 @@ RCC input-priority verification:
 - The interactive `Flickable` now has explicit z-priority over the panel-body catcher; direct pointer confirmation remains pending.
 
 ## Delivery
-- Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`), `df64eb5` (`feat(quickshell): compact right-panel power mode`), `a80d9a9` (`fix(quickshell): open audio control center collapsed`), `bafc01b` (`feat(quickshell): simplify compact audio controls`), `356fec9` (`fix(quickshell): restore compact audio mute clicks`), and `277ee7b` (`fix(quickshell): dispatch compact audio mute directly`) on `main`.
+- Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`), `df64eb5` (`feat(quickshell): compact right-panel power mode`), `a80d9a9` (`fix(quickshell): open audio control center collapsed`), `bafc01b` (`feat(quickshell): simplify compact audio controls`), `356fec9` (`fix(quickshell): restore compact audio mute clicks`), `277ee7b` (`fix(quickshell): dispatch compact audio mute directly`), and `bfa42b8` (`fix(quickshell): prioritize control center input`) on `main`.
 - No push unless separately requested.

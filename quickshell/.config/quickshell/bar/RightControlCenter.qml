@@ -203,8 +203,11 @@ Item {
             onClicked: mouse => mouse.accepted = true
         }
 
+        // Content owns the interactive cards; keep it above the body catcher so
+        // nested MouseAreas receive clicks instead of the panel's sink handler.
         Flickable {
             id: contentScroller
+            z: 1
             anchors { fill: parent; margins: Theme.rightPanelPadding }
             clip: true
             contentWidth: width

@@ -15,6 +15,10 @@ PanelWindow {
     // Quickshell default change silently reorder the bar against the panels
     // that now declare Top by hand. See specs/overlay-manager.md.
     WlrLayershell.layer: WlrLayer.Top
+    // Keyboard focus follows the in-surface right control center: only while
+    // it is open does this surface need key events (Escape-to-close). None is
+    // the PanelWindow default and keeps the bar inert when the RCC is closed.
+    WlrLayershell.keyboardFocus: rightControlCenter.isOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     anchors { top: true; left: true; right: true }
     readonly property real sideTabHeight: Math.max(leftTab.implicitHeight, rightTab.implicitHeight)
     readonly property real stableSurfaceContentHeight: Math.max(sideTabHeight, Theme.centerExpandedHeight)
@@ -28,14 +32,25 @@ PanelWindow {
     // dashboard does not resize the layer-shell surface or shift tiled windows.
     exclusiveZone: Math.ceil(reservedBarContentHeight)
 
-    implicitHeight: stableSurfaceContentHeight + (Theme.barStyle === "silhouette" ? Theme.barWrapDepth : 0)
+    // Full-output height: the right control center now renders inside this
+    // surface, so the window must span the whole output for its below-bar
+    // body and outside-click backdrop. While `screen` is still null at
+    // startup, fall back to the old content-height formula. Anchors stay
+    // top/left/right ONLY (never bottom) so the exclusive zone remains
+    // unambiguously top-edge.
+    implicitHeight: screen !== null ? screen.height : (stableSurfaceContentHeight + (Theme.barStyle === "silhouette" ? Theme.barWrapDepth : 0))
     margins { top: 0; left: 0; right: 0 }
     color: "transparent"
     mask: Region {
         regions: [
             Region { item: leftSection.hit },
             Region { item: centerSection.hit },
-            Region { item: rightSection.hit }
+            Region { item: rightSection.hit },
+            // Fourth region: the right-control-center backdrop. Region{item}
+            // reacts to the item's geometry only, so the backdrop reports 0x0
+            // while closed and contributes an empty rect; while open it fills
+            // the surface and takes outside clicks.
+            Region { item: rightControlCenter.backdropItem }
         ]
     }
 
@@ -58,8 +73,6 @@ PanelWindow {
     property int workspaceMonitorTick: 0
 
     // IPC signals
-    signal powerMenuOpened()
-    signal powerMenuClosed()
     signal mprisClosed()
     signal metricsOpened()
     signal metricsClosed()
@@ -72,8 +85,6 @@ PanelWindow {
     signal rightControlCenterClosed()
 
     // IPC functions
-    function closePowerMenu() { powerMenu.close() }
-    function openPowerMenu()  { powerMenu.open() }
     function closeMpris()     { mprisPopup.close() }
     function openMetrics()    { metricsDropdown.open() }
     function closeMetrics()   { metricsDropdown.close() }
@@ -91,7 +102,9 @@ PanelWindow {
     function closeRightControlCenter() { rightControlCenter.close() }
 
     // IPC readonly properties
-    readonly property bool powerMenuVisible: powerMenu.isOpen
+    // Power is a section of the right control center, not a standalone overlay,
+    // so its visibility derives from the RCC's open state and active section.
+    readonly property bool powerMenuVisible: rightControlCenter.isOpen && rightControlCenter.activeSection === "power"
     readonly property real powerBtnGlobalX:  rightTab.x + rightTab.width - powerMenu.implicitWidth - Theme.tabPaddingH
     // Horizontal center of the media chip, in this bar's window coordinates.
     // The collapsed header is [fill, ClockChip, MprisIndicator, fill] with two
@@ -301,20 +314,25 @@ PanelWindow {
         }
 
         RightIslandIconButton {
+            id: wifiButton
             icon: WifiService.wifiEnabled ? "󰤨" : "󰤭"
             label: "Wi-Fi"
+            disabled: !WifiService.wifiEnabled
             active: WifiService.wifiEnabled && WifiService.activeSsid.length > 0
             onClicked: root.rightControlCenterSectionRequested("wifi")
         }
 
         RightIslandIconButton {
+            id: bluetoothButton
             icon: BluetoothService.bluetoothEnabled ? "󰂯" : "󰂲"
             label: "Bluetooth"
+            disabled: !BluetoothService.bluetoothEnabled
             active: BluetoothService.bluetoothEnabled && (BluetoothService.connectedDevices || []).length > 0
             onClicked: root.rightControlCenterSectionRequested("bluetooth")
         }
 
         RightIslandIconButton {
+            id: audioButton
             icon: AudioService.outputMuted ? "󰝟" : "󰕾"
             label: "Audio"
             active: !AudioService.outputMuted
@@ -323,6 +341,7 @@ PanelWindow {
         }
 
         RightIslandIconButton {
+            id: notificationButton
             icon: root.notificationsState && root.notificationsState.doNotDisturb ? "󰂛" : "󰂚"
             label: "Notifications"
             active: root.notificationsState && root.notificationsState.recentModel && root.notificationsState.recentModel.count > 0
@@ -330,13 +349,27 @@ PanelWindow {
             onClicked: root.rightControlCenterSectionRequested("notifications")
         }
 
+        // Semantic divider between the service chips and the destructive
+        // session action. Purely decorative: it takes no input and changes no
+        // routing; islandSemanticGap widens the whitespace around it.
+        Rectangle {
+            Layout.preferredWidth: Theme.islandSeparatorWidth > 0
+                                      ? Theme.islandSeparatorWidth + Theme.islandSemanticGap * 2
+                                      : 0
+            Layout.preferredHeight: Theme.barChipHeight - Theme.spacingSm
+            Layout.alignment: Qt.AlignVCenter
+            radius: Math.min(1, Theme.islandSeparatorWidth / 2)
+            color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
+            visible: Theme.islandSeparatorWidth > 0
+        }
+
         PowerMenu {
             id: powerMenu
-            // Pin to this bar's screen; an unpinned layer-shell surface lets
-            // the compositor choose the output.
-            screenTarget: root.screen
-            onOpened: root.powerMenuOpened()
-            onClosed: root.powerMenuClosed()
+            // The pill emits intent upward; the coordinator routes it to the
+            // power section of the right control center, which owns the menu
+            // content inside this surface. No surface opens from the pill
+            // itself, and no global timer is involved for sibling switches.
+            onToggleRequested: root.rightControlCenterSectionRequested("power")
         }
     }
 
@@ -372,9 +405,6 @@ PanelWindow {
 
     RightControlCenter {
         id: rightControlCenter
-        // Pin to this bar's screen; an unpinned layer-shell surface lets
-        // the compositor choose the output.
-        screenTarget: root.screen
         notificationsState: root.notificationsState
         systemStatsState: root.systemStatsState
         onOpened: root.rightControlCenterOpened()

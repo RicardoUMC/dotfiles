@@ -47,7 +47,7 @@ ShellRoot {
 
     IpcHandler {
         target: "powermenu"
-        function toggle() { overlayManager.open("", "powermenu") }
+        function toggle() { overlayManager.openRightControlCenter("", "power") }
     }
 
     IpcHandler {
@@ -144,9 +144,31 @@ ShellRoot {
 
         property string activeOverlay: ""
         property string activeScreenName: ""
+        // Logical content path model (odd/tasks/interaction-tree-routing.md).
+        // activeOverlay stays the single global root identity; activeSection is
+        // the right-control-center child content ("" = aggregate landing). The
+        // derived activePath is the one truth source for relationship
+        // comparisons: same node toggles closed, a sibling switches locally,
+        // a different root closes globally. Child components keep emitting
+        // intent upward; no component-to-component calls. Descendant shape is
+        // reserved for later, not implemented:
+        //   right-control-center/audio/device-panel
+        property string activeSection: ""
+        readonly property string activePath: {
+            if (activeOverlay === "") return ""
+            if (activeOverlay === "right-control-center")
+                return activeSection === "" ? "right-control-center" : "right-control-center/" + activeSection
+            return activeOverlay
+        }
         property string _pendingOpen: ""
         property string _pendingScreenName: ""
         property string _pendingRightControlCenterSection: ""
+
+        // Build the full logical path for a right-control-center section.
+        // Centralized here so no visual component hardcodes path literals.
+        function rightControlCenterPath(section) {
+            return section === "" ? "right-control-center" : "right-control-center/" + section
+        }
 
         function open(screenName, name) {
             if (activeOverlay === name && activeScreenName === screenName) { _closeActive(); return }
@@ -158,11 +180,23 @@ ShellRoot {
         }
 
         function openRightControlCenter(screenName, section) {
+            const targetPath = rightControlCenterPath(section)
             if (activeOverlay === "right-control-center" && activeScreenName === screenName) {
+                // Same screen, same root. Same path toggles closed through the
+                // re-entrancy-guarded _closeActive(); a different child switches
+                // sibling content locally without tearing down the global root
+                // or restarting the 50 ms timer.
+                if (activePath === targetPath) { _closeActive(); return }
                 const bar = root.barForScreen(screenName)
-                if (bar !== null) bar.openRightControlCenterSection(section)
+                if (bar !== null) {
+                    bar.openRightControlCenterSection(section)
+                    activeSection = section
+                }
                 return
             }
+            // Different root or different screen: preserve the global
+            // close-then-open behavior through the shared timer. A rapid second
+            // request replaces the pending path instead of queueing a duplicate.
             _closeActive()
             _pendingRightControlCenterSection = section
             _pendingScreenName = screenName
@@ -182,13 +216,13 @@ ShellRoot {
             const ownerScreenName = activeScreenName
             activeOverlay = ""
             activeScreenName = ""
+            activeSection = ""
             if (current === "") return
             if (current === "launcher") { launcher.visible = false; return }
             // The owning instance may already be gone (monitor unplugged):
             // its surfaces were destroyed with it, state is cleared above.
             const bar = root.barForScreen(ownerScreenName)
             if (bar === null) return
-            if (current === "powermenu") bar.closePowerMenu()
             if (current === "mpris") bar.closeMpris()
             if (current === "metrics") bar.closeMetrics()
             if (current === "center-panel") bar.closeCenterPanel()
@@ -204,12 +238,12 @@ ShellRoot {
             }
             const bar = root.barForScreen(screenName)
             if (bar === null) return  // No instance on that screen — nothing to open.
-            if (name === "powermenu") bar.openPowerMenu()
             if (name === "mpris") bar.openMpris()
             if (name === "metrics") bar.openMetrics()
             if (name === "center-panel") bar.openCenterPanel()
             if (name === "right-control-center") {
                 bar.openRightControlCenterSection(_pendingRightControlCenterSection)
+                activeSection = _pendingRightControlCenterSection
             }
             _pendingRightControlCenterSection = ""
             activeOverlay = name
@@ -247,7 +281,14 @@ ShellRoot {
                 root.workspaceMonitorTick++
                 Hyprland.refreshMonitors()
             }
-            if (["workspace","workspacev2","moveworkspace","movewindow","activewindow","fullscreen"].includes(n))
+            // Workspace/window transitions are global focus loss and close the
+            // active overlay regardless of which screen emitted them. `activewindow`
+            // is deliberately NOT in this list: it fires on the panel's own
+            // OnDemand keyboard-focus transition the moment a right-control-center
+            // opens, so treating it as a focus-loss event closed the panel it was
+            // supposed to keep open. Explicit backdrop click and Escape remain the
+            // focus-loss/close paths for interactive panels.
+            if (["workspace","workspacev2","moveworkspace","movewindow","fullscreen"].includes(n))
                 overlayManager.closeAll()
         }
     }
@@ -291,7 +332,6 @@ ShellRoot {
             // this bar, so every event carries its own screen identity and the
             // coordinator can command the exact instance that emitted it. Bar
             // instances never talk to each other; all coordination lives here.
-            onPowerMenuClosed: overlayManager.close(barInstance.screenName, "powermenu")
             onMprisClosed: overlayManager.close(barInstance.screenName, "mpris")
             onMetricsClosed: overlayManager.close(barInstance.screenName, "metrics")
             onCenterPanelToggleRequested: overlayManager.open(barInstance.screenName, "center-panel")
@@ -323,7 +363,7 @@ ShellRoot {
             const inBar = y < bar.reservedBarContentHeight
             if (!inBar) return
             if (x >= bar.powerBtnGlobalX) {
-                overlayManager.open(bar.screenName, "powermenu")
+                overlayManager.openRightControlCenter(bar.screenName, "power")
             } else if (bar.mprisChipActive
                        && x >= bar.mprisChipGlobalX - bar.mprisChipWidth / 2
                        && x <= bar.mprisChipGlobalX + bar.mprisChipWidth / 2) {

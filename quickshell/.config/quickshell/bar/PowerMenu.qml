@@ -1,40 +1,35 @@
 import QtQuick
-import QtQuick.Layouts
-import Quickshell
-import Quickshell.Wayland
-import Quickshell.Io
 import "../theme"
 
+// Immediate power sibling trigger for the right control center. This component
+// renders only the destructive pill button; its menu content now lives inside
+// RightControlCenter, which owns the in-surface tree for the power section.
+// The pill emits intent upward and never opens or closes a surface itself.
 Item {
     id: root
 
     implicitWidth: btn.width
     implicitHeight: btn.height
 
-    // Wayland output this overlay pins itself to, passed down from the Bar
-    // instance that owns it. An unpinned layer-shell surface sends a null
-    // wl_output to get_layer_surface, so the compositor picks the screen.
-    property var screenTarget: null
+    signal toggleRequested()
 
-    signal opened()
-    signal closed()
-    function close() { popup.visible = false; closed() }
-    function open() { popup.selectedIndex = 0; popup.visible = true; opened() }
-    readonly property bool isOpen: popup.visible
-
+    // Power is a destructive session action, not a service chip: it takes a
+    // pill silhouette with a resting red tint instead of the service chips'
+    // variable-radius tiles.
     Rectangle {
         id: btn
         width: 28
         height: Theme.barChipHeight
-        radius: Theme.radiusSm
-        color: mouseBtn.containsMouse
-            ? Qt.rgba(Colors.red.r, Colors.red.g, Colors.red.b, Theme.opacityDim)
-            : Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacityOverlay)
-        border {
-            width: 1
-            color: mouseBtn.containsMouse
-                ? Qt.rgba(Colors.red.r, Colors.red.g, Colors.red.b, 0.5)
-                : Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
+        radius: height / 2
+        color: Qt.rgba(Colors.red.r, Colors.red.g, Colors.red.b, Theme.islandPowerTintOpacity)
+
+        // Transient feedback under the icon, riding on the resting tint;
+        // inherits the pill radius.
+        StateLayer {
+            hovered: mouseBtn.containsMouse && !mouseBtn.pressed
+            pressed: mouseBtn.pressed
+            stateColor: Colors.red
+            radius: btn.radius
         }
 
         Text {
@@ -48,135 +43,7 @@ Item {
             id: mouseBtn
             anchors.fill: parent
             hoverEnabled: true
-            onClicked: popup.visible ? root.close() : root.open()
+            onClicked: root.toggleRequested()
         }
     }
-
-    // Fullscreen PanelWindow in Top — manages its own outside-click dismissal.
-    // No external backdrop needed for the PowerMenu.
-    PanelWindow {
-        id: popup
-        visible: false
-        // Null keeps the compositor-picks-output default; a screen pins it.
-        screen: root.screenTarget
-        color: "transparent"
-        // Layer rule: transient system feedback (toasts, OSD) owns Overlay; interactive panels are Top.
-        WlrLayershell.layer: WlrLayer.Top
-        WlrLayershell.keyboardFocus: visible ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
-        exclusionMode: ExclusionMode.Ignore
-        anchors { top: true; bottom: true; left: true; right: true }
-
-        onVisibleChanged: if (visible) keyHandler.forceActiveFocus()
-
-        property int selectedIndex: 0
-        readonly property int itemCount: 3
-
-        // Click anywhere outside the menu content closes the popup
-        MouseArea {
-            anchors.fill: parent
-            onClicked: { popup.visible = false; root.closed() }
-        }
-
-        Item {
-            id: keyHandler
-            anchors.fill: parent
-            focus: true
-
-            Keys.onPressed: event => {
-                const key = event.key
-                if (key === Qt.Key_J || key === Qt.Key_Down) {
-                    popup.selectedIndex = (popup.selectedIndex + 1) % popup.itemCount
-                    event.accepted = true
-                } else if (key === Qt.Key_K || key === Qt.Key_Up) {
-                    popup.selectedIndex = (popup.selectedIndex - 1 + popup.itemCount) % popup.itemCount
-                    event.accepted = true
-                } else if (key === Qt.Key_Return || key === Qt.Key_Enter) {
-                    actions[popup.selectedIndex]()
-                    event.accepted = true
-                } else if (key === Qt.Key_Escape) {
-                    popup.visible = false
-                    root.closed()
-                    event.accepted = true
-                }
-            }
-
-            // Matches order of PowerMenuItems below
-            property var actions: [
-                () => { popup.visible = false; rebootCmd.running = true },
-                () => { popup.visible = false; poweroffCmd.running = true },
-                () => { popup.visible = false; logoutCmd.running = true }
-            ]
-        }
-
-        // Menu content anchored to top-right corner
-        Rectangle {
-            anchors { top: parent.top; right: parent.right }
-            anchors { topMargin: Theme.barHeight + Theme.spacingMd - 1; rightMargin: Theme.spacingMd - 1 }
-            width: 160
-            height: col.implicitHeight + Theme.spacingLg
-            radius: Theme.radiusMd
-            color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacitySurface)
-            border {
-                width: 1
-                color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.35)
-            }
-
-            // Consume clicks so they don't propagate to the fullscreen dismiss MouseArea
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {}
-            }
-
-            ColumnLayout {
-                id: col
-                anchors { fill: parent; margins: Theme.spacingSm }
-                spacing: Theme.spacingXs
-
-                PowerMenuItem {
-                    icon: "󰜉"
-                    label: "Reiniciar"
-                    selected: popup.selectedIndex === 0
-                    onActivated: { popup.visible = false; rebootCmd.running = true }
-                }
-
-                PowerMenuItem {
-                    icon: "󰐥"
-                    label: "Apagar"
-                    danger: true
-                    selected: popup.selectedIndex === 1
-                    onActivated: { popup.visible = false; poweroffCmd.running = true }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 1
-                    color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.2)
-                }
-
-                PowerMenuItem {
-                    icon: "󰍃"
-                    label: "Cerrar sesión"
-                    selected: popup.selectedIndex === 2
-                    onActivated: { popup.visible = false; logoutCmd.running = true }
-                }
-            }
-
-            // Debug visual bounds overlay (development scaffolding)
-            Rectangle {
-                anchors.fill: parent
-                color: "transparent"
-                radius: parent.radius
-                border {
-                    width: Theme.debugBorderWidth
-                    color: Theme.debugBorderColor
-                }
-                visible: Theme.debugVisualBounds
-                z: 999
-            }
-        }
-    }
-
-    Process { id: rebootCmd;  command: ["systemctl", "reboot"] }
-    Process { id: poweroffCmd; command: ["systemctl", "poweroff"] }
-    Process { id: logoutCmd;  command: ["hyprctl", "dispatch", "exit"] }
 }

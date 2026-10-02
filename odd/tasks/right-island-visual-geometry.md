@@ -56,5 +56,5 @@ Audio flow verification:
 - The interactive visual click path remains pending direct pointer confirmation; the state transition is now explicit in `RightControlCenter.qml` and the Audio card's second-step controls remain intact.
 
 ## Delivery
-- Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`) and `df64eb5` (`feat(quickshell): compact right-panel power mode`) on `main`.
+- Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`), `df64eb5` (`feat(quickshell): compact right-panel power mode`), and `a80d9a9` (`fix(quickshell): open audio control center collapsed`) on `main`.
 - No push unless separately requested.

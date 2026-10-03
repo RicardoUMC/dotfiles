@@ -4,7 +4,9 @@
 
 In Progress
 
-Implemented and lint-verified: `services/` Wi-Fi, Bluetooth and Audio singletons; the specialty cards (`WifiControlCard`, `BluetoothControlCard`, `AudioControlCard`/`AudioControlPanel`, `NotificationControlCard`, `MetricsControlCard`); the `RightControlCenter` host with per-section specialty routing; and compact right-island icons. The radio/adapter power switch in the two radio heroes and the group-header overflow reveals are implemented in the cards described below. None of it is yet verified at runtime on the live compositor, so this is `In Progress` rather than `Implemented`.
+Implemented and lint-verified: `services/` Wi-Fi, Bluetooth and Audio singletons; the specialty cards (`WifiControlCard`, `BluetoothControlCard`, `AudioControlCard`/`AudioControlPanel`, `NotificationControlCard`, `MetricsControlCard`); the `RightControlCenter` host with per-section specialty routing; and compact right-island icons. The radio/adapter power switch in the two radio heroes and the group-header overflow reveals are implemented in the cards described below.
+
+The Caelestia-inspired right-island visual pass is also implemented: the fill/shape/state-layer chip grammar (`StateLayer.qml` + rebuilt `RightIslandIconButton.qml`), the disabled-vs-active precedence, the configurable semantic divider, the distinct power pill, and the scoped `Motion` pilot (`theme/Motion.qml`, control-center body height, chip fill, and state-layer transitions). It is verified by Qt 6.11 lint and offscreen runtime probes; **live compositor visual confirmation and a debug-off screenshot are still pending**, so this remains `In Progress` rather than `Implemented`. Feature document: `odd/tasks/caelestia-right-island.md`.
 
 ## Purpose
 
@@ -42,6 +44,7 @@ Inspirations:
 
 - **Ambxst / Ax-Shell**: modular panels, expandable dashboards, composable controls, polished animations.
 - **Dank Material Shell**: visual cohesion, hierarchy, restraint, and consistent spacing/typography.
+- **Caelestia** (`caelestia-dots/shell`, kept outside the repo): the right-island visual pass adapts its **state-layer principle** (interaction state as flat fill, never border) and its **intent-named motion principle** (effects vs. spatial, no per-call-site easing literals). Inspiration only — no copied code, no Material-3 palette or curve table, no SDF/blob shader, no hover-open behavior; the Tokyo City palette and the single-slot overlay architecture are preserved. Rationale and rejected adaptations: `DESIGN.md`.
 
 ## Included Capabilities
 
@@ -158,6 +161,8 @@ Default animation style: slide from the right.
 
 Each style should eventually expose independent parameters through config and later Settings GUI, such as duration, easing, distance, scale origin/intensity, opacity curve, and reduced-motion behavior. The animation config should support a global default plus per-overlay overrides, so the control center, launcher, power menu, and future panels can differ when useful without duplicating the motion model. The first implementation may support a smaller subset, but should avoid baking motion constants directly into components.
 
+Current state: the scoped motion pilot is implemented. `theme/Motion.qml` provides named `Effects` / `EffectsColor` / `Spatial` intents driven by `Theme.anim*` and one global `anim.scale` multiplier, applied so far to the right island and control center only (`StateLayer` opacity, chip fill color, `panelBody` height). Panel-window open/close animation styles and per-overlay overrides remain unimplemented; `PanelWindow.visible` has no exit animation because the overlay manager tears the surface down synchronously. Unmigrated call sites elsewhere in the shell still use `Theme.anim*` directly by design. Contract: `specs/theme-system.md`.
+
 ## Overlay Model
 
 The existing centralized overlay coordination in `shell.qml` remains the authority. What it actually does today is a **single global slot**: one `activeOverlay` plus one `activeScreenName`, so opening any overlay closes the active one on any screen, with the surface pinned to the screen that requested it.
@@ -171,15 +176,17 @@ The requirements that remain true regardless of the model:
 - Explicit user actions drive panel transitions.
 - A short delay before opening remains useful to avoid Wayland serial conflicts — one shared 50 ms timer for the session, never one per bar instance.
 
-**Open proposal, not implemented:** an explicit parent/child or depth-aware tree, with group membership and descendant cascade. There are no context groups in the codebase; the `bar-primary` / `bar-secondary` grouping that earlier revisions of this spec assumed was never implemented. Revisit the proposal only if a future surface genuinely needs two overlays open at once, and treat that as a change to the exclusivity rule rather than metadata on top of it. See `specs/overlay-manager.md`.
+**Logical interaction tree — implemented (lint-verified; live pointer confirmation pending):** the relationship-aware transitions among the control center's sections are now modeled as logical paths (`right-control-center`, `right-control-center/wifi`, `right-control-center/bluetooth`, `right-control-center/audio`, `right-control-center/notifications`). Same section on the same screen toggles closed; a different sibling section switches content in place without tearing down the root, losing screen ownership, or restarting the 50 ms timer. The descendant shape `right-control-center/audio/device-panel` is reserved in comments only — the current audio device panel remains content inside the `RightControlCenter` surface, not a routed node.
+
+**Concurrent parent/child overlays remain explicitly out of scope.** There are no context groups in the codebase; the `bar-primary` / `bar-secondary` grouping that earlier revisions of this spec assumed was never implemented. If a future surface genuinely needs two overlays open at once, treat that as a change to the exclusivity rule rather than metadata on top of it. See `specs/overlay-manager.md` and `odd/tasks/interaction-tree-routing.md`.
 
 ## Collapsed Right Island
 
 The compact right-island state should support two design modes:
 
-- **Icon access mode**: compact icons for key entry points. Default visible icons should be Wi-Fi, Bluetooth, audio, notifications, and power.
+- **Icon access mode**: compact icons for key entry points. Default visible icons should be Wi-Fi, Bluetooth, audio, notifications, and power. This is what ships: four fill/shape-grammar **service chips**, a configurable **semantic hairline** separating them from the power action (`island.separatorWidth`, `island.semanticGap`; width `0` removes line and gap together), and a **power pill** — same height, pill radius, resting red tint, red state layer — as the visually distinct direct action. Full collapsed-island behavior: [Collapsed Right Island](#collapsed-right-island); token contract: `specs/theme-system.md`.
 - **Adaptive status mode**: shows the most relevant current state with a strict visual limit, avoiding noisy always-visible telemetry.
-- **Power action**: power remains visually separated at the end of the right island and continues to open the existing PowerMenu directly. It should remain separate from the control center long-term; a future visual redesign may refine the power affordance based on design-skill feedback, but its direct-action role should remain distinct from daily control-center interactions.
+- **Power action**: power remains visually separated at the end of the right island and continues to open the existing PowerMenu directly. It should remain separate from the control center long-term; a future visual redesign may refine the power affordance based on design-skill feedback, but its direct-action role should remain distinct from daily control-center interactions. The current pass made that separation structural: the pill's shape and destructive tint, not a border, mark it as different from service chips.
 
 The user should eventually be able to choose between these modes and configure visible compact icons through configuration and later the Settings GUI. The first implementation may choose one default, but should avoid hardcoding assumptions that prevent the other.
 

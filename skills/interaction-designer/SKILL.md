@@ -20,6 +20,32 @@ Use this skill before implementing or revising UI flows, overlay behavior, neste
 - Preserve Tokyo City dark terminal character and Ambxst/Ax-Shell/Dank-inspired ambition without copying.
 - Keep motion purposeful, short, and supportive of state comprehension.
 
+## Logical interaction tree (normative)
+
+Interactive content is modeled as a **logical path tree**, not as concurrent overlay windows. The single global root overlay (`activeOverlay` + `activeScreenName`) and the one shared 50 ms open timer are unchanged; the tree describes how content *inside* a root surface relates to itself.
+
+```text
+root
+└── right-control-center
+    ├── wifi
+    ├── bluetooth
+    ├── audio
+    │   └── device-panel (reserved descendant shape; current panel remains content)
+    └── notifications
+```
+
+Every actionable implementation must honor these transitions:
+
+- **Same path on the same screen toggles closed.**
+- **A sibling path switches local content** in place — it preserves the root overlay and its screen ownership and does not restart the 50 ms timer.
+- **A descendant path preserves its parent** and opens the child content inside the owning surface.
+- **A different root or a different screen closes globally first**, then opens through the shared 50 ms timer.
+- **Rapid pending requests replace one another** — a single pending slot, never a queue of duplicate opens.
+- **Child components emit intent upward; the coordinator owns relation decisions.** No component-to-component calls.
+- **Every actionable trigger must define, before implementation:** pointer hover and press, keyboard/focus, disabled state, loading/error state, repeated-click behavior, outside-click, `Escape`, and screen ownership. If any of these is ambiguous, stop and resolve it in the spec before writing code.
+
+Full contract: `specs/overlay-manager.md` and `odd/tasks/interaction-tree-routing.md`.
+
 ## Decision Gates
 - If ownership of state is unclear, stop and assign it before implementation.
 - If nested panels can conflict with global overlays, define close order and exclusivity first.

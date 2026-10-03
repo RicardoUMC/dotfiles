@@ -35,7 +35,8 @@ Exclusivity is **one global slot, no groups**. There is exactly one `activeOverl
 
 ### State ownership
 
-- `property string activeOverlay` and `property string activeScreenName` are the only overlay state; there is no overlay stack and no list of open surfaces.
+- `property string activeOverlay` and `property string activeScreenName` are the root overlay state; there is no overlay stack and no list of open surfaces.
+- Logical path state: `activeSection` mirrors the right-control-center child content (`""` = aggregate landing) and the derived readonly `activePath` is the one truth source for relationship comparison (`right-control-center`, `right-control-center/wifi`, ...). Both are built through the centralized `rightControlCenterPath(section)` helper so no visual component hardcodes path literals.
 - Request state: `_pendingOpen`, `_pendingScreenName`, `_pendingRightControlCenterSection`.
 - Visibility itself stays inside each surface (`popup.visible`, exposed as `isOpen` / `readonly property bool powerMenuVisible` etc.); the manager commands surfaces through `Bar.qml` functions (`openPowerMenu()`, `closeMpris()`, `closeCenterPanel()`, `closeRightControlCenter()`, `openRightControlCenterSection(section)`) and through `launcher.visible` for the launcher.
 - The manager lives in `ShellRoot`, so a `Bar` reload or a per-screen instance never recreates the coordination state.
@@ -54,7 +55,34 @@ The manager implements no group table, no group membership, and no per-group com
 
 - Same-group "coexistence" is a consequence of composition, not of group logic: `center-panel` does not open a separate visible panel but expands the bar's own center notch in place, and `right-control-center` hosts its section cards (Wi-Fi, Bluetooth, Audio, Notifications) as content inside that one surface, so switching sections is not an overlay transition.
 - `_closeActive()` clears `activeOverlay`/`activeScreenName` **before** hiding the surface, specifically so the surface's own `closed()` signal re-entering `overlayManager.close()` cannot cascade. That guard is what makes single-slot state safe with signal-driven teardown.
-- Group-era language has been purged from every live document, including the two that once described the model as if it existed: `skills/interaction-designer/SKILL.md` now states the single global slot and warns against designing for `bar-primary`/`bar-secondary`, and this spec's own tree/graph material is labelled an open proposal rather than current behavior. What remains in those files is explicit negation, not a surviving model.
+- Group-era language has been purged from every live document, including the two that once described the model as if it existed: `skills/interaction-designer/SKILL.md` now states the single global slot and warns against designing for `bar-primary`/`bar-secondary`. What remains in those files is explicit negation, not a surviving model.
+- Distinct from groups, the **logical interaction tree** is now implemented (see below): it models relationships *within* one root surface as paths, not as a multi-window stack, so it does not resurrect group semantics.
+
+### Logical interaction tree
+
+Implemented (lint-verified; live pointer confirmation pending): the coordinator models the right-control-center's child content as a logical path tree, not as concurrent overlays. `activeOverlay` stays the single global root identity; `activeSection` mirrors the child content (`""` = aggregate landing), and the derived `activePath` is the one truth source for relationship comparison.
+
+```text
+root
+└── right-control-center
+    ├── wifi
+    ├── bluetooth
+    ├── audio
+    │   └── device-panel (reserved descendant shape; current panel remains content)
+    └── notifications
+```
+
+Transition rules, implemented in `openRightControlCenter(screenName, section)`:
+
+- **Same path on the same screen toggles closed** — `activePath === rightControlCenterPath(section)` routes through the re-entrancy-guarded `_closeActive()`.
+- **A sibling path switches local content** — same screen, same root, different child calls `bar.openRightControlCenterSection(section)` in place and updates `activeSection` truthfully: no teardown, no timer restart, screen ownership preserved.
+- **A descendant path preserves its parent and opens child content inside the owning surface.** The concrete descendant `right-control-center/audio/device-panel` is reserved in comments only; the current audio device panel remains content inside `RightControlCenter`, not a routed node.
+- **A different root or screen closes globally first, then opens through the shared 50 ms timer** — the existing close-then-open path.
+- **Rapid pending requests replace rather than queue** — one `_pendingRightControlCenterSection` slot, `overlayOpenTimer.restart()` on every queued open.
+
+`_closeActive()` clears `activeSection` alongside `activeOverlay`/`activeScreenName` before hiding the surface, and `_doOpen()` sets `activeSection` from the pending section before consuming it, so `activePath` stays truthful through every open and close. The empty-section aggregate path (`right-control-center`) stays coherent even though its entry point is dormant.
+
+Concurrent parent/child overlays remain **out of scope**: no multi-window stack, no change to the single-slot exclusivity rule, no `Top`/`Overlay` layer change. Feature document: `odd/tasks/interaction-tree-routing.md`.
 
 ### Layer policy
 
@@ -144,7 +172,7 @@ There is no descendant registry; the cascade is achieved by two mechanisms that 
 ### Open sequencing rules
 
 - Overlays open only on explicit user interaction (click, keybinding, IPC request). No `hovered` handler opens, closes, or replaces an overlay anywhere in the managed set; hover only changes selection or tint inside the already-open surface.
-- For `"right-control-center"`, `_doOpen()` consumes `_pendingRightControlCenterSection` and clears it; an empty section string opens the plain landing state, and `openRightControlCenter(screenName, section)` short-circuits to `bar.openRightControlCenterSection(section)` when that overlay is already active on the same screen — a section switch is not a close/reopen cycle and does not touch the 50 ms timer.
+- For `"right-control-center"`, `_doOpen()` consumes `_pendingRightControlCenterSection` and clears it; an empty section string opens the plain landing state. Same-screen section requests route through `openRightControlCenter(screenName, section)` and follow the logical-tree transitions above — a same-path toggle or a sibling switch never tears the root down and never touches the 50 ms timer; only a different root or screen goes through the timer.
 
 ## Verified at runtime
 

@@ -1,11 +1,15 @@
 # Bar
 
 **Status:** Implemented
-**Files:** `quickshell/.config/quickshell/bar/Bar.qml`, `BarTab.qml`, `BarSection.qml`, `NotchIslandMask.qml`, `NotchCornerMask.qml`, `Workspaces.qml`, `RightIslandIconButton.qml`, `RightControlCenter.qml`, instantiation in `shell.qml`
+**Files:** `quickshell/.config/quickshell/bar/Bar.qml`, `BarTab.qml`, `BarSection.qml`, `NotchIslandMask.qml`, `NotchCornerMask.qml`, `Workspaces.qml`, `RightIslandIconButton.qml`, `StateLayer.qml`, `RightControlCenter.qml`, `PowerMenu.qml`, instantiation in `shell.qml`
 
 ## Description
 
 Top-anchored floating bar composed of independent wrapped-silhouette islands. Each `Bar` is one instance bound to one screen; it coordinates the overlay state of the surfaces it owns and expands the center island in place into a lightweight dashboard.
+
+## Future evolution
+
+The future, not-yet-implemented configurable bar design is specified in [Configurable Bar](configurable-bar.md). That design preserves this current top/island behavior as the baseline while adding per-monitor position and visibility policies, a separate continuous style, and embedded or detached dashboard attachment. This spec remains the source of truth for the implemented bar until that design is implemented and verified.
 
 ## Behavior
 
@@ -23,7 +27,7 @@ Top-anchored floating bar composed of independent wrapped-silhouette islands. Ea
 - Decorative wrapped silhouette depth may draw below the reserved height when `Theme.barStyle === "silhouette"`
 - Keeps `PanelWindow.implicitHeight` stable at the expanded-aware surface height so opening the center dashboard does not resize the layer-shell surface or shift tiled windows
 - `reservedBarContentHeight` is the max of the three sections' reserved heights and is the single value the bar hands the compositor as its exclusive zone (`Math.ceil` of it). Observed at `42` px on both monitors via `hyprctl monitors` (`reserved: 0 42 0 0`). Other components use it as the bar's hit band rather than guessing from `Theme.barHeight` or `Theme.barRailHeight`.
-- Left and right islands share `sideTabHeight`; workspace, control-center, and power chips share `Theme.barChipHeight`
+- Left and right islands share `sideTabHeight`; workspace chips and the four right-island service chips share `Theme.barChipHeight`; the power pill is the same height with a pill radius
 - The center island uses `Theme.centerCollapsedWidth` when collapsed and `Theme.centerExpandedWidth` / `Theme.centerExpandedHeight` when expanded
 - Expanded center content overlays app windows without increasing reserved Hyprland space
 - The expanded dashboard body uses dashboard structural tokens for radius, background opacity, border width, and inner padding
@@ -47,8 +51,9 @@ Top-anchored floating bar composed of independent wrapped-silhouette islands. Ea
 - Managed-overlay semantics, reachability per name, and the single-slot (no context groups) model are specified in `specs/overlay-manager.md`
 
 ### Power button
+- Distinct from the service chips by shape and color, not by an outline: a pill (`radius = height / 2`) with a resting red tint at `Theme.islandPowerTintOpacity` and a red `StateLayer` hover/press overlay — the destructive session action should not read as another service tile
 - Positioned at right edge with fixed `x` exposed as `powerBtnGlobalX` for launcher click detection
-- Click toggles PowerMenu overlay
+- Click toggles PowerMenu overlay; popup behavior is unchanged by the right-island visual pass
 - `PowerMenu` emits `opened()` / `closed()`; `Bar` re-emits as `powerMenuOpened` / `powerMenuClosed` and the shell updates `activeOverlay`. The signal pair was previously `onOpened()` / `closed()`, and `Bar` bound `onOnClosed:` to a signal that did not exist — closing the menu therefore never cleared overlay state. See `specs/overlay-manager.md`.
 
 ### Left island — workspaces
@@ -73,11 +78,20 @@ Top-anchored floating bar composed of independent wrapped-silhouette islands. Ea
 - The standalone `MprisPopup` is reachable only through launcher outside-click routing — see `specs/overlay-manager.md`
 
 ### Right island
-- Four `RightIslandIconButton` chips in order: Wi-Fi, Bluetooth, Audio, Notifications, followed by the `PowerMenu` button
-- Each chip is a reusable icon + active/warning-accent button that **deep-links** into the control center: it emits `rightControlCenterSectionRequested("<section>")`, which opens `RightControlCenter` on that section rather than routing through an aggregate panel
-- Chip state is read from the injected `notificationsState` and from the `pragma Singleton` services (`WifiService`, `BluetoothService`, `AudioService`) directly in `Bar.qml`
-- Active/warning semantics per chip: Wi-Fi active when enabled with an active SSID; Bluetooth active when enabled with connected devices; Audio active unless output-muted (muted shows the warning tint); Notifications active when the retained store is non-empty, warning when DND or sound-muted
-- Section semantics, card content, and layout of the control center are specified in `specs/right-island-control-center.md`
+- Four `RightIslandIconButton` **service chips** in order — Wi-Fi, Bluetooth, Audio, Notifications — then a configurable **semantic divider**, then the `PowerMenu` **pill**. The divider and the power pill are separate objects, not a fifth chip
+- Each chip is a reusable button that **deep-links** into the control center: it emits `rightControlCenterSectionRequested("<section>")`, which opens `RightControlCenter` on that section rather than routing through an aggregate panel
+- **State grammar (Caelestia-inspired adaptation — fill/shape/state-layer, no copied code, no hover-open, Tokyo City palette preserved):** chips express state through fill tint, icon accent, and the shared `StateLayer.qml` hover/press overlay — never through a per-chip border, because the wrapped silhouette already carries the edge. States, in precedence order:
+  - `disabled` (adapter off) — quiet dimmed `base01` fill, muted icon; takes visual precedence over `active` so a powered-off radio never reads live
+  - off / not connected — quiet `base01` fill at `Theme.opacityOverlay`, dim icon
+  - `active` — accent-tinted fill at `Theme.islandActiveFillOpacity` + accent icon
+  - `warning` (muted, DND) — orange-tinted fill + orange icon; warning wins over active
+  - hover / press — `StateLayer` fill at `Theme.islandStateLayerHoverOpacity` / `Theme.islandStateLayerPressedOpacity`, inheriting the chip radius
+- Chip fill animates state flips through `Motion.EffectsColor` (state can change while on screen; an instant color flip reads as a glitch). The hover-driven icon color is deliberately **not** animated — delaying pointer feedback would make the chip feel laggy
+- `disabled` and `active` are fed from the injected `notificationsState` and the `pragma Singleton` services (`WifiService`, `BluetoothService`, `AudioService`) directly in `Bar.qml`; per-chip semantics: Wi-Fi disabled when the radio is off, active when enabled with an active SSID; Bluetooth likewise with connected devices; Audio active unless output-muted (muted shows warning); Notifications active when the retained store is non-empty, warning when DND or sound-muted
+- The **semantic divider** between the service group and the power action is a decorative hairline colored from `Colors.muted` at `Theme.opacityBorder`. It takes no input and changes no routing. `Theme.islandSeparatorWidth` sets its width and `Theme.islandSemanticGap` adds whitespace on each side; setting the width to `0` removes **both** the line and the gap
+- Click routing is unchanged by the visual pass; the consumer owns semantics via `clicked`
+- Section semantics, card content, and layout of the control center are specified in `specs/right-island-control-center.md`; the motion primitive in `specs/theme-system.md`
+- **Verification status:** implemented; Qt 6.11 lint-clean and validated by offscreen motion probes. Live compositor visual confirmation and a debug-off screenshot are still pending — see `odd/tasks/caelestia-right-island.md`
 
 ### Metrics entry point — deliberately absent
 - **Decision:** the right island has no metrics button. `MetricsButton.qml` is deleted and its `bar/qmldir` entry removed, along with the never-emitted `Bar.metricsToggleRequested` and `Bar.mprisToggleRequested` signals and their `shell.qml` handlers.

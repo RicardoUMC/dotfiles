@@ -43,3 +43,6 @@ The current first slice is functionally correct but leaves a large empty panel w
 - [x] Make motion globally configurable with per-part overrides and configurable wallpaper application transitions.
 - [x] Add real wallpaper preview transactions: preview on carousel navigation, restore on cancel, persist only on Apply.
 - [x] Restore persisted wallpaper on shell startup and verify after hard shell restart.
+
+## Delivery Evidence
+- Work-unit commit: `84e6a29` (`feat(quickshell): add wallpaper selector preview workflow`)

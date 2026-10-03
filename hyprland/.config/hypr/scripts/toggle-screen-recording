@@ -62,7 +62,17 @@ fi
 timestamp="$(date +%Y%m%d_%H%M%S)"
 output_path="${recording_dir}/screen_${timestamp}.mp4"
 
-"${recorder}" -w screen -f 60 -o "${output_path}" >/dev/null 2>&1 &
+# Capture whichever output currently owns keyboard focus; do not hardcode a
+# monitor or resolution. gpu-screen-recorder requires the focused output size
+# explicitly when using -w focused.
+focused_monitor="$(hyprctl monitors -j | jq -r '.[] | select(.focused == true) | .name' | head -n 1)"
+focused_size="$(hyprctl monitors -j | jq -r '.[] | select(.focused == true) | "\(.width)x\(.height)"' | head -n 1)"
+if [[ -z "${focused_monitor}" || -z "${focused_size}" ]]; then
+    notify "Recording failed" "Could not resolve the focused monitor"
+    exit 1
+fi
+
+"${recorder}" -w "${focused_monitor}" -s "${focused_size}" -f 60 -o "${output_path}" >/dev/null 2>&1 &
 pid="$!"
 printf '%s\n%s\n' "${pid}" "${output_path}" > "${pid_file}"
 

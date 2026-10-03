@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/hyprland"
+state_file="$state_dir/zoom-factor"
+mkdir -p "$state_dir"
+
+exec 9>"$state_file.lock"
+flock -x 9
+
+factor="1.0"
+if [[ -s "$state_file" ]] && [[ "$(<"$state_file")" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    factor="$(<"$state_file")"
+fi
+
+case "${1:-}" in
+    in) factor="$(awk -v value="$factor" 'BEGIN { printf "%.1f", value * 2 }')" ;;
+    out) factor="$(awk -v value="$factor" 'BEGIN { printf "%.1f", value / 2 }')" ;;
+    reset) factor="1.0" ;;
+    *) printf 'Usage: %s {in|out|reset}\n' "$0" >&2; exit 2 ;;
+esac
+
+factor="$(awk -v value="$factor" 'BEGIN { if (value < 1.0) value = 1.0; if (value > 5.0) value = 5.0; printf "%.1f", value }')"
+printf '%s\n' "$factor" > "$state_file"
+# Lua-configured Hyprland rejects the legacy `keyword` command. Update the
+# live option through Hyprland's Lua evaluator instead.
+hyprctl eval "hl.config({ cursor = { zoom_factor = $factor } })"

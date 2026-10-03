@@ -40,6 +40,10 @@ hl.config({
     dwindle = { preserve_split = true },
     master = { new_status = "master" },
     misc = { force_default_wallpaper = 2, disable_hyprland_logo = false },
+    binds = {
+        pass_mouse_when_bound = false,
+        scroll_event_delay = 0,
+    },
     input = {
         kb_layout = "latam",
         kb_variant = "",
@@ -105,7 +109,7 @@ bind(key(mainMod, "B"), exec(browser))
 bind(key(mainMod, "M"), exec("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch exit"))
 bind(key(mainMod, "E"), exec(fileManager))
 bind(key(mainMod, "F"), hl.dsp.window.float({ action = "toggle" }))
-bind(key(mainMod, "SPACE"), exec("quickshell ipc call launcher toggle"))
+bind(key(mainMod, "SUPER_L"), exec("quickshell ipc call launcher toggle"), { release = true })
 bind(key(mainMod .. " SHIFT", "W"), exec("quickshell ipc call wallpaper toggle"))
 bind(key(mainMod, "X"), exec("quickshell ipc call powermenu toggle"))
 bind(key(mainMod, "P"), hl.dsp.window.pseudo())
@@ -124,8 +128,8 @@ for i = 1, 10 do
 end
 bind(key(mainMod, "S"), hl.dsp.workspace.toggle_special("magic"))
 bind(key(mainMod .. " SHIFT", "S"), hl.dsp.window.move({ workspace = "special:magic" }))
-bind(key(mainMod, "mouse_down"), exec("hyprctl keyword cursor:zoom_factor 0.5"))
-bind(key(mainMod, "mouse_up"), exec("hyprctl keyword cursor:zoom_factor 2.0"))
+bind(key(mainMod, "mouse_down"), exec("$HOME/.config/hypr/scripts/zoom out"), { non_consuming = false })
+bind(key(mainMod, "mouse_up"), exec("$HOME/.config/hypr/scripts/zoom in"), { non_consuming = false })
 bind(key(mainMod, "mouse:272"), hl.dsp.window.drag(), { mouse = true })
 bind(key(mainMod, "mouse:273"), hl.dsp.window.resize(), { mouse = true })
 
@@ -153,9 +157,9 @@ bind("XF86AudioNext", exec("playerctl next"), locked)
 bind("XF86AudioPause", exec("playerctl play-pause"), locked)
 bind("XF86AudioPlay", exec("playerctl play-pause"), locked)
 bind("XF86AudioPrev", exec("playerctl previous"), locked)
-bind(key(mainMod .. " SHIFT", "F"), exec("hyprctl dispatch fullscreen 0"))
-bind(key(mainMod, "Z"), exec("hyprctl dispatch fullscreen 1"))
-bind(key(mainMod .. " SHIFT", "Z"), exec("hyprctl dispatch fullscreenstate 2 0"))
+bind(key(mainMod .. " SHIFT", "F"), hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
+bind(key(mainMod, "Z"), hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }))
+bind(key(mainMod .. " SHIFT", "Z"), hl.dsp.window.fullscreen_state({ internal = 2, client = 0, action = "toggle" }))
 bind(key(mainMod, "G"), exec("hyprctl dispatch togglegroup"))
 bind(key(mainMod, "TAB"), exec("hyprctl dispatch changegroupactive f"))
 bind(key(mainMod .. " SHIFT", "TAB"), exec("hyprctl dispatch changegroupactive b"))

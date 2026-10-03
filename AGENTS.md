@@ -37,7 +37,8 @@ bar/MetricsPane.qml     ← center dashboard Metrics pane: CPU/RAM/GPU visual ca
 bar/MetricCard.qml      ← reusable metric card with progress bar, Canvas sparkline, percent/N/A state
 bar/SystemStats.qml     ← shared metrics dataState with scalar stats, 32-sample histories, and gpuAvailable flag
 bar/CenterPanel.qml     ← invisible Escape/outside-click catcher for the in-place center notch (screen-pinned)
-bar/RightIslandIconButton.qml ← reusable right-island chip button (icon + active/warning accent state) that deep-links into the control center
+bar/StateLayer.qml      ← passive hover/press fill overlay (Caelestia-inspired state-layer grammar); sized to its owner, takes an explicit radius, never owns input
+bar/RightIslandIconButton.qml ← reusable right-island service chip: fill/shape/accent state grammar (disabled/on/active/warning, no border) + StateLayer hover, deep-links into the control center
 bar/RightControlCenter.qml ← right-island control center: PanelWindow Top surface hosting the specialty cards
 bar/WifiControlCard.qml ← Wi-Fi specialty card: hero block, nearby-network list, connect/password/forget detail sheet
 bar/BluetoothControlCard.qml ← Bluetooth specialty card: adapter hero, connected/available device groups, pair sheet
@@ -48,7 +49,7 @@ bar/MetricsControlCard.qml ← system metrics card fed by the shell-level System
 services/WifiService.qml ← pragma Singleton — Wi-Fi state and actions (scan/connect/forget) via shell commands
 services/BluetoothService.qml ← pragma Singleton — Bluetooth adapter, discovery, device, and pairing state
 services/AudioService.qml ← pragma Singleton — PipeWire/WirePlumber outputs, inputs, volume, and mute state
-bar/PowerMenu.qml       ← fullscreen PanelWindow Top (WlrLayer.Top), pinned to its bar's screen
+bar/PowerMenu.qml       ← fullscreen PanelWindow Top (WlrLayer.Top), pinned to its bar's screen; its trigger is a pill-shaped destructive button (resting red tint + StateLayer), visually distinct from the service chips
 bar/MprisPopup.qml      ← fullscreen PanelWindow Top, pinned to its bar's screen; reachable only via launcher outside-click
 bar/MetricsDropdown.qml ← dormant: instantiated and screen-pinned per bar, but has NO open trigger. `MetricsButton.qml` was deleted. See `specs/overlay-manager.md`
 launcher/LauncherCentered.qml ← fullscreen PanelWindow Top, pinned to the focused monitor
@@ -57,11 +58,31 @@ notifications/Notifications.qml ← ENGINE (non-surface `Item`): one Notificatio
                                    Presentation is a per-screen `Variants` of PanelWindow toast surfaces (Overlay, top-right)
 theme/Colors.qml        ← pragma Singleton — readonly color + font tokens
 theme/Theme.qml         ← pragma Singleton — mutable structural tokens from config.json
+theme/Motion.qml        ← pragma Singleton — shared motion vocabulary: named intents (Effects / EffectsColor / Spatial) as drop-in inline animation types; see "Motion system" below
 ```
 
 There is no `bar/MetricsButton.qml` — the right island exposes Wi-Fi, Bluetooth, Audio, and Notifications chips plus the power button. Telemetry lives in the center dashboard Metrics pane and `MetricsControlCard.qml`.
 
-**Every QML module needs its type declared in the local `qmldir` file** — missing entries cause `Type X unavailable` errors on load.
+**Every QML module needs its type declared in the local `qmldir` file** — missing entries cause `Type X unavailable` errors on load. Singleton registration works the same way: `theme/qmldir` carries `singleton Motion 1.0 Motion.qml` alongside `Colors` and `Theme`.
+
+## Motion system
+
+`theme/Motion.qml` is a `pragma Singleton` exposing named-intent animation types so call sites carry no duration or easing literals:
+
+```qml
+Behavior on opacity { Motion.Effects { } }       // short state feedback (numeric)
+Behavior on color   { Motion.EffectsColor { } }  // same intent, ColorAnimation variant
+Behavior on height  { Motion.Spatial { } }       // geometry that moves or grows
+```
+
+- Timing derives from `Theme.animFast`/`animSlow` × `Theme.animScale` (`anim.scale`, default `1.0`, clamped 0.25–3.0); `anim.enabled: false` makes shared Motion animations instantaneous, while `anim.overrides` can disable named parts such as `wallpaper.carousel` or `wallpaper.apply` selectively. Unmigrated call sites still use `Theme.anim*` directly — the primitive is opt-in per call site.
+- Curves are the Qt 6.11 **6-value** Bézier form `[x1, y1, x2, y2, 1, 1]`. The CSS-style 4-value form is rejected at runtime and **silently animates linear** (qmllint does not catch it). The singleton probes curve support once against a real `NumberAnimation` and falls back to `Easing.OutCubic` when unsupported.
+- **Never add `pragma ComponentBehavior: Bound` to a singleton that declares inline `component` animation types consumed from other files.** Qt 6.11 silently drops bound inline-component instances created by external `Behavior` call sites — motion snaps while qmllint stays clean. Inline components also cannot see the enclosing `id`; they bind through the singleton type name (`Motion.effectsDuration`, etc.).
+- Adapted from Caelestia's motion *principle* (intent-named animation), not copied; see `specs/theme-system.md`.
+
+The right island's Caelestia-inspired visual pass (state-layer chips, semantic divider, power pill, Motion pilot) is **implemented and lint/offscreen-verified but not yet confirmed on the live compositor**; the feature document is `odd/tasks/caelestia-right-island.md`.
+
+The future configurable-bar design is documented in `specs/configurable-bar.md` and is **not implemented**. It defines global defaults with name-based per-monitor overrides for position (`top`/`bottom`/`left`/`right`), visibility (`always`/`edge-reveal`/`disabled`), style (`islands`/`continuous`), and dashboard attachment (`embedded`/`detached`). Edge reveal must use only external monitor edges; shared monitor seams remain pointer-traversal space. Do not treat these planned keys as current `Theme.qml` or `config.json` behavior.
 
 ## Overlay system rules (enforced in shell.qml)
 - Overlay exclusivity is a **single global slot**: one `activeOverlay` plus one `activeScreenName`. Opening any overlay closes whatever was active, on any screen. There are **no context groups** — the `bar-primary` / `bar-secondary` grouping older notes described was never implemented. See `specs/overlay-manager.md`.
@@ -111,6 +132,14 @@ All components use font-family tokens from `Colors.qml` — never hardcode font 
 - `Theme.rightPanelOpacity` — right control-center outer surface opacity (`rightPanel.opacity`, default `0.94`); inner card surfaces stay subtly translucent
 - `Theme.accentSeamWidth` — specialty-card hero accent seam width (`panel.accentSeamWidth`); deliberately independent from `Theme.dashboardProgressHeight`
 - `Theme.panelVolumeTrackHeight` — Audio card volume track and knob thickness (`panel.volumeTrackHeight`)
+- `Theme.islandChipRadius` — right-island service-chip corner radius (`island.chipRadius`, default `8`)
+- `Theme.islandActiveFillOpacity` — accent-tinted fill opacity for active/warning chips (`island.activeFillOpacity`, default `0.18`)
+- `Theme.islandStateLayerHoverOpacity` — hover overlay opacity on right-island chips and the power pill (`island.stateLayerHoverOpacity`, default `0.10`)
+- `Theme.islandStateLayerPressedOpacity` — pressed overlay opacity on the same surfaces (`island.stateLayerPressedOpacity`, default `0.16`)
+- `Theme.islandSemanticGap` — extra whitespace on each side of the service/power separator (`island.semanticGap`, default `4`)
+- `Theme.islandSeparatorWidth` — hairline dividing service chips from the power action (`island.separatorWidth`, default `1`); `0` removes **both** the line and its semantic gap
+- `Theme.islandPowerTintOpacity` — resting red tint of the destructive power pill (`island.powerTintOpacity`, default `0.10`)
+- `Theme.animScale` — global motion multiplier applied by the `Motion` singleton (`anim.scale`, default `1.0`, clamped 0.25–3.0); does not rewrite `animFast/animNormal/animSlow` for unmigrated call sites
 - `Theme.debugBarSilhouette` — high-contrast red debug silhouette; do not disable unless Ricardo explicitly asks
 
 ## Multi-monitor rule
@@ -224,6 +253,7 @@ See `DESIGN.md` for the full design reference — philosophy, inspirations, toke
 - Before implementing a feature inspired by Ambxst, inspect how Ambxst solves the same problem, then compare at least one alternative approach with pros and cons.
 - Final decisions must adapt the idea to this shell's architecture, tokens, overlay rules, and Ricardo's personal design goals.
 - Keep the reference clone outside this repository. Current local reference path: `/home/unseen/src/reference/Ambxst`.
+- Caelestia (`caelestia-dots/shell`) is a second reference at `/home/unseen/src/reference/Caelestia`, used for the right-island visual pass. Same rule applies: principles (state-layer fill grammar, intent-named motion) are adapted, never copied; the Tokyo City palette, overlay architecture, and no-hover-open rule are preserved.
 - Do not vendor, stow, or copy Ambxst files into `dotfiles` unless Ricardo explicitly asks for a deliberate port.
 
 ## Available skills (OpenCode)

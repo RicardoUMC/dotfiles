@@ -89,6 +89,15 @@ QtObject {
     property real islandBgOpacity:     0.92
     property real islandBorderOpacity: 0.15
 
+    // Right-island state grammar (fill/accent per chip - no generic outline)
+    property int  islandChipRadius: 8                // right-island chip corner radius
+    property real islandActiveFillOpacity: 0.18      // accent-tinted fill for active/warning chips
+    property real islandStateLayerHoverOpacity: 0.10 // hover overlay on right-island chips
+    property real islandStateLayerPressedOpacity: 0.16 // pressed overlay on right-island chips
+    property int  islandSemanticGap: 4               // extra whitespace on each side of the service/power separator
+    property int  islandSeparatorWidth: 1            // hairline dividing service chips from the power action; 0 hides it
+    property real islandPowerTintOpacity: 0.10       // resting red tint of the destructive power button
+
     // Ornament (Variant A & B)
     property real ornamentOpacity: 0.07
     property real ornamentStroke:  1.5
@@ -97,6 +106,28 @@ QtObject {
     property int animFast:   180
     property int animNormal: 300
     property int animSlow:   500
+    property bool animationsEnabled: true
+    property var animationOverrides: ({})
+
+    function animationEnabled(key) {
+        if (!animationsEnabled)
+            return false
+        if (animationOverrides && animationOverrides[key] !== undefined)
+            return animationOverrides[key] !== false
+        return true
+    }
+
+    // Wallpaper application transition. `fade` preserves the current behavior.
+    property string wallpaperTransition: "fade"
+    property real wallpaperTransitionDuration: 1.0
+    property int wallpaperTransitionFps: 30
+    property int wallpaperTransitionStep: 90
+
+    // Global motion multiplier applied by the Motion singleton on top of the
+    // durations above (`anim.scale`). 1.0 preserves the current timing exactly;
+    // it never rewrites animFast/animNormal/animSlow, so unmigrated call sites
+    // keep answering to the plain duration tokens.
+    property real animScale: 1.0
 
     // Font sizes
     property int fontSizeCaption: 12
@@ -174,16 +205,47 @@ QtObject {
             if (cfg.island?.blur            !== undefined) islandBlur            = cfg.island.blur
             if (cfg.island?.bgOpacity       !== undefined) islandBgOpacity       = cfg.island.bgOpacity
             if (cfg.island?.borderOpacity   !== undefined) islandBorderOpacity   = cfg.island.borderOpacity
+            if (cfg.island?.chipRadius               !== undefined) islandChipRadius               = cfg.island.chipRadius
+            if (cfg.island?.activeFillOpacity        !== undefined) islandActiveFillOpacity        = cfg.island.activeFillOpacity
+            if (cfg.island?.stateLayerHoverOpacity   !== undefined) islandStateLayerHoverOpacity   = cfg.island.stateLayerHoverOpacity
+            if (cfg.island?.stateLayerPressedOpacity !== undefined) islandStateLayerPressedOpacity = cfg.island.stateLayerPressedOpacity
+            if (cfg.island?.semanticGap              !== undefined) islandSemanticGap              = cfg.island.semanticGap
+            if (cfg.island?.separatorWidth           !== undefined) islandSeparatorWidth           = cfg.island.separatorWidth
+            if (cfg.island?.powerTintOpacity         !== undefined) islandPowerTintOpacity         = cfg.island.powerTintOpacity
             if (cfg.ornament?.opacity       !== undefined) ornamentOpacity       = cfg.ornament.opacity
             if (cfg.ornament?.stroke        !== undefined) ornamentStroke        = cfg.ornament.stroke
             if (cfg.anim?.fast       !== undefined) animFast       = cfg.anim.fast
             if (cfg.anim?.normal     !== undefined) animNormal     = cfg.anim.normal
             if (cfg.anim?.slow       !== undefined) animSlow       = cfg.anim.slow
+            if (cfg.anim?.enabled    !== undefined) animationsEnabled = cfg.anim.enabled !== false
+            if (cfg.anim?.overrides  !== undefined && typeof cfg.anim.overrides === "object") animationOverrides = cfg.anim.overrides
+            // Clamp the scale: a zero, negative, or absurd multiplier would
+            // turn the shell's motion into either no motion or a stall. Values
+            // that do not parse to a positive number are ignored outright, so a
+            // malformed entry cannot silently replace the timing defaults.
+            if (cfg.anim?.scale !== undefined) {
+                const scale = Number(cfg.anim.scale)
+                if (Number.isFinite(scale) && scale > 0)
+                    animScale = Math.min(3.0, Math.max(0.25, scale))
+            }
             if (cfg.font?.caption    !== undefined) fontSizeCaption = cfg.font.caption
             if (cfg.font?.label      !== undefined) fontSizeLabel   = cfg.font.label
             if (cfg.font?.body       !== undefined) fontSizeBody    = cfg.font.body
             if (cfg.font?.bodyLg     !== undefined) fontSizeBodyLg  = cfg.font.bodyLg
             if (cfg.font?.icon       !== undefined) fontSizeIcon    = cfg.font.icon
+            if (cfg.wallpaper?.transition !== undefined) wallpaperTransition = String(cfg.wallpaper.transition)
+            if (cfg.wallpaper?.duration !== undefined) {
+                const duration = Number(cfg.wallpaper.duration)
+                if (Number.isFinite(duration)) wallpaperTransitionDuration = Math.max(0.1, duration)
+            }
+            if (cfg.wallpaper?.fps !== undefined) {
+                const fps = Number(cfg.wallpaper.fps)
+                if (Number.isFinite(fps)) wallpaperTransitionFps = Math.max(1, Math.round(fps))
+            }
+            if (cfg.wallpaper?.step !== undefined) {
+                const step = Number(cfg.wallpaper.step)
+                if (Number.isFinite(step)) wallpaperTransitionStep = Math.max(1, Math.round(step))
+            }
             if (cfg.dashboard?.railWidth !== undefined) dashboardRailWidth = cfg.dashboard.railWidth
             if (cfg.dashboard?.bodyRadius       !== undefined) dashboardBodyRadius       = cfg.dashboard.bodyRadius
             if (cfg.dashboard?.bodyOpacity      !== undefined) dashboardBodyOpacity      = cfg.dashboard.bodyOpacity

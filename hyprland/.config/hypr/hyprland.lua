@@ -74,6 +74,7 @@ bind(key(mainMod, "M"), exec("command -v hyprshutdown >/dev/null 2>&1 && hyprshu
 bind(key(mainMod, "E"), exec(fileManager))
 bind(key(mainMod, "F"), hl.dsp.window.float({ action = "toggle" }))
 bind(key(mainMod, "SPACE"), exec("quickshell ipc call launcher toggle"))
+bind(key(mainMod .. " SHIFT", "W"), exec("quickshell ipc call wallpaper toggle"))
 bind(key(mainMod, "X"), exec("quickshell ipc call powermenu toggle"))
 bind(key(mainMod, "P"), hl.dsp.window.pseudo())
 bind(key(mainMod, "T"), hl.dsp.layout("togglesplit"))

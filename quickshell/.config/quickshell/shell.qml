@@ -15,6 +15,7 @@ import "launcher"
 import "notifications"
 import "osd"
 import "theme"
+import "services"
 
 ShellRoot {
     id: root
@@ -48,6 +49,13 @@ ShellRoot {
     IpcHandler {
         target: "powermenu"
         function toggle() { overlayManager.openRightControlCenter("", "power") }
+    }
+
+    IpcHandler {
+        target: "wallpaper"
+        function toggle() { overlayManager.open("", "wallpaper") }
+        function set(path: string): void { WallpaperService.setWallpaper(path) }
+        function random(): void { WallpaperService.setRandom() }
     }
 
     IpcHandler {
@@ -219,6 +227,7 @@ ShellRoot {
             activeSection = ""
             if (current === "") return
             if (current === "launcher") { launcher.visible = false; return }
+            if (current === "wallpaper") { wallpaperSelector.visible = false; return }
             // The owning instance may already be gone (monitor unplugged):
             // its surfaces were destroyed with it, state is cleared above.
             const bar = root.barForScreen(ownerScreenName)
@@ -232,6 +241,12 @@ ShellRoot {
         function _doOpen(screenName, name) {
             if (name === "launcher") {
                 launcher.toggleOpen()
+                activeOverlay = name
+                activeScreenName = screenName
+                return
+            }
+            if (name === "wallpaper") {
+                wallpaperSelector.toggleOpen()
                 activeOverlay = name
                 activeScreenName = screenName
                 return
@@ -371,6 +386,11 @@ ShellRoot {
                 overlayManager.open(bar.screenName, "mpris")
             }
         }
+    }
+
+    WallpaperSelector {
+        id: wallpaperSelector
+        onDismissed: overlayManager.close("", "wallpaper")
     }
 
     Notifications { id: notifications }

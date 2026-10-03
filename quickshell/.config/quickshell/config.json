@@ -33,7 +33,35 @@
     "volumeTrackHeight": 8,
     "secondarySeamWidth": 2
   },
-  "anim": { "fast": 180, "normal": 300, "slow": 500 },
+  "island": {
+    "chipRadius": 8,
+    "activeFillOpacity": 0.18,
+    "stateLayerHoverOpacity": 0.1,
+    "stateLayerPressedOpacity": 0.16,
+    "semanticGap": 4,
+    "separatorWidth": 1,
+    "powerTintOpacity": 0.1
+  },
+  "anim": {
+    "fast": 180,
+    "normal": 300,
+    "slow": 500,
+    "scale": 1.0,
+    "enabled": true,
+    "overrides": {
+      "wallpaper.carousel": true,
+      "wallpaper.selection": true,
+      "wallpaper.controls": true,
+      "wallpaper.apply": true,
+      "wallpaper.overlay": true
+    }
+  },
+  "wallpaper": {
+    "transition": "fade",
+    "duration": 1.0,
+    "fps": 30,
+    "step": 90
+  },
   "font": { "caption": 12, "label": 13, "body": 15, "bodyLg": 17, "icon": 22 },
   "rightPanel": {
     "opacity": 0.94,
@@ -50,6 +78,6 @@
     "visualBounds": false,
     "borderColor": "#ff3344",
     "borderWidth": 1,
-    "barSilhouette": true
+    "barSilhouette": false
   }
 }

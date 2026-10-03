@@ -54,6 +54,36 @@ Ambxst is a reference to study, not a target to clone. For features inspired by 
 
 **Why Ax-Shell specifically:** it feels like software, not a rice. It has design criteria, not just pretty colors.
 
+### Caelestia (right-island visual pass)
+
+**What was taken — principles only, no copied code:**
+
+- **State-layer grammar:** transient interaction state (hover/press) is expressed as a flat fill overlay, never as a border. Local adaptation: `bar/StateLayer.qml`, a passive overlay the owning chip feeds its own hover/press booleans into.
+- **State as fill + shape, not outline:** service state reads through fill tint and icon accent; a per-chip outline was removed because it reads "empty" regardless of state. Power is separated by *shape* (pill vs. tile) and a resting destructive tint, not by an added border.
+- **Intent-named motion:** animations are addressed by named intent (effects vs. spatial), not by per-call-site duration/easing literals. Local adaptation: `theme/Motion.qml` driven by the existing `Theme.anim*` tokens plus one `anim.scale` knob; deliberately **not** Caelestia's Material-3 curve table or its C++ SDF/blob shader.
+
+**What was explicitly not taken:**
+
+- No code copying or vendoring; the reference lives outside the repo at `/home/unseen/src/reference/Caelestia`.
+- No Material 3 palette or curve table — colors stay Tokyo City Base16 in `Colors.qml`.
+- No hover-open behavior; the overlay rules (single global slot, `Top` vs. `Overlay` layering, 50 ms open timer) are unchanged.
+- No overshooting spatial curves: Caelestia's own curves exceed 1.0 mid-flight, which would resize the content-driven control-center body past its own content. The adopted curves are monotonic within `[0, 1]`.
+
+Status: implemented and verified by Qt 6 lint plus offscreen runtime probes; **live compositor visual confirmation and a debug-off screenshot are still pending**. Feature document: `odd/tasks/caelestia-right-island.md`.
+
+### Future configurable bar direction
+
+The current top-anchored island bar remains the implemented baseline. The future design is documented in [`specs/configurable-bar.md`](specs/configurable-bar.md) and is intentionally not represented as implemented configuration today.
+
+The design separates four independent decisions:
+
+- **Position:** `top`, `bottom`, `left`, or `right`, selected per monitor through global defaults and name-based monitor overrides.
+- **Visibility:** `always`, `edge-reveal`, or `disabled`, with reveal and reservation state owned independently by each monitor's bar instance.
+- **Style:** `islands` preserves the current curves, wraps, masks, gaps, and ornaments; `continuous` is a separate future visual grammar.
+- **Dashboard attachment:** `embedded` keeps the dashboard visually attached to the bar; `detached` gives it an independent screen-pinned surface.
+
+Edge reveal must use only external output edges. A seam shared by adjacent monitors stays free for pointer traversal and is never used as a generic reveal hit region.
+
 ---
 
 ## Design Tokens
@@ -139,6 +169,18 @@ Current `config.json` keeps the scale at its defaults (`12 / 13 / 15 / 17 / 22`)
 | `Theme.accentSeamWidth` | `4` | `4` | Hero accent seam width inside the three control-center specialty cards — Wi-Fi, Bluetooth, and Audio hero blocks (`panel.accentSeamWidth`). |
 | `Theme.panelSecondarySeamWidth` | `2` | `2` | Accent seam of the nested audio device panel; deliberately thinner than the `accentSeamWidth` hero seam — do not merge them (`panel.secondarySeamWidth`). |
 | `Theme.panelVolumeTrackHeight` | `8` | `8` | Audio card volume track and knob thickness (`panel.volumeTrackHeight`). |
+| `Theme.islandChipRadius` | `8` | `8` | Right-island service-chip corner radius (`island.chipRadius`). |
+| `Theme.islandActiveFillOpacity` | `0.18` | `0.18` | Accent-tinted fill opacity when a chip is active or warning (`island.activeFillOpacity`). |
+| `Theme.islandStateLayerHoverOpacity` | `0.10` | `0.10` | Hover overlay opacity on the right-island chips and power pill (`island.stateLayerHoverOpacity`). |
+| `Theme.islandStateLayerPressedOpacity` | `0.16` | `0.16` | Pressed overlay opacity on the same surfaces (`island.stateLayerPressedOpacity`). |
+| `Theme.islandSemanticGap` | `4` | `4` | Extra whitespace on each side of the service/power separator (`island.semanticGap`). |
+| `Theme.islandSeparatorWidth` | `1` | `1` | Hairline dividing service chips from the power action; `0` removes **both** the line and its semantic gap (`island.separatorWidth`). |
+| `Theme.islandPowerTintOpacity` | `0.10` | `0.10` | Resting red tint of the destructive power pill (`island.powerTintOpacity`). |
+| `Theme.animScale` | `1.0` | `1.0` | Global motion multiplier applied by the `Motion` singleton on top of `animFast/animNormal/animSlow`; clamped to 0.25–3.0; `1.0` preserves current timing exactly (`anim.scale`). |
+| `Theme.animationsEnabled` | `true` | `true` | Global animation switch (`anim.enabled`). `false` makes all shared Motion animations instantaneous. |
+| `Theme.animationOverrides` | `{}` | wallpaper overrides enabled | Named per-part exceptions (`anim.overrides`), e.g. `wallpaper.carousel: false` while all other motion remains enabled. |
+| `Theme.wallpaperTransition` | `"fade"` | `"fade"` | `awww` wallpaper application transition (`wallpaper.transition`). Supported values include `none`, `simple`, `fade`, directional, `wipe`, `wave`, `grow`, `center`, `any`, `outer`, and `random`. |
+| `Theme.wallpaperTransitionDuration` | `1.0` | `1.0` | Duration in seconds for supported `awww` transitions (`wallpaper.duration`). |
 | `Theme.barStyle` | `"silhouette"` | `"silhouette"` | Enables the masked wrapped silhouette; `"plain"` disables it. |
 | `Theme.barScreens` | `"all"` | `"all"` | Which screens get a bar: `"all"`, or an array of `ShellScreen.name` strings (`bar.screens`). Matching is by name only — never index or order; unmatched names are ignored; a resolved-empty set falls back to all screens so a session is never left without a bar. Architecture: `specs/multi-monitor.md`. |
 | `Theme.barNotchGapWidth` | `30` | `30` | Horizontal gap at each section boundary of the silhouette (`bar.notchGapWidth`). |
@@ -185,6 +227,16 @@ Mixed system — radius is contextual:
 ### Accent Borders
 
 Cards and panels may use a **single-side color highlight** (left border) to create visual hierarchy without adding noise. Color matches the contextual accent (urgency color for notifications, `base0D` blue for general panels).
+
+### Right-Island State Grammar
+
+The right island expresses state through **fill, shape, and a passive state layer** (adapted from Caelestia, see Inspirations):
+
+- Service chips never carry their own outline; the wrapped bar silhouette already owns the edge. States: quiet `base01` fill when off, accent-tinted fill + accent icon when active, orange-tinted fill + orange icon when warning (warning wins over active), dimmed quiet fill when the adapter is disabled. Disabled takes visual precedence over active so a powered-off radio never reads live.
+- Hover/press feedback is the `StateLayer` overlay at `islandStateLayerHoverOpacity` / `islandStateLayerPressedOpacity`, inheriting the owner's radius.
+- Power is a **distinct object class**: a pill silhouette (`radius = height / 2`) with a resting red tint at `islandPowerTintOpacity`, not another service tile.
+- A configurable semantic hairline separates the service group from the power action. It is purely decorative: no input, no routing change; `separatorWidth: 0` removes the line and its surrounding gap together.
+- Fill state changes animate through `Motion.EffectsColor` because service state can flip while the chip is on screen; hover-driven icon color stays instant so pointer feedback never lags.
 
 ### Bar Style
 
@@ -240,6 +292,31 @@ The active overlay must close when:
 - With one slot there is no subtree to walk: closing the active overlay tears down the **entire surface**, including any expanded child content mounted inside it
 - Child content resets itself on invisibility (`NotificationControlCard` collapses its expansion; `RightControlCenter.open()` calls `resetSections()`), so a fresh open never restores a previously expanded child
 - Keyboard navigation acts on the single active surface
+
+### Logical interaction paths
+
+The shell models interactive content as a **logical path tree** — relationship-aware routing for content *inside* one root surface, never concurrent overlays. The one global slot (`activeOverlay` + `activeScreenName`) and the shared 50 ms timer are unchanged.
+
+```text
+root
+└── right-control-center
+    ├── wifi
+    ├── bluetooth
+    ├── audio
+    │   └── device-panel (reserved descendant shape; current panel remains content)
+    └── notifications
+```
+
+Normative transitions:
+
+- **Same path on the same screen toggles closed.**
+- **A sibling path switches local content** in place — it preserves the root overlay and its screen ownership and does not restart the 50 ms timer.
+- **A descendant path preserves its parent** and opens the child content inside the owning surface.
+- **A different root or a different screen closes globally first**, then opens through the shared timer.
+- **Rapid pending requests replace one another** — never a queue of duplicate opens.
+- **Child components emit intent upward; the coordinator owns relation decisions.**
+
+These paths live in `shell.qml`'s `overlayManager` (`activeSection`, the derived `activePath`, and the `rightControlCenterPath()` helper), so no visual component hardcodes path literals. Concurrent parent/child overlays remain out of scope. Full contract: `specs/overlay-manager.md` and `odd/tasks/interaction-tree-routing.md`.
 
 ### Implementation
 
@@ -303,7 +380,10 @@ Theme.dashboard.tabHeight / tabSpacing
 Theme.dashboard.cardHeight / cardGap / progressHeight / progressRadius / sparklineWidth / sparklineHeight / footerHeight
 Theme.panel.accentSeamWidth / secondarySeamWidth / volumeTrackHeight
 Theme.rightPanel.opacity
+Theme.island.chipRadius / activeFillOpacity / stateLayerHoverOpacity / stateLayerPressedOpacity
+Theme.island.semanticGap / separatorWidth / powerTintOpacity
 Theme.tab.paddingH / paddingV / radius / collapsedHeight
+Theme.anim.fast / normal / slow / scale
 Theme.font.caption / label / body / bodyLg / icon
 Theme.debug.visualBounds / borderColor / borderWidth / barSilhouette
 ```

@@ -43,6 +43,9 @@ The current first slice is functionally correct but leaves a large empty panel w
 - [x] Make motion globally configurable with per-part overrides and configurable wallpaper application transitions.
 - [x] Add real wallpaper preview transactions: preview on carousel navigation, restore on cancel, persist only on Apply.
 - [x] Restore persisted wallpaper on shell startup and verify after hard shell restart.
+- [x] Animate overlay carousel image swaps without changing real wallpaper preview behavior. Uses a two-layer crossfade governed by `wallpaper.carousel`; rapid reversal cancels the pending layer safely.
+- [x] Add perspective depth tiers to the overlay carousel so cards shrink, fade, and spread non-linearly as they move away from center. The seven-card model uses three progressively smaller side tiers with non-linear spacing.
+- [x] Bind carousel cards to wallpaper identities so focus changes animate cards through the depth tiers instead of swapping content inside fixed slots. Each delegate now follows a wallpaper index and computes a cyclic relative offset; depth tiers are clamped for hidden distant cards.
 
 ## Delivery Evidence
 - Work-unit commit: `84e6a29` (`feat(quickshell): add wallpaper selector preview workflow`)

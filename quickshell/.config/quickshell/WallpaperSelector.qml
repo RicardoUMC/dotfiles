@@ -38,6 +38,18 @@ PanelWindow {
         return ((index % count) + count) % count
     }
 
+    function carouselOffset(index) {
+        const count = WallpaperService.wallpapers.length
+        if (count <= 0)
+            return 0
+        let offset = index - selectedIndex
+        if (offset > count / 2)
+            offset -= count
+        else if (offset < -count / 2)
+            offset += count
+        return offset
+    }
+
     function resolveTargetScreen() {
         const focused = Hyprland.focusedMonitor
         if (!focused)
@@ -252,13 +264,15 @@ PanelWindow {
             Layout.preferredHeight: Math.min(660, root.height * 0.62)
 
             Repeater {
-                model: 5
+                model: WallpaperService.wallpapers.length
 
                 delegate: Item {
                     id: carouselCard
                     required property int index
-                    readonly property int offset: index - 2
-                    readonly property int wallIndex: root.cyclicIndex(root.selectedIndex + offset)
+                    readonly property int wallIndex: index
+                    readonly property int offset: root.carouselOffset(index)
+                    readonly property int distance: Math.abs(offset)
+                    readonly property int depthTier: Math.min(3, distance)
                     readonly property var wallpaper: WallpaperService.wallpapers.length > 0
                         ? WallpaperService.wallpapers[wallIndex]
                         : null
@@ -266,15 +280,84 @@ PanelWindow {
                     readonly property real centerWidth: Math.min(1180, carouselArea.width * 0.60)
                     readonly property real centerHeight: Math.min(620, centerWidth * 9 / 16)
                     readonly property real sideGap: Math.min(460, carouselArea.width * 0.25)
+                    readonly property real depthScale: [1.0, 0.76, 0.56, 0.38][depthTier]
+                    readonly property real depthOpacity: [1.0, 0.72, 0.48, 0.28][depthTier]
+                    readonly property real depthOffset: [0.0, 0.84, 1.55, 2.15][depthTier]
+                    readonly property string wallpaperPath: wallpaper ? wallpaper.path : ""
+                    property string activeImagePath: ""
+                    property string pendingImagePath: ""
+                    property bool imageSwapPending: false
+                    property bool imageSwapAnimating: false
+
+                    function cancelImageSwap() {
+                        imageSwapAnimating = false
+                        pendingImagePath = ""
+                        imageSwapPending = false
+                        currentImage.opacity = 1
+                        incomingImage.opacity = 0
+                        incomingImage.source = ""
+                    }
+
+                    function beginImageSwap(path) {
+                        if (!path) {
+                            cancelImageSwap()
+                            activeImagePath = ""
+                            return
+                        }
+                        if (activeImagePath === path) {
+                            if (imageSwapPending)
+                                cancelImageSwap()
+                            return
+                        }
+                        if (!Theme.animationEnabled("wallpaper.carousel")) {
+                            activeImagePath = path
+                            cancelImageSwap()
+                            return
+                        }
+                        pendingImagePath = path
+                        imageSwapPending = true
+                        incomingImage.source = path
+                        if (incomingImage.status === Image.Ready)
+                            startImageSwap()
+                    }
+
+                    function startImageSwap() {
+                        if (!imageSwapPending || incomingImage.status !== Image.Ready)
+                            return
+                        imageSwapAnimating = true
+                        incomingImage.opacity = 1
+                        currentImage.opacity = 0
+                    }
+
+                    function finishImageSwap() {
+                        if (!imageSwapPending || currentImage.opacity > 0.01)
+                            return
+                        imageSwapAnimating = false
+                        activeImagePath = pendingImagePath
+                        pendingImagePath = ""
+                        imageSwapPending = false
+                        currentImage.opacity = 1
+                        incomingImage.opacity = 0
+                        incomingImage.source = ""
+                    }
+
+                    onWallpaperPathChanged: {
+                        if (!activeImagePath)
+                            activeImagePath = wallpaperPath
+                        else
+                            beginImageSwap(wallpaperPath)
+                    }
+                    Component.onCompleted: activeImagePath = wallpaperPath
 
                     width: centerWidth
                     height: centerHeight
-                    x: carouselArea.width / 2 - width / 2 + offset * sideGap
+                    x: carouselArea.width / 2 - width / 2
+                        + (offset < 0 ? -1 : offset > 0 ? 1 : 0) * depthOffset * sideGap
                     y: carouselArea.height / 2 - height / 2
-                    scale: isCurrent ? 1.0 : 0.68
-                    opacity: isCurrent ? 1.0 : 0.50
-                    z: isCurrent ? 4 : 4 - Math.abs(offset)
-                    visible: WallpaperService.wallpapers.length > 0 && (isCurrent || Math.abs(offset) <= 2)
+                    scale: depthScale
+                    opacity: depthOpacity
+                    z: 10 - distance
+                    visible: WallpaperService.wallpapers.length > 0 && distance <= 3
 
                     Behavior on x {
                         enabled: Theme.animationEnabled("wallpaper.carousel")
@@ -311,11 +394,34 @@ PanelWindow {
                             clip: true
 
                             Image {
+                                id: currentImage
                                 anchors.fill: parent
-                                source: carouselCard.wallpaper ? carouselCard.wallpaper.path : ""
+                                source: carouselCard.activeImagePath
                                 fillMode: Image.PreserveAspectCrop
                                 asynchronous: true
                                 smooth: true
+                                onOpacityChanged: carouselCard.finishImageSwap()
+                                Behavior on opacity {
+                                    enabled: Theme.animationEnabled("wallpaper.carousel")
+                                    Motion.Effects { }
+                                }
+                            }
+
+                            Image {
+                                id: incomingImage
+                                anchors.fill: parent
+                                opacity: 0
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
+                                smooth: true
+                                onStatusChanged: {
+                                    if (status === Image.Ready)
+                                        carouselCard.startImageSwap()
+                                }
+                                Behavior on opacity {
+                                    enabled: Theme.animationEnabled("wallpaper.carousel")
+                                    Motion.Effects { }
+                                }
                             }
                         }
 

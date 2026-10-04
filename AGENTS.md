@@ -158,6 +158,12 @@ The shell is **N-monitor generic** — never assume a monitor count, index, or s
 - Avoid token sprawl: do not expose one-off decorative constants unless they materially help Ricardo tune the UI.
 - Document any new tokens in `DESIGN.md`, `AGENTS.md`, and relevant `specs/*.md` via `sync-docs` after implementation.
 
+### Configurability review gate
+- During every RDD review and every general review of an applied change, inspect whether the new behavior has an appropriate user configuration surface.
+- Verify the configuration contract: discoverable keys, safe defaults, explicit fallback behavior, scope (global/per-monitor/session), and documentation alongside the implementation.
+- If configurability is intentionally out of scope, record that decision and its rationale in the feature spec or review evidence; do not assume hardcoded behavior is acceptable merely because the default looks right.
+- For visual/color changes, also verify that semantic roles remain separable from structural tokens and that users can select a readable fallback when dynamic or external inputs fail.
+
 ## Palette — Tokyo City Terminal Dark (Base16)
 Key values used in components:
 - `base00` `#171D23` — background

@@ -84,6 +84,18 @@ The design separates four independent decisions:
 
 Edge reveal must use only external output edges. A seam shared by adjacent monitors stays free for pointer traversal and is never used as a generic reveal hit region.
 
+### Future dynamic wallpaper colors
+
+The current Tokyo City palette remains the implemented baseline. The future color design is documented in [`specs/dynamic-colors.md`](specs/dynamic-colors.md) and is not implemented yet.
+
+The planned model has three conceptual modes:
+
+- `fixed`: use the user-selected fallback palette for the entire session.
+- `dynamic`: derive one semantic palette from the selected wallpaper for the entire session.
+- `accent-only`: preserve fallback surfaces and text while deriving accent roles from the wallpaper.
+
+The user selects the fallback palette. Tokyo City is available but is not mandatory. Extraction failures use that selected fallback. Dynamic colors affect semantic roles only; structural tokens such as spacing, geometry, radii, opacity, and animation remain owned by `Theme.qml`.
+
 ---
 
 ## Design Tokens

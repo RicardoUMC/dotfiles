@@ -46,6 +46,7 @@ The current first slice is functionally correct but leaves a large empty panel w
 - [x] Animate overlay carousel image swaps without changing real wallpaper preview behavior. Uses a two-layer crossfade governed by `wallpaper.carousel`; rapid reversal cancels the pending layer safely.
 - [x] Add perspective depth tiers to the overlay carousel so cards shrink, fade, and spread non-linearly as they move away from center. The seven-card model uses three progressively smaller side tiers with non-linear spacing.
 - [x] Bind carousel cards to wallpaper identities so focus changes animate cards through the depth tiers instead of swapping content inside fixed slots. Each delegate now follows a wallpaper index and computes a cyclic relative offset; depth tiers are clamped for hidden distant cards.
+- [x] Shorten wallpaper preview scheduling and overlay enter/exit through wallpaper-specific timing tokens without changing global shell motion. Cancellation keeps the original transition duration but starts restoration immediately, bypassing preview scheduling delay.
 
 ## Delivery Evidence
 - Work-unit commit: `84e6a29` (`feat(quickshell): add wallpaper selector preview workflow`)

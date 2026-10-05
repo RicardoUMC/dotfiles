@@ -76,10 +76,10 @@ Item {
         previewOriginalPath = ""
         previewPath = ""
         if (original)
-            applyWallpaper(original)
+            applyWallpaper(original, Theme.wallpaperTransitionDuration, true)
     }
 
-    function applyWallpaper(path) {
+    function applyWallpaper(path, durationOverride, immediate) {
         if (!path || path.length === 0) {
             errorMessage = "No wallpaper selected"
             return
@@ -89,7 +89,15 @@ Item {
             daemonStarted = true
         }
         applyTimer.pendingPath = path
-        applyTimer.restart()
+        applyTimer.pendingTransitionDuration = durationOverride !== undefined && Number(durationOverride) > 0
+            ? Number(durationOverride)
+            : Theme.wallpaperTransitionDuration
+        if (immediate) {
+            applyTimer.stop()
+            executePendingWallpaper()
+        } else {
+            applyTimer.restart()
+        }
     }
 
     function setWallpaper(path) {
@@ -193,24 +201,27 @@ Item {
         onLoadFailed: root.currentPath = ""
     }
 
+    function executePendingWallpaper() {
+        const enabled = Theme.animationEnabled("wallpaper.apply")
+        const transition = enabled ? root.validTransition(Theme.wallpaperTransition) : "none"
+        const command = ["awww", "img", "--transition-type", transition]
+        if (transition !== "none") {
+            command.push("--transition-step", String(Theme.wallpaperTransitionStep))
+            if (transition !== "simple")
+                command.push("--transition-duration", String(applyTimer.pendingTransitionDuration))
+            command.push("--transition-fps", String(Theme.wallpaperTransitionFps))
+        }
+        command.push(applyTimer.pendingPath)
+        Quickshell.execDetached(command)
+    }
+
     Timer {
         id: applyTimer
         property string pendingPath: ""
-        interval: 350
+        property real pendingTransitionDuration: 0
+        interval: Theme.wallpaperPreviewDelay
         repeat: false
-        onTriggered: {
-            const enabled = Theme.animationEnabled("wallpaper.apply")
-            const transition = enabled ? root.validTransition(Theme.wallpaperTransition) : "none"
-            const command = ["awww", "img", "--transition-type", transition]
-            if (transition !== "none") {
-                command.push("--transition-step", String(Theme.wallpaperTransitionStep))
-                if (transition !== "simple")
-                    command.push("--transition-duration", String(Theme.wallpaperTransitionDuration))
-                command.push("--transition-fps", String(Theme.wallpaperTransitionFps))
-            }
-            command.push(pendingPath)
-            Quickshell.execDetached(command)
-        }
+        onTriggered: root.executePendingWallpaper()
     }
 
     Component.onCompleted: refresh()

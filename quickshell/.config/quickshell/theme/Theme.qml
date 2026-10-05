@@ -117,7 +117,9 @@ QtObject {
         return true
     }
 
-    // Wallpaper application transition. `fade` preserves the current behavior.
+    // Wallpaper-specific timing; global shell animation tokens stay unchanged.
+    property int wallpaperOverlayDuration: 160
+    property int wallpaperPreviewDelay: 120
     property string wallpaperTransition: "fade"
     property real wallpaperTransitionDuration: 1.0
     property int wallpaperTransitionFps: 30
@@ -233,6 +235,14 @@ QtObject {
             if (cfg.font?.body       !== undefined) fontSizeBody    = cfg.font.body
             if (cfg.font?.bodyLg     !== undefined) fontSizeBodyLg  = cfg.font.bodyLg
             if (cfg.font?.icon       !== undefined) fontSizeIcon    = cfg.font.icon
+            if (cfg.wallpaper?.overlayDuration !== undefined) {
+                const overlayDuration = Number(cfg.wallpaper.overlayDuration)
+                if (Number.isFinite(overlayDuration)) wallpaperOverlayDuration = Math.max(1, Math.round(overlayDuration))
+            }
+            if (cfg.wallpaper?.previewDelay !== undefined) {
+                const previewDelay = Number(cfg.wallpaper.previewDelay)
+                if (Number.isFinite(previewDelay)) wallpaperPreviewDelay = Math.max(0, Math.round(previewDelay))
+            }
             if (cfg.wallpaper?.transition !== undefined) wallpaperTransition = String(cfg.wallpaper.transition)
             if (cfg.wallpaper?.duration !== undefined) {
                 const duration = Number(cfg.wallpaper.duration)

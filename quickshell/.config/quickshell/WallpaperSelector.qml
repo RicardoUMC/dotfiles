@@ -142,15 +142,15 @@ PanelWindow {
 
     Behavior on presentationOpacity {
         enabled: Theme.animationEnabled("wallpaper.overlay")
-        Motion.Effects { }
+        NumberAnimation { duration: Theme.wallpaperOverlayDuration; easing.type: Easing.OutCubic }
     }
     Behavior on presentationScale {
         enabled: Theme.animationEnabled("wallpaper.overlay")
-        Motion.Spatial { }
+        NumberAnimation { duration: Theme.wallpaperOverlayDuration; easing.type: Easing.OutCubic }
     }
     Behavior on backdropOpacity {
         enabled: Theme.animationEnabled("wallpaper.overlay")
-        Motion.Spatial { }
+        NumberAnimation { duration: Theme.wallpaperOverlayDuration; easing.type: Easing.OutCubic }
     }
 
     Connections {
@@ -192,11 +192,11 @@ PanelWindow {
         scale: root.presentationScale
         Behavior on opacity {
             enabled: Theme.animationEnabled("wallpaper.overlay")
-            Motion.Effects { }
+            NumberAnimation { duration: Theme.wallpaperOverlayDuration; easing.type: Easing.OutCubic }
         }
         Behavior on scale {
             enabled: Theme.animationEnabled("wallpaper.overlay")
-            Motion.Spatial { }
+            NumberAnimation { duration: Theme.wallpaperOverlayDuration; easing.type: Easing.OutCubic }
         }
         anchors.leftMargin: Math.max(Theme.spacingXl, parent.width * 0.055)
         anchors.rightMargin: Math.max(Theme.spacingXl, parent.width * 0.055)

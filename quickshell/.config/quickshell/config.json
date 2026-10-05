@@ -57,6 +57,8 @@
     }
   },
   "wallpaper": {
+    "overlayDuration": 160,
+    "previewDelay": 120,
     "transition": "fade",
     "duration": 1.0,
     "fps": 30,

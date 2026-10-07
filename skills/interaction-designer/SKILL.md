@@ -19,6 +19,9 @@ Use this skill before implementing or revising UI flows, overlay behavior, neste
 - Treat minimalism as edited and intentional, not empty, flat, generic, or under-designed.
 - Preserve Tokyo City dark terminal character and Ambxst/Ax-Shell/Dank-inspired ambition without copying.
 - Keep motion purposeful, short, and supportive of state comprehension.
+- Treat repeated user feedback and accepted visual iterations as evolving preference evidence; keep uncertain preferences provisional and revise them when later feedback conflicts.
+- For expandable content, prefer contextual inline placement directly below or beside its triggering row; do not append unrelated detail to the bottom of a panel.
+- Preserve the right-island outer silhouette by default; refine its internal panels, icons, states, hierarchy, and density unless the user explicitly requests a new silhouette.
 
 ## Logical interaction tree (normative)
 
@@ -56,7 +59,7 @@ Full contract: `specs/overlay-manager.md` and `odd/tasks/interaction-tree-routin
 ## Execution Steps
 1. Name the user goal and entry points.
 2. Enumerate states, including collapsed, focused, expanded, nested, loading, empty, error, and closing states where relevant.
-3. Specify each state's visual composition: hierarchy, density, grouping, layered surfaces, rhythm, whitespace, accents, and useful asymmetry.
+3. Specify each state's visual composition: hierarchy, density, grouping, layered surfaces, rhythm, whitespace, accents, useful asymmetry, and contextual placement of expanded content.
 4. Define transitions, triggers, blocked transitions, and close behavior.
 5. Specify click, click-outside, Escape, focus, keyboard, and pointer behavior.
 6. Identify required signals, state owners, and integration points in `shell.qml`.

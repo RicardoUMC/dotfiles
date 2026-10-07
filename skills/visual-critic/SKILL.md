@@ -18,7 +18,9 @@ Use this skill to review screenshots, prototypes, reference images, or described
 - Anchor feedback in Tokyo City dark terminal character, Quickshell/QML constraints, token discipline, and the existing design language.
 - Preserve the Ambxst/Ax-Shell/Dank-inspired ambition without copying references.
 - Repeated patterns in Ricardo's references are project design constraints, not optional taste.
+- Treat explicit feedback, repeated approvals, and repeated visual choices as preference evidence; label one-off reactions as provisional.
 - Separate observed evidence from taste, inference, and uncertainty.
+- Record confirmed preferences in the relevant project design/task evidence, and retire rules when later feedback clearly contradicts them.
 - Treat minimalism as edited and intentional, never empty, flat, generic, or under-designed.
 - Avoid trend-chasing, gratuitous decoration, and elements without a clear visual or interaction purpose.
 - Prefer composition-level fixes over micro-polish; avoid exhaustive nitpicks.
@@ -38,9 +40,10 @@ Use this skill to review screenshots, prototypes, reference images, or described
 5. Review contrast, color temperature, accent usage, state treatment, icon/text legibility, and Tokyo City palette fit.
 6. Explicitly flag current anti-patterns when visible: one large flat card, uniform padding/radii, equal-weight rows, repeated nested cards, and unused fixed-height space.
 7. Produce actionable implementation grammar: canvas/frame, anchors, surface hierarchy, grouping/rhythm, edge treatment, state treatment, and density target.
-8. Prioritize findings by user impact, composition impact, evidence, and confidence.
-9. When a surface is too generic, recommend one or two novel but coherent directions and explain why they fit Tokyo City and the supplied references.
-10. Suggest concise design directions without writing implementation code.
+8. For iterative work, propose one or two small, comparable visual changes; preserve the right-island outer silhouette unless the user explicitly changes that requirement.
+9. Prioritize findings by user impact, composition impact, evidence, and confidence; distinguish confirmed preferences from hypotheses.
+10. When a surface is too generic, recommend coherent directions that fit Tokyo City and the supplied references.
+11. Suggest concise design directions without writing implementation code.
 
 ## Output Contract
 Return a concise visual critique with: strengths, evidence-based prioritized issues, taste/uncertainty notes, actionable visual grammar, recommended direction, and non-goals. Do not include patches.

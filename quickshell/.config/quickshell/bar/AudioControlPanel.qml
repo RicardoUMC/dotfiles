@@ -9,22 +9,11 @@ Rectangle {
     Layout.fillWidth: true
     implicitHeight: panelColumn.implicitHeight + Theme.spacingSm * 2
     radius: Theme.radiusLg
-    color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.08)
+    color: "transparent"
     border.width: 0
 
-    signal closeRequested()
-
-    Rectangle {
-        anchors {
-            left: parent.left
-            top: parent.top
-            bottom: parent.bottom
-        }
-        width: Theme.panelSecondarySeamWidth
-        radius: Theme.radiusPill
-        color: Colors.accent
-        opacity: 0.78
-    }
+    property bool outputExpanded: false
+    property bool inputExpanded: false
 
     function activeDevice(devices, deviceId) {
         const items = devices || []
@@ -63,58 +52,9 @@ Rectangle {
         anchors.margins: Theme.spacingSm
         spacing: Theme.spacingMd
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: Theme.spacingSm
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 0
-
-                Text {
-                    Layout.fillWidth: true
-                    text: "Audio"
-                    color: Colors.text
-                    font { family: Colors.displayFont; pixelSize: Theme.fontSizeBodyLg }
-                }
-
-                Text {
-                    Layout.fillWidth: true
-                    text: "Output and input routing"
-                    color: Colors.textDim
-                    font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
-                }
-            }
-
-            Rectangle {
-                Layout.preferredWidth: closeLabel.implicitWidth + Theme.spacingMd
-                implicitHeight: 28
-                radius: Theme.radiusPill
-                color: closeArea.containsMouse ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.18)
-                                             : Qt.rgba(Colors.base02.r, Colors.base02.g, Colors.base02.b, 0.42)
-                border.width: Theme.dashboardBodyBorderWidth
-                border.color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.28)
-
-                Text {
-                    id: closeLabel
-                    anchors.centerIn: parent
-                    text: "Back"
-                    color: Colors.text
-                    font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
-                }
-
-                MouseArea {
-                    id: closeArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.closeRequested()
-                }
-            }
-        }
-
         AudioBlock {
             Layout.fillWidth: true
+            visible: root.outputExpanded
             title: "Output"
             iconText: "󰕾"
             devices: AudioService.outputs || []
@@ -132,6 +72,7 @@ Rectangle {
 
         AudioBlock {
             Layout.fillWidth: true
+            visible: root.inputExpanded
             title: "Input"
             iconText: "󰍬"
             devices: AudioService.inputs || []
@@ -161,6 +102,8 @@ Rectangle {
         property string controlLabel: "Level"
         property string fallbackDeviceName: "Device"
         property string fallbackIcon: "󰕾"
+        property bool showHeader: false
+        property bool showLevel: false
 
         signal deviceSelected(string deviceId)
         signal levelCommitted(int value)
@@ -178,6 +121,7 @@ Rectangle {
             spacing: Theme.spacingSm
 
             RowLayout {
+                visible: block.showHeader
                 Layout.fillWidth: true
                 spacing: Theme.spacingSm
 
@@ -202,6 +146,7 @@ Rectangle {
             }
 
             LevelControl {
+                visible: block.showLevel
                 Layout.fillWidth: true
                 label: block.controlLabel
                 value: block.level
@@ -342,9 +287,11 @@ Rectangle {
 
         implicitHeight: 42
         radius: Theme.radiusMd
-        color: rowArea.containsMouse || row.active
-               ? Qt.rgba(Colors.base02.r, Colors.base02.g, Colors.base02.b, 0.42)
-               : "transparent"
+        color: row.active
+               ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.14)
+               : rowArea.containsMouse
+                 ? Qt.rgba(Colors.base02.r, Colors.base02.g, Colors.base02.b, 0.42)
+                 : "transparent"
         border.width: 0
 
         RowLayout {
@@ -383,6 +330,13 @@ Rectangle {
                 text: row.muted ? "Muted" : row.levelText
                 color: row.muted ? Colors.orange : Colors.textDim
                 font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
+            }
+
+            Text {
+                visible: row.active
+                text: "✓"
+                color: Colors.green
+                font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel; weight: Font.DemiBold }
             }
         }
 

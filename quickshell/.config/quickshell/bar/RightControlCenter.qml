@@ -29,7 +29,8 @@ Item {
     function resetSections() {
         wifiCard.expanded = false
         bluetoothCard.expanded = false
-        audioCard.panelOpen = false
+        audioCard.outputDevicesExpanded = false
+        audioCard.inputDevicesExpanded = false
         notificationCard.expanded = false
         powerCard.selectedIndex = 0
     }
@@ -212,6 +213,9 @@ Item {
             clip: true
             contentWidth: width
             contentHeight: contentColumn.implicitHeight
+            // Let child controls own pointer input when the content fits; only
+            // capture gestures for scrolling once the panel actually overflows.
+            interactive: contentHeight > height
             boundsBehavior: Flickable.StopAtBounds
 
             ColumnLayout {

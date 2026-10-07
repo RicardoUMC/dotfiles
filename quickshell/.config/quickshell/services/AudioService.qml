@@ -18,6 +18,8 @@ Item {
     property string errorMessage: ""
     property string pendingAction: ""
     property string pendingValue: ""
+    property string pendingMuteChannel: ""
+    property bool pendingMuteValue: false
 
     readonly property string refreshScript: String.raw`
 import json
@@ -187,12 +189,29 @@ except Exception as exc:
 
     function setOutputMuted(muted) {
         console.log("[audio-mute] setOutputMuted requested=" + muted)
-        runAction("output-muted", muted ? "true" : "false")
+        runMuteAction("output", muted)
     }
 
     function setInputMuted(muted) {
         console.log("[audio-mute] setInputMuted requested=" + muted)
-        runAction("input-muted", muted ? "true" : "false")
+        runMuteAction("input", muted)
+    }
+
+    function runMuteAction(channel, muted) {
+        if (muteProcess.running) {
+            pendingMuteChannel = channel
+            pendingMuteValue = muted
+            console.log("[audio-mute] queue direct channel=" + channel + " value=" + muted)
+            return
+        }
+        startMuteAction(channel, muted)
+    }
+
+    function startMuteAction(channel, muted) {
+        const target = channel === "input" ? "@DEFAULT_AUDIO_SOURCE@" : "@DEFAULT_AUDIO_SINK@"
+        console.log("[audio-mute] start direct target=" + target + " value=" + (muted ? "1" : "0"))
+        muteProcess.command = ["wpctl", "set-mute", target, muted ? "1" : "0"]
+        muteProcess.running = true
     }
 
     function runAction(action, value) {
@@ -224,6 +243,26 @@ except Exception as exc:
                     root.errorMessage = String(error)
                 }
                 refreshProcess.running = false
+            }
+        }
+    }
+
+    Process {
+        id: muteProcess
+        stderr: SplitParser {
+            onRead: data => console.log("[audio-mute] stderr=" + data.trim())
+        }
+        onRunningChanged: {
+            if (running)
+                return
+            console.log("[audio-mute] direct process finished")
+            root.refresh()
+            if (root.pendingMuteChannel.length > 0) {
+                const nextChannel = root.pendingMuteChannel
+                const nextValue = root.pendingMuteValue
+                root.pendingMuteChannel = ""
+                root.pendingMuteValue = false
+                root.startMuteAction(nextChannel, nextValue)
             }
         }
     }

@@ -24,8 +24,9 @@ Rectangle {
                    AudioService.outputMuted ? 0.18 : 0.30)
     border.width: 0
 
-    property bool panelOpen: false
     property bool standalone: false
+    property bool outputDevicesExpanded: false
+    property bool inputDevicesExpanded: false
 
     readonly property var defaultOutput: deviceById(AudioService.outputs || [], AudioService.defaultOutputId)
     readonly property string outputName: defaultOutput
@@ -106,14 +107,6 @@ Rectangle {
         return fallbackIcon
     }
 
-    onStandaloneChanged: if (standalone) panelOpen = true
-    onVisibleChanged: {
-        if (!visible)
-            panelOpen = false
-        else if (standalone)
-            panelOpen = true
-    }
-
     ColumnLayout {
         id: cardColumn
         anchors.fill: parent
@@ -123,30 +116,13 @@ Rectangle {
         // ── Layer 1 — hero: the active output device owns this block ──────
         Rectangle {
             id: heroBlock
-            visible: !root.panelOpen
+            visible: true
             Layout.fillWidth: true
             implicitHeight: heroRow.implicitHeight + Theme.spacingSm * 2
             radius: Theme.radiusLg
-            color: heroClickArea.containsMouse
-                   ? Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b, 0.60)
-                   : Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b,
-                             AudioService.outputMuted ? 0.24 : 0.44)
+            color: Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b,
+                           AudioService.outputMuted ? 0.24 : 0.44)
             border.width: 0
-
-            // Click/hover surface sits below the content so the chevron keeps its
-            // own affordance while the rest of the hero toggles the module.
-            MouseArea {
-                id: heroClickArea
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                    if (root.standalone)
-                        root.panelOpen = true
-                    else
-                        root.panelOpen = !root.panelOpen
-                }
-            }
 
             // Accent seam — the only rail in this module.
             Rectangle {
@@ -243,33 +219,6 @@ Rectangle {
                     }
                 }
 
-                Rectangle {
-                    id: chevronButton
-                    visible: !root.standalone
-                    Layout.preferredWidth: 28
-                    Layout.preferredHeight: 28
-                    Layout.alignment: Qt.AlignVCenter
-                    radius: Theme.radiusPill
-                    color: chevronClickArea.containsMouse || root.panelOpen
-                           ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
-                           : "transparent"
-                    border.width: 0
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: root.panelOpen ? "⌃" : "⌄"
-                        color: Colors.textDim
-                        font { family: Colors.uiFont; pixelSize: Theme.fontSizeBody }
-                    }
-
-                    MouseArea {
-                        id: chevronClickArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.panelOpen = !root.panelOpen
-                    }
-                }
             }
         }
 
@@ -284,34 +233,42 @@ Rectangle {
 
         // Compact state: keep the two directly actionable levels together.
         CompactLevelControl {
-            visible: !root.panelOpen
             Layout.fillWidth: true
             label: "Output"
             glyph: "󰕾"
             value: AudioService.outputVolume
             muted: AudioService.outputMuted
+            expanded: root.outputDevicesExpanded
             accentColor: root.volumeStateColor
             onValueCommitted: value => AudioService.setOutputVolume(value)
+            onDisclosureRequested: root.outputDevicesExpanded = !root.outputDevicesExpanded
+        }
+
+        AudioControlPanel {
+            Layout.fillWidth: true
+            visible: root.outputDevicesExpanded
+            outputExpanded: true
+            inputExpanded: false
         }
 
         CompactLevelControl {
-            visible: !root.panelOpen
             Layout.fillWidth: true
             label: "Microphone"
             glyph: "󰍬"
             value: AudioService.inputVolume
             muted: AudioService.inputMuted
             inputChannel: true
+            expanded: root.inputDevicesExpanded
             accentColor: AudioService.inputMuted ? Colors.orange : Colors.accent
             onValueCommitted: value => AudioService.setInputVolume(value)
+            onDisclosureRequested: root.inputDevicesExpanded = !root.inputDevicesExpanded
         }
 
-        // Keep audio detail as an attached secondary surface instead of a
-        // separate PanelWindow to avoid changing global overlay coordination.
         AudioControlPanel {
             Layout.fillWidth: true
-            visible: root.panelOpen
-            onCloseRequested: root.panelOpen = false
+            visible: root.inputDevicesExpanded
+            outputExpanded: false
+            inputExpanded: true
         }
     }
 
@@ -324,8 +281,10 @@ Rectangle {
         property bool muted: false
         property bool inputChannel: false
         property color accentColor: Colors.accent
+        property bool expanded: false
 
         signal valueCommitted(int value)
+        signal disclosureRequested()
 
         implicitHeight: compactColumn.implicitHeight + Theme.spacingSm * 2
         radius: Theme.radiusMd
@@ -426,6 +385,32 @@ Rectangle {
                             else
                                 AudioService.setOutputMuted(!AudioService.outputMuted)
                         }
+                    }
+                }
+
+                Rectangle {
+                    Layout.preferredWidth: 26
+                    Layout.preferredHeight: 26
+                    Layout.alignment: Qt.AlignVCenter
+                    radius: Theme.radiusPill
+                    color: disclosureArea.containsMouse || compactControl.expanded
+                           ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
+                           : "transparent"
+                    border.width: 0
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: compactControl.expanded ? "⌃" : "⌄"
+                        color: Colors.textDim
+                        font { family: Colors.uiFont; pixelSize: Theme.fontSizeBody }
+                    }
+
+                    MouseArea {
+                        id: disclosureArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: compactControl.disclosureRequested()
                     }
                 }
             }

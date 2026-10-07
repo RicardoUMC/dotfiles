@@ -97,15 +97,35 @@ RCC input-priority verification:
 - The interactive `Flickable` has explicit z-priority over the panel-body catcher, and live QA passed for panel routing, dismissal, monitor anchoring, sibling switching, and Audio entry/expansion. Compact mute activation was the sole remaining failing path.
 
 ## Follow-up: compact mute event delivery
+- Disable RCC scrolling while content fits so child controls retain pointer ownership; enable it only when `contentHeight > height`.
 - Prevent the interactive `Flickable` from stealing compact mute/volume pointer gestures and size the mute pill from its complete icon-plus-label content.
 - Use a dedicated `TapHandler` with takeover permission for mute pills, avoiding `MouseArea` competition with the parent `Flickable`.
-- Queue the latest Audio action while another action is running so mute requests are not silently dropped behind slider updates.
+- Route mute directly through `wpctl set-mute` instead of the generic Python action wrapper, and refresh on process completion even when the command emits no stdout.
+- Queue the latest Audio mute request while another mute action is running.
 - Preserve direct `AudioService` dispatch and the existing visual grammar.
 
 Mute event-delivery fix verification:
 - Qt6 lint, JSON parse, and `git diff --check` passed after this follow-up change; no new diagnostics.
-- Soft reload ended with `Configuration Loaded` and no post-reload errors; Qt6 lint also passed for the updated `AudioService.qml` and `AudioControlCard.qml`.
-- Live verification must confirm both output and microphone mute buttons toggle state without regressing sliders or panel routing.
+- Soft reload ended with `Configuration Loaded` and no post-reload errors; Qt6 lint also passed for the updated `AudioService.qml`, `AudioControlCard.qml`, and `RightControlCenter.qml`.
+- The overflow-aware scrolling pattern follows Ambxst's `interactive: contentHeight > height` implementation.
+- Runtime evidence showed tap and service dispatch occurred, but the generic action process produced no result; direct `wpctl` routing is the corrective change.
+- Live verification must confirm both output and microphone mute buttons toggle state and overflowing sections still scroll.
+
+## Follow-up: independent Audio device disclosures
+- Keep the Audio output hero visible as the stable summary; remove the global hero chevron and global `panelOpen`/Back flow.
+- Give Output and Microphone independent disclosure chevrons at the end of their level rows; each reveals only its own device list immediately below that row.
+- Keep one volume and one mute control per channel in the compact row; remove the duplicated level/mute controls from the attached detail panel.
+- Render each device list as a nested, headerless surface so the channel label and controls are not repeated.
+- Integrate each disclosure chevron into its channel header row instead of leaving it on a detached line below the slider.
+- Use the existing state-layer grammar for channel hover/active surfaces and keep the visual hierarchy compact and software-like.
+- Mark the active device with an accent-tinted row and a trailing check, while preserving quiet hover treatment for available devices.
+- Preserve device selection, default routing, service actions, Escape/focus ownership, and the RCC's single-surface input model.
+
+Independent Audio disclosure verification:
+- Qt6 lint passed for `AudioControlCard.qml`, `AudioControlPanel.qml`, and `RightControlCenter.qml`; only pre-existing `[unqualified]` style warnings remain in `AudioControlPanel.qml`.
+- `git diff --check` passed.
+- Soft reload ended with `Configuration Loaded` and no post-reload errors after removing the stale `panelOpen` reset reference.
+- Live confirmation remains pending for independent Output/Microphone chevrons, device selection, and the preserved mute/volume controls.
 
 ## Delivery
 - Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`), `df64eb5` (`feat(quickshell): compact right-panel power mode`), `a80d9a9` (`fix(quickshell): open audio control center collapsed`), `bafc01b` (`feat(quickshell): simplify compact audio controls`), `356fec9` (`fix(quickshell): restore compact audio mute clicks`), `277ee7b` (`fix(quickshell): dispatch compact audio mute directly`), and `bfa42b8` (`fix(quickshell): prioritize control center input`) on `main`.

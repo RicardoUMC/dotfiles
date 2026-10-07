@@ -146,6 +146,10 @@ Rectangle {
     }
 
     function selectNetwork(network) {
+        if (selectedNetwork !== null && selectedNetwork.ssid === network.ssid) {
+            clearSelection()
+            return
+        }
         selectedNetwork = network
         passwordText = ""
         if (network.known)
@@ -426,26 +430,41 @@ Rectangle {
             Repeater {
                 model: root.visibleNetworks
 
-                delegate: WifiNetworkRow {
+                delegate: ColumnLayout {
                     Layout.fillWidth: true
-                    glyphText: root.signalGlyph(modelData.signal)
-                    titleText: modelData.ssid && String(modelData.ssid).length > 0
-                               ? modelData.ssid : "Unnamed network"
-                    metaText: root.securityText(modelData) + (modelData.known ? " • Saved" : "")
-                    trailingText: modelData.active ? "Active" : root.signalText(modelData.signal)
-                    isActive: !!modelData.active
-                    isSelected: root.selectedNetwork !== null
+                    spacing: 0
+
+                    WifiNetworkRow {
+                        Layout.fillWidth: true
+                        glyphText: root.signalGlyph(modelData.signal)
+                        titleText: modelData.ssid && String(modelData.ssid).length > 0
+                                   ? modelData.ssid : "Unnamed network"
+                        metaText: root.securityText(modelData) + (modelData.known ? " • Saved" : "")
+                        trailingText: modelData.active ? "Active" : root.signalText(modelData.signal)
+                        isActive: !!modelData.active
+                        isSelected: root.selectedNetwork !== null
+                                    && root.selectedNetwork.ssid === modelData.ssid
+                        onRowSelected: root.selectNetwork(modelData)
+                    }
+
+                    Loader {
+                        Layout.fillWidth: true
+                        Layout.topMargin: Theme.spacingSm
+                        active: root.selectedNetwork !== null
                                 && root.selectedNetwork.ssid === modelData.ssid
-                    onRowSelected: root.selectNetwork(modelData)
+                        visible: active
+                        sourceComponent: wifiDetailSheet
+                    }
                 }
             }
 
             // ── Layer 3 — selection detail sheet ───────────────────────
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.topMargin: Theme.spacingSm
-                visible: root.selectedNetwork !== null
-                implicitHeight: detailColumn.implicitHeight + Theme.spacingMd * 2
+            Component {
+                id: wifiDetailSheet
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: detailColumn.implicitHeight + Theme.spacingMd * 2
                 radius: Theme.radiusLg
                 color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.10)
                 border.width: 0
@@ -591,6 +610,7 @@ Rectangle {
                         }
                     }
                 }
+            }
             }
         }
     }

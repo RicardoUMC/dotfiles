@@ -127,6 +127,24 @@ Independent Audio disclosure verification:
 - Soft reload ended with `Configuration Loaded` and no post-reload errors after removing the stale `panelOpen` reset reference.
 - Live confirmation remains pending for independent Output/Microphone chevrons, device selection, and the preserved mute/volume controls.
 
+## Follow-up: closed-state Wi-Fi signal affordance
+- Map the compact Wi-Fi island icon to `WifiService.activeSignal` so the closed bar communicates low, medium, or high signal without opening the control center.
+- Preserve the existing off glyph, label, disabled/active semantics, routing, multi-monitor behavior, and Wi-Fi backend.
+- Keep this iteration presentational only; panel composition and outer island geometry remain unchanged.
+
+Wi-Fi signal affordance verification:
+- Static/QML lint and live compositor confirmation are pending.
+
+## Follow-up: inline selected-network/device detail sheets
+- Render Wi-Fi and Bluetooth detail sheets immediately after their selected row, inside the owning list/group, so the selected row and its actions read as one subordinate disclosure without changing selection or service behavior.
+- Verification placeholder: run Qt6 qmllint, `git diff --check`, reload checks, and live pointer/focus QA for password focus, pairing/connection/forget actions, overflow, and connected-device group migration.
+
+## Follow-up: repeated-row disclosure toggles
+- Repeated activation of the same Wi-Fi row toggles its inline connection detail closed/open; selecting a different row moves the disclosure.
+- Repeated activation of connected or unpaired Bluetooth rows toggles their inline detail/pairing sheet; paired/trusted available devices retain their immediate-connect exception.
+- Audio disclosure chevrons already implement the same toggle grammar; Audio routing rows remain selection actions rather than disclosure toggles.
+- Closing a Bluetooth pairing sheet remains UI-only and does not cancel an in-flight service transaction.
+
 ## Delivery
 - Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`), `df64eb5` (`feat(quickshell): compact right-panel power mode`), `a80d9a9` (`fix(quickshell): open audio control center collapsed`), `bafc01b` (`feat(quickshell): simplify compact audio controls`), `356fec9` (`fix(quickshell): restore compact audio mute clicks`), `277ee7b` (`fix(quickshell): dispatch compact audio mute directly`), and `bfa42b8` (`fix(quickshell): prioritize control center input`) on `main`.
 - No push unless separately requested.

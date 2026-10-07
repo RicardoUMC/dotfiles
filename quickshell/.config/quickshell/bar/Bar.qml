@@ -88,6 +88,19 @@ PanelWindow {
     // IPC functions
     function closeMpris()     { mprisPopup.close() }
     function openMetrics()    { metricsDropdown.open() }
+
+    function wifiSignalGlyph(signal) {
+        const value = Math.max(0, Number(signal || 0))
+        if (value < 20)
+            return "󰤯"
+        if (value < 40)
+            return "󰤟"
+        if (value < 60)
+            return "󰤢"
+        if (value < 80)
+            return "󰤥"
+        return "󰤨"
+    }
     function closeMetrics()   { metricsDropdown.close() }
     function openMpris() {
         mprisPopup.anchorX = root.mprisChipGlobalX
@@ -316,7 +329,7 @@ PanelWindow {
 
         RightIslandIconButton {
             id: wifiButton
-            icon: WifiService.wifiEnabled ? "󰤨" : "󰤭"
+            icon: WifiService.wifiEnabled ? root.wifiSignalGlyph(WifiService.activeSignal) : "󰤭"
             label: "Wi-Fi"
             disabled: !WifiService.wifiEnabled
             active: WifiService.wifiEnabled && WifiService.activeSsid.length > 0

@@ -218,16 +218,23 @@ Rectangle {
     }
 
     function selectConnected(device) {
+        if (selectedAddress === device.address) {
+            clearSelection()
+            return
+        }
         selectedAddress = device.address || ""
         detailMode = "connected"
     }
 
     function selectAvailable(device) {
-        selectedAddress = device.address || ""
         if (device.paired || device.trusted) {
+            selectedAddress = device.address || ""
             BluetoothService.connectDevice(selectedAddress)
             clearSelection()
+        } else if (selectedAddress === device.address) {
+            clearSelection()
         } else {
+            selectedAddress = device.address || ""
             detailMode = "pair"
         }
     }
@@ -506,17 +513,30 @@ Rectangle {
             Repeater {
                 model: BluetoothService.connectedDevices || []
 
-                delegate: BtDeviceRow {
+                delegate: ColumnLayout {
                     Layout.fillWidth: true
-                    primary: true
-                    glyphText: root.deviceIcon(modelData)
-                    titleText: root.deviceName(modelData)
-                    metaText: root.stateText(modelData)
-                    batteryText: root.batteryText(modelData)
-                    batteryGlyphText: root.batteryGlyph(root.batteryText(modelData))
-                    isConnected: true
-                    isSelected: root.selectedAddress === modelData.address
-                    onRowSelected: root.selectConnected(modelData)
+                    spacing: 0
+
+                    BtDeviceRow {
+                        Layout.fillWidth: true
+                        primary: true
+                        glyphText: root.deviceIcon(modelData)
+                        titleText: root.deviceName(modelData)
+                        metaText: root.stateText(modelData)
+                        batteryText: root.batteryText(modelData)
+                        batteryGlyphText: root.batteryGlyph(root.batteryText(modelData))
+                        isConnected: true
+                        isSelected: root.selectedAddress === modelData.address
+                        onRowSelected: root.selectConnected(modelData)
+                    }
+
+                    Loader {
+                        Layout.fillWidth: true
+                        Layout.topMargin: Theme.spacingSm
+                        active: root.selectedAddress === modelData.address
+                        visible: active
+                        sourceComponent: bluetoothDetailSheet
+                    }
                 }
             }
         }
@@ -594,25 +614,39 @@ Rectangle {
             Repeater {
                 model: root.visibleAvailableDevices
 
-                delegate: BtDeviceRow {
+                delegate: ColumnLayout {
                     Layout.fillWidth: true
-                    glyphText: root.deviceIcon(modelData)
-                    titleText: root.deviceName(modelData)
-                    metaText: root.stateText(modelData) + (modelData.paired ? " • Saved" : "")
-                    batteryText: root.batteryText(modelData)
-                    batteryGlyphText: root.batteryGlyph(root.batteryText(modelData))
-                    isSelected: root.selectedAddress === modelData.address
-                    onRowSelected: root.selectAvailable(modelData)
+                    spacing: 0
+
+                    BtDeviceRow {
+                        Layout.fillWidth: true
+                        glyphText: root.deviceIcon(modelData)
+                        titleText: root.deviceName(modelData)
+                        metaText: root.stateText(modelData) + (modelData.paired ? " • Saved" : "")
+                        batteryText: root.batteryText(modelData)
+                        batteryGlyphText: root.batteryGlyph(root.batteryText(modelData))
+                        isSelected: root.selectedAddress === modelData.address
+                        onRowSelected: root.selectAvailable(modelData)
+                    }
+
+                    Loader {
+                        Layout.fillWidth: true
+                        Layout.topMargin: Theme.spacingSm
+                        active: root.selectedAddress === modelData.address
+                        visible: active
+                        sourceComponent: bluetoothDetailSheet
+                    }
                 }
             }
         }
 
         // ── Layer 4 — selection detail sheet ─────────────────────────────
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.topMargin: Theme.spacingSm
-            visible: root.expanded && BluetoothService.bluetoothEnabled && root.selectedDevice !== null
-            implicitHeight: detailColumn.implicitHeight + Theme.spacingMd * 2
+        Component {
+            id: bluetoothDetailSheet
+
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: detailColumn.implicitHeight + Theme.spacingMd * 2
             radius: Theme.radiusLg
             color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.10)
             border.width: 0
@@ -751,6 +785,7 @@ Rectangle {
                         onTriggered: root.keepDevice()
                     }
                 }
+            }
             }
         }
     }

@@ -159,42 +159,90 @@ end)
 --     { name = "home-nas", remote_address = "user@192.168.1.10", multiplexing = "None" },
 -- }
 
--- Productive keybindings with mux and splits
+local function basename(path)
+    if not path then
+        return ""
+    end
+
+    return path:gsub("\\", "/"):match("([^/]+)$") or path
+end
+
+local function is_editor_process(pane)
+    local user_vars = pane:get_user_vars()
+    if user_vars.IS_NVIM == "true" then
+        return true
+    end
+
+    local process_name = basename(pane:get_foreground_process_name()):lower()
+
+    return process_name == "nvim"
+        or process_name == "vim"
+        or process_name == "view"
+        or process_name == "lvim"
+        or process_name == "nvim.exe"
+        or process_name == "vim.exe"
+end
+
+local function activate_pane_or_send_key(direction, key)
+    return wezterm.action_callback(function(window, pane)
+        if is_editor_process(pane) then
+            window:perform_action(wezterm.action.SendKey({ key = key, mods = "CTRL" }), pane)
+            return
+        end
+
+        window:perform_action(wezterm.action.ActivatePaneDirection(direction), pane)
+    end)
+end
+
+-- Productive keybindings with mux, splits, and nvim-aware pane navigation.
 config.keys = {
     { key = "T", mods = "CTRL|SHIFT", action = wezterm.action.SpawnTab("DefaultDomain") },
     { key = "W", mods = "CTRL|SHIFT", action = wezterm.action.CloseCurrentTab({ confirm = false }) },
 
-    { key = "S", mods = "CTRL|SHIFT", action = wezterm.action.SplitPane({ direction = "Right" }) },
-    { key = "D", mods = "CTRL|SHIFT", action = wezterm.action.SplitPane({ direction = "Down" }) },
-    { key = "Q", mods = "CTRL|SHIFT", action = wezterm.action.CloseCurrentPane({ confirm = false }) },
-
-    { key = "H", mods = "CTRL|SHIFT", action = wezterm.action.ActivatePaneDirection("Left") },
-    { key = "L", mods = "CTRL|SHIFT", action = wezterm.action.ActivatePaneDirection("Right") },
-    { key = "K", mods = "CTRL|SHIFT", action = wezterm.action.ActivatePaneDirection("Up") },
-    { key = "J", mods = "CTRL|SHIFT", action = wezterm.action.ActivatePaneDirection("Down") },
-    { key = "Z", mods = "CTRL|SHIFT", action = wezterm.action.TogglePaneZoomState },
-
-    { key = "F", mods = "CTRL|SHIFT", action = wezterm.action.Search({ CaseSensitiveString = "" }) },
-    { key = "C", mods = "CTRL|SHIFT", action = wezterm.action.CopyTo("Clipboard") },
-    { key = "V", mods = "CTRL|SHIFT", action = wezterm.action.PasteFrom("Clipboard") },
-
-    { key = "U", mods = "CTRL|SHIFT", action = wezterm.action.SwitchToWorkspace },
-    { key = "N", mods = "CTRL|SHIFT", action = wezterm.action.SwitchWorkspaceRelative(1) },
-    { key = "P", mods = "CTRL|SHIFT", action = wezterm.action.SwitchWorkspaceRelative(-1) },
+    { key = "r", mods = "CTRL|SHIFT", action = wezterm.action.SplitPane({ direction = "Right" }) },
+    { key = "d", mods = "CTRL|SHIFT", action = wezterm.action.SplitPane({ direction = "Down" }) },
     {
-        key = "M",
+        key = "Enter",
         mods = "CTRL|SHIFT",
-        action = wezterm.action.ShowLauncherArgs({ flags = "WORKSPACES" }),
+        action = wezterm.action.Multiple({
+            wezterm.action.SplitPane({ direction = "Down", size = { Percent = 35 } }),
+            wezterm.action.TogglePaneZoomState,
+        }),
+    },
+    { key = "q", mods = "CTRL|SHIFT", action = wezterm.action.CloseCurrentPane({ confirm = false }) },
+
+    { key = "h", mods = "CTRL", action = activate_pane_or_send_key("Left", "h") },
+    { key = "l", mods = "CTRL", action = activate_pane_or_send_key("Right", "l") },
+    { key = "k", mods = "CTRL", action = activate_pane_or_send_key("Up", "k") },
+    { key = "j", mods = "CTRL", action = activate_pane_or_send_key("Down", "j") },
+    { key = "z", mods = "CTRL|SHIFT", action = wezterm.action.TogglePaneZoomState },
+
+    { key = "f", mods = "CTRL|SHIFT", action = wezterm.action.Search({ CaseSensitiveString = "" }) },
+    { key = "c", mods = "CTRL|SHIFT", action = wezterm.action.CopyTo("Clipboard") },
+    { key = "v", mods = "CTRL|SHIFT", action = wezterm.action.PasteFrom("Clipboard") },
+
+    { key = "u", mods = "CTRL|SHIFT", action = wezterm.action.SwitchToWorkspace },
+    { key = "n", mods = "CTRL|SHIFT", action = wezterm.action.SwitchWorkspaceRelative(1) },
+    { key = "p", mods = "CTRL|SHIFT", action = wezterm.action.SwitchWorkspaceRelative(-1) },
+    {
+        key = "a",
+        mods = "CTRL|SHIFT",
+        action = wezterm.action.ShowLauncherArgs({ flags = "FUZZY|TABS|WORKSPACES" }),
+    },
+    {
+        key = "m",
+        mods = "CTRL|SHIFT",
+        action = wezterm.action.ShowLauncherArgs({ flags = "FUZZY|WORKSPACES" }),
     },
 
     {
-        key = "O",
+        key = "o",
         mods = "CTRL|SHIFT",
         action = wezterm.action.SpawnCommandInNewWindow({
             args = { wezterm.executable_dir .. "/wezterm", "start", "--always-new-process", "--attach", "current-pane" },
         }),
     },
-    -- { key = "P", mods = "CTRL|SHIFT", action = wezterm.action.ActivateCommandPalette },
+    -- { key = "p", mods = "CTRL|SHIFT", action = wezterm.action.ActivateCommandPalette },
 }
 
 -- Quick tab switching Alt+1..9

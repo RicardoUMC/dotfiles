@@ -376,16 +376,17 @@ Rectangle {
 
                 Rectangle {
                     id: compactMuteButton
-                    Layout.preferredWidth: compactMuteLabel.implicitWidth + Theme.spacingMd
+                    Layout.preferredWidth: compactMuteContent.implicitWidth + Theme.spacingMd
                     Layout.preferredHeight: 26
                     radius: Theme.radiusPill
-                    color: compactMuteArea.containsMouse || compactControl.muted
+                    color: compactMuteHover.hovered || compactControl.muted
                            ? Qt.rgba(Colors.orange.r, Colors.orange.g, Colors.orange.b,
                                      compactControl.muted ? 0.28 : 0.24)
                            : Qt.rgba(Colors.orange.r, Colors.orange.g, Colors.orange.b, 0.14)
                     border.width: 0
 
                     RowLayout {
+                        id: compactMuteContent
                         anchors.centerIn: parent
                         spacing: Theme.spacingXs
 
@@ -407,12 +408,19 @@ Rectangle {
                         }
                     }
 
-                    MouseArea {
-                        id: compactMuteArea
-                        anchors.fill: parent
-                        hoverEnabled: true
+                    HoverHandler {
+                        id: compactMuteHover
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: {
+                    }
+
+                    TapHandler {
+                        acceptedButtons: Qt.LeftButton
+                        grabPermissions: PointerHandler.CanTakeOverFromAnything
+                        onTapped: {
+                            const channel = compactControl.inputChannel ? "input" : "output"
+                            const currentMuted = compactControl.inputChannel
+                                             ? AudioService.inputMuted : AudioService.outputMuted
+                            console.log("[audio-mute] tap channel=" + channel + " currentMuted=" + currentMuted)
                             if (compactControl.inputChannel)
                                 AudioService.setInputMuted(!AudioService.inputMuted)
                             else
@@ -446,6 +454,7 @@ Rectangle {
                     anchors.topMargin: -Theme.spacingXs
                     anchors.bottomMargin: -Theme.spacingXs
                     hoverEnabled: true
+                    preventStealing: true
                     cursorShape: Qt.PointingHandCursor
                     onPressed: mouse => compactControl.valueCommitted(compactControl.valueFromX(mouse.x))
                     onPositionChanged: mouse => {

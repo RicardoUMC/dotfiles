@@ -16,6 +16,8 @@ Item {
     property bool outputMuted: false
     property bool inputMuted: false
     property string errorMessage: ""
+    property string pendingAction: ""
+    property string pendingValue: ""
 
     readonly property string refreshScript: String.raw`
 import json
@@ -145,6 +147,8 @@ except Exception as exc:
 `
 
     function applyState(payload) {
+        console.log("[audio-mute] refresh outputMuted=" + !!payload.outputMuted
+                    + " inputMuted=" + !!payload.inputMuted)
         outputs = payload.outputs || []
         inputs = payload.inputs || []
         defaultOutputId = payload.defaultOutputId || ""
@@ -182,17 +186,31 @@ except Exception as exc:
     }
 
     function setOutputMuted(muted) {
+        console.log("[audio-mute] setOutputMuted requested=" + muted)
         runAction("output-muted", muted ? "true" : "false")
     }
 
     function setInputMuted(muted) {
+        console.log("[audio-mute] setInputMuted requested=" + muted)
         runAction("input-muted", muted ? "true" : "false")
     }
 
     function runAction(action, value) {
-        if (actionProcess.running)
+        const normalizedValue = value || ""
+        if (actionProcess.running) {
+            console.log("[audio-mute] queue action=" + action + " value=" + normalizedValue)
+            // Do not drop a mute request that arrives while a slider action is
+            // still being applied; execute the latest request after completion.
+            pendingAction = action
+            pendingValue = normalizedValue
             return
-        actionProcess.command = ["python3", "-c", actionScript, action, value || ""]
+        }
+        startAction(action, normalizedValue)
+    }
+
+    function startAction(action, value) {
+        console.log("[audio-mute] start action=" + action + " value=" + value)
+        actionProcess.command = ["python3", "-c", actionScript, action, value]
         actionProcess.running = true
     }
 
@@ -216,12 +234,21 @@ except Exception as exc:
             onRead: data => {
                 try {
                     const payload = JSON.parse(data.trim())
+                    console.log("[audio-mute] result ok=" + payload.ok
+                                + " error=" + (payload.errorMessage || ""))
                     root.errorMessage = payload.ok ? "" : (payload.errorMessage || "Audio action failed")
                 } catch (error) {
                     root.errorMessage = String(error)
                 }
                 actionProcess.running = false
                 root.refresh()
+                if (root.pendingAction.length > 0) {
+                    const nextAction = root.pendingAction
+                    const nextValue = root.pendingValue
+                    root.pendingAction = ""
+                    root.pendingValue = ""
+                    root.startAction(nextAction, nextValue)
+                }
             }
         }
     }

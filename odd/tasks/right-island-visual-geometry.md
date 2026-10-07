@@ -33,7 +33,7 @@ Improve the right control-center's visual proportions and user configurability w
 - Soft and hard reload with terminal `Configuration Loaded` and no post-reload `ERROR`.
 - Qt6 lint/JSON/diff verification passed; only documented Theme style warnings remain.
 - Full compositor screenshot captured after reload at 4480x1440; Power opened through IPC and visually inspected as a full-width card inside the panel. Closed-state screenshot preserved both outputs and the bar composition.
-- Pointer behavior remains pending live confirmation: closed-state pass-through, sibling switching, Escape, and N-monitor anchoring.
+- Live pointer QA passed for closed-state pass-through, sibling switching, Escape/outside-click dismissal, Audio flow, and N-monitor anchoring. The only failing live path was compact Audio mute-button activation; the fix is tracked below.
 
 Compact Power verification:
 - Qt6 lint, JSON parse, and `git diff --check` passed; only the same pre-existing Theme style warnings remain.
@@ -53,7 +53,7 @@ Audio flow verification:
 - Qt6 lint passed for `RightControlCenter.qml`; `AudioControlCard.qml` retains only pre-existing `[unqualified]` warnings in its repeater delegate.
 - `git diff --check` passed.
 - Soft and hard reload both ended with `Configuration Loaded` and no post-reload errors.
-- The interactive visual click path remains pending direct pointer confirmation; the state transition is now explicit in `RightControlCenter.qml` and the Audio card's second-step controls remain intact.
+- Live click-path QA passed: the initial Audio interaction shows the summary card and the second interaction opens the detailed controls; routing and the attached device panel remain intact.
 
 ## Follow-up: Audio hierarchy and compact input control
 - Compact Audio should show one summary hero plus two distinct controls: output volume and microphone gain.
@@ -64,7 +64,7 @@ Audio hierarchy verification:
 - `AudioControlCard.qml` passes Qt6 lint with no diagnostics; `AudioControlPanel.qml` retains only its existing `[unqualified]` warnings.
 - `git diff --check` passed.
 - Soft and hard reload both ended with `Configuration Loaded` and no post-reload errors.
-- Compact output and microphone sliders share one visual/interaction component; expanded Audio renders only the detailed panel. Direct pointer confirmation remains pending.
+- Live QA passed for the compact output/microphone hierarchy and expanded detailed panel. The only remaining Audio interaction issue was mute-button activation, tracked below.
 
 ## Follow-up: compact mute hit targets
 - Make compact output/microphone mute controls own explicit click targets inside `CompactLevelControl`, while preserving the existing visual pill grammar and AudioService actions.
@@ -74,7 +74,7 @@ Mute hit-target verification:
 - `AudioControlCard.qml` passes Qt6 lint with no diagnostics.
 - `git diff --check` passed.
 - Soft and hard reload both ended with `Configuration Loaded` and no post-reload errors.
-- Compact mute buttons now own explicit `MouseArea`s; direct pointer confirmation remains pending.
+- The initial explicit mute hit targets did not activate reliably during live QA; the follow-up fix adds pointer-grab protection and sizes the hit target from the complete icon-plus-label content.
 
 ## Follow-up: direct audio mute dispatch
 - Remove the remaining compact mute signal hop; each compact level control dispatches directly to the appropriate AudioService output/input mute method.
@@ -84,7 +84,7 @@ Direct mute dispatch verification:
 - `AudioControlCard.qml` passes Qt6 lint with no diagnostics.
 - `git diff --check` passed.
 - Soft and hard reload both ended with `Configuration Loaded` and no post-reload errors.
-- Backend `wpctl set-mute` was validated for both default sink and source without changing either current state; live pointer confirmation remains pending.
+- Backend `wpctl set-mute` was validated for both default sink and source without changing either current state. Live QA isolated the remaining failure to compact button event delivery rather than backend dispatch.
 
 ## Follow-up: RCC content input priority
 - Make the interactive RCC content layer explicitly higher than the panel-body click catcher so compact mute controls and detailed Audio controls receive pointer events.
@@ -94,7 +94,18 @@ RCC input-priority verification:
 - Qt6 lint passed for `RightControlCenter.qml` and `AudioControlCard.qml`.
 - `git diff --check` passed.
 - Soft and hard reload both ended with `Configuration Loaded` and no post-reload errors.
-- The interactive `Flickable` now has explicit z-priority over the panel-body catcher; direct pointer confirmation remains pending.
+- The interactive `Flickable` has explicit z-priority over the panel-body catcher, and live QA passed for panel routing, dismissal, monitor anchoring, sibling switching, and Audio entry/expansion. Compact mute activation was the sole remaining failing path.
+
+## Follow-up: compact mute event delivery
+- Prevent the interactive `Flickable` from stealing compact mute/volume pointer gestures and size the mute pill from its complete icon-plus-label content.
+- Use a dedicated `TapHandler` with takeover permission for mute pills, avoiding `MouseArea` competition with the parent `Flickable`.
+- Queue the latest Audio action while another action is running so mute requests are not silently dropped behind slider updates.
+- Preserve direct `AudioService` dispatch and the existing visual grammar.
+
+Mute event-delivery fix verification:
+- Qt6 lint, JSON parse, and `git diff --check` passed after this follow-up change; no new diagnostics.
+- Soft reload ended with `Configuration Loaded` and no post-reload errors; Qt6 lint also passed for the updated `AudioService.qml` and `AudioControlCard.qml`.
+- Live verification must confirm both output and microphone mute buttons toggle state without regressing sliders or panel routing.
 
 ## Delivery
 - Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`), `df64eb5` (`feat(quickshell): compact right-panel power mode`), `a80d9a9` (`fix(quickshell): open audio control center collapsed`), `bafc01b` (`feat(quickshell): simplify compact audio controls`), `356fec9` (`fix(quickshell): restore compact audio mute clicks`), `277ee7b` (`fix(quickshell): dispatch compact audio mute directly`), and `bfa42b8` (`fix(quickshell): prioritize control center input`) on `main`.

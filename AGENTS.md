@@ -55,7 +55,8 @@ bar/MetricsDropdown.qml ← dormant: instantiated and screen-pinned per bar, but
 launcher/LauncherCentered.qml ← fullscreen PanelWindow Top, pinned to the focused monitor
 notifications/Notifications.qml ← ENGINE (non-surface `Item`): one NotificationServer, one sound player,
                                    one retained history + one live toast model, both persistence layers.
-                                   Presentation is a per-screen `Variants` of PanelWindow toast surfaces (Overlay, top-right)
+                                   Presentation is a per-screen `Variants` of PanelWindow toast surfaces (Overlay, top-right),
+                                   with a bounded native blur Region over visible `toastColumn` content in glass mode
 theme/Colors.qml        ← pragma Singleton — readonly color + font tokens
 theme/Theme.qml         ← pragma Singleton — mutable structural tokens from config.json
 theme/Motion.qml        ← pragma Singleton — shared motion vocabulary: named intents (Effects / EffectsColor / Spatial) as drop-in inline animation types; see "Motion system" below
@@ -129,18 +130,20 @@ All components use font-family tokens from `Colors.qml` — never hardcode font 
 - `Theme.dashboardSparklineWidth` — Metrics card sparkline width
 - `Theme.dashboardSparklineHeight` — Metrics card sparkline height
 - `Theme.dashboardFooterHeight` — Metrics pane footer row height
-- `Theme.surfaceMode` — global visual surface mode (`surface.mode`: `solid`, `translucent`, or `glass`; invalid values fall back to `solid`; `glass` is a readable translucent fallback because no safely scoped blur rule exists)
+- `Theme.surfaceMode` — global visual surface mode (`surface.mode`: `solid`, `translucent`, or `glass`; invalid values fall back to `solid`; `glass` keeps a readable translucent fill and attempts native blur only when `surface.nativeBlur` is true)
+- `Theme.nativeBlur` — opt-in native `BackgroundEffect.blurRegion` attempt for `glass` only (default `true`); unsupported compositor/API behavior is a native no-op or warning, never a solid/translucent mode change
 - `Theme.surfaceOpacity` — global background opacity (`surface.opacity`, default `1.0`, finite values clamped to `[0,1]`; solid mode is opaque)
 - `Theme.surfaceCardOpacity`, `Theme.surfaceNestedOpacity`, `Theme.surfaceOverlayOpacity` — role-specific background alphas (`surface.cardOpacity`, `surface.nestedOpacity`, `surface.overlayOpacity`), clamped to `[0,1]`; text, controls, artwork, masks, and transparent catchers remain independent
+- `Theme.buttonPrimaryTone`, `Theme.buttonSecondaryTone`, `Theme.buttonHoverLift`, `Theme.buttonPressedLift` — opaque darkened semantic button fills and interaction lifts (`button.*`); use `Theme.buttonFill()` for action controls, keep intent colors in `Colors.qml`, and never use root opacity to weaken a button
 - `Theme.accentSeamWidth` — specialty-card hero accent seam width (`panel.accentSeamWidth`); deliberately independent from `Theme.dashboardProgressHeight`
 - `Theme.panelVolumeTrackHeight` — Audio card volume track and knob thickness (`panel.volumeTrackHeight`)
 - `Theme.islandChipRadius` — right-island service-chip corner radius (`island.chipRadius`, default `8`)
-- `Theme.islandActiveFillOpacity` — accent-tinted fill opacity for active/warning chips (`island.activeFillOpacity`, default `0.18`)
+- `Theme.islandActiveFillOpacity` — **superseded/inert legacy token**; active/warning action fills use the global `Theme.buttonFill()` grammar instead (historical default `0.18`)
 - `Theme.islandStateLayerHoverOpacity` — hover overlay opacity on right-island chips and the power pill (`island.stateLayerHoverOpacity`, default `0.10`)
 - `Theme.islandStateLayerPressedOpacity` — pressed overlay opacity on the same surfaces (`island.stateLayerPressedOpacity`, default `0.16`)
 - `Theme.islandSemanticGap` — extra whitespace on each side of the service/power separator (`island.semanticGap`, default `4`)
 - `Theme.islandSeparatorWidth` — hairline dividing service chips from the power action (`island.separatorWidth`, default `1`); `0` removes **both** the line and its semantic gap
-- `Theme.islandPowerTintOpacity` — resting red tint of the destructive power pill (`island.powerTintOpacity`, default `0.10`)
+- `Theme.islandPowerTintOpacity` — **superseded/inert legacy token**; the destructive power action uses the global `Theme.buttonFill()` grammar instead (historical default `0.10`)
 - `Theme.animScale` — global motion multiplier applied by the `Motion` singleton (`anim.scale`, default `1.0`, clamped 0.25–3.0); does not rewrite `animFast/animNormal/animSlow` for unmigrated call sites
 - `Theme.debugBarSilhouette` — high-contrast red debug silhouette; do not disable unless Ricardo explicitly asks
 

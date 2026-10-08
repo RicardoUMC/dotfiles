@@ -133,8 +133,11 @@ Item {
         onClicked: root.close()
     }
 
-    // Exposed for Bar.qml's composed mask.
+    // Exposed separately for Bar.qml's composed input mask and blur region.
+    // The visual alias never exposes the backdrop/input tree; its height is
+    // already driven by revealActive, so the blur region collapses on close.
     readonly property alias backdropItem: backdrop
+    readonly property alias panelBodyItem: panelBody
 
     // Window-level OnDemand focus is handled by the Bar surface; this item is
     // the in-surface focus target for Escape-to-close.

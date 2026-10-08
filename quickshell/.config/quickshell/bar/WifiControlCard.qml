@@ -328,9 +328,10 @@ Rectangle {
                     Layout.preferredHeight: 28
                     Layout.alignment: Qt.AlignVCenter
                     radius: Theme.radiusMd
-                    color: chevronClickArea.containsMouse || root.expanded
-                           ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
-                           : "transparent"
+                    color: Theme.buttonFill(Colors.accent, false,
+                                            chevronClickArea.pressed
+                                            ? "pressed"
+                                            : (chevronClickArea.containsMouse || root.expanded ? "hover" : "rest"))
                     border.width: 0
 
                     Text {
@@ -579,7 +580,7 @@ Rectangle {
                             visible: root.detailMode === "known"
                             Layout.fillWidth: true
                             label: "Forget"
-                            primary: true
+                            primary: false
                             accentColor: Colors.muted
                             onTriggered: root.detailMode = "forget"
                         }
@@ -754,13 +755,11 @@ Rectangle {
         implicitHeight: powerContent.implicitHeight + Theme.spacingXs * 2
         radius: Theme.radiusMd
         opacity: powerSwitch.pending ? 0.72 : 1.0
-        color: powerSwitch.emphasis
-               ? (powerClickArea.containsMouse
-                  ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.24)
-                  : Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.14))
-               : (powerClickArea.containsMouse
-                  ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.10)
-                  : "transparent")
+        color: Theme.buttonFill(powerSwitch.emphasis ? Colors.accent : Colors.muted,
+                                powerSwitch.emphasis,
+                                powerClickArea.pressed
+                                ? "pressed"
+                                : (powerClickArea.containsMouse ? "hover" : "rest"))
         border.width: 0
 
         RowLayout {
@@ -870,14 +869,9 @@ Rectangle {
         implicitWidth: pillRow.implicitWidth + Theme.spacingMd
         implicitHeight: 26
         radius: Theme.radiusSm
-        opacity: enabled ? 1.0 : 0.55
-        color: pillAction.quiet
-               ? (pillClickArea.containsMouse
-                  ? Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, 0.16)
-                  : "transparent")
-               : (pillClickArea.containsMouse
-                  ? Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, 0.24)
-                  : Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, 0.14))
+        color: !enabled ? Colors.base02
+               : Theme.buttonFill(pillAction.accentColor, pillAction.primary,
+                                  pillClickArea.pressed ? "pressed" : (pillClickArea.containsMouse ? "hover" : "rest"))
         border.width: pillAction.primary ? Theme.dashboardBodyBorderWidth : 0
         border.color: pillAction.primary
                       ? Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, Theme.opacityBorder * 0.8)

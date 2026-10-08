@@ -340,9 +340,9 @@ Rectangle {
                     Layout.preferredWidth: 28
                     Layout.preferredHeight: 28
                     radius: Theme.radiusMd
-                    color: compactControl.muted
-                           ? Qt.rgba(Colors.orange.r, Colors.orange.g, Colors.orange.b, 0.28)
-                           : Colors.backgroundAlt
+                    color: Theme.buttonFill(compactControl.muted ? Colors.orange : Colors.muted,
+                                             compactControl.muted,
+                                             compactMuteHover.hovered ? "hover" : "rest")
                     border.width: Theme.dashboardBodyBorderWidth
                     border.color: compactControl.muted
                                   ? Qt.rgba(Colors.orange.r, Colors.orange.g, Colors.orange.b, Theme.opacityBorder * 0.8)
@@ -381,9 +381,9 @@ Rectangle {
                     Layout.preferredHeight: 26
                     Layout.alignment: Qt.AlignVCenter
                     radius: Theme.radiusMd
-                    color: disclosureArea.containsMouse || compactControl.expanded
-                           ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
-                           : "transparent"
+                    color: (disclosureArea.pressed || compactControl.expanded)
+                           ? Theme.buttonFill(Colors.accent, false, disclosureArea.pressed ? "pressed" : "rest")
+                           : (disclosureArea.containsMouse ? Theme.buttonFill(Colors.accent, false, "hover") : "transparent")
                     border.width: 0
 
                     Text {
@@ -453,11 +453,9 @@ Rectangle {
         implicitWidth: pillRow.implicitWidth + Theme.spacingMd
         implicitHeight: 26
         radius: Theme.radiusSm
-        opacity: enabled ? 1.0 : 0.55
-        color: pillClickArea.containsMouse || pillAction.active
-               ? Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b,
-                         pillAction.active ? 0.28 : 0.24)
-               : Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, 0.14)
+        color: !enabled ? Colors.base02
+               : Theme.buttonFill(pillAction.accentColor, pillAction.active,
+                                  pillClickArea.pressed ? "pressed" : (pillClickArea.containsMouse ? "hover" : "rest"))
         border.width: 0
 
         RowLayout {

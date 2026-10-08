@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Wayland._BackgroundEffect
 import Quickshell.Services.Mpris
 import "../theme"
 
@@ -37,6 +38,9 @@ Item {
         // Null keeps the compositor-picks-output default; a screen pins it.
         screen: root.screenTarget
         color: "transparent"
+        BackgroundEffect.blurRegion: Theme.nativeBlur && Theme.surfaceMode === "glass"
+            ? glassBlurRegion
+            : null
         // Layer rule: transient system feedback (toasts, OSD) owns Overlay; interactive panels are Top.
         WlrLayershell.layer: WlrLayer.Top
         exclusionMode: ExclusionMode.Ignore
@@ -48,6 +52,7 @@ Item {
         }
 
         Rectangle {
+            id: popupCard
             readonly property int popupW: 280
             readonly property int popupH: (root.player?.trackArtUrl ?? "") !== "" ? 320 : 220
 
@@ -64,6 +69,13 @@ Item {
             }
 
             MouseArea { anchors.fill: parent }
+
+            // Bounded visual region only; never the fullscreen dismiss catcher.
+            GlassEffect {
+                id: glassBlurRegion
+                item: popupCard
+                radius: Theme.radiusMd
+            }
 
             ColumnLayout {
                 anchors { fill: parent; margins: Theme.spacingLg }

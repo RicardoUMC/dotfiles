@@ -35,11 +35,12 @@ Rectangle {
     radius: Theme.islandChipRadius
 
     color: root.disabled
-           ? Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacityDim)
+           ? Colors.base02
            : (root.active || root.warning)
-           ? Qt.rgba(root.accentColor.r, root.accentColor.g, root.accentColor.b,
-                     Theme.islandActiveFillOpacity)
-           : Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacityOverlay)
+           ? Theme.buttonFill(root.accentColor, false,
+                              buttonArea.pressed ? "pressed" : (buttonArea.containsMouse ? "hover" : "rest"))
+           : (buttonArea.pressed ? Theme.buttonFill(Colors.muted, false, "pressed")
+              : (buttonArea.containsMouse ? Theme.buttonFill(Colors.muted, false, "hover") : Colors.base01))
 
     // Service state is what this fill encodes, and it can flip while the chip is
     // on screen (Wi-Fi connected/disconnected, audio muted/unmuted). A fill that

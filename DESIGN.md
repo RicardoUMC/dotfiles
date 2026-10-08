@@ -177,19 +177,23 @@ Current `config.json` keeps the scale at its defaults (`12 / 13 / 15 / 17 / 22`)
 | `Theme.dashboardSparklineWidth` | `80` | `80` | Metrics card sparkline width. |
 | `Theme.dashboardSparklineHeight` | `32` | `32` | Metrics card sparkline height. |
 | `Theme.dashboardFooterHeight` | `18` | `18` | Metrics pane footer row height. |
-| `Theme.surfaceMode` | `"solid"` | `"solid"` | Global visual-surface mode (`surface.mode`): `solid`, `translucent`, or `glass`; invalid values fall back to `solid`. `glass` is currently a documented translucent fallback because the shared layer surfaces have no safely scoped blur rule. |
+| `Theme.surfaceMode` | `"solid"` | `"glass"` (test override) | Global visual-surface mode (`surface.mode`): `solid`, `translucent`, or `glass`; invalid values fall back to `solid`. `glass` retains a readable translucent fill and may attempt bounded native blur. |
+| `Theme.nativeBlur` | `true` | `true` | Native `BackgroundEffect.blurRegion` attempt (`surface.nativeBlur`), evaluated only for `glass`; unsupported compositor/API behavior is a native no-op or warning. |
 | `Theme.surfaceOpacity` | `1.0` | `1.0` | Configured opacity for non-solid global visual surfaces (`surface.opacity`), clamped to `[0, 1]`; solid mode remains opaque. |
+| `Theme.buttonPrimaryTone` | `0.32` | `0.32` | Opaque darkened semantic fill tone for primary buttons (`button.primaryTone`). |
+| `Theme.buttonSecondaryTone` | `0.22` | `0.22` | Opaque darkened semantic fill tone for secondary buttons (`button.secondaryTone`); hue and saturation remain semantic. |
+| `Theme.buttonHoverLift` / `Theme.buttonPressedLift` | `0.08` / `0.14` | same | Lift applied to semantic button fills on hover/press (`button.*`). |
 | `Theme.surfaceCardOpacity` | `0.18` | `0.18` | Shared specialty-card background opacity in non-solid modes (`surface.cardOpacity`), clamped to `[0, 1]`; text and controls remain opaque. |
 | `Theme.accentSeamWidth` | `4` | `4` | Hero accent seam width inside the three control-center specialty cards — Wi-Fi, Bluetooth, and Audio hero blocks (`panel.accentSeamWidth`). |
 | `Theme.panelSecondarySeamWidth` | `2` | `2` | Accent seam of the nested audio device panel; deliberately thinner than the `accentSeamWidth` hero seam — do not merge them (`panel.secondarySeamWidth`). |
 | `Theme.panelVolumeTrackHeight` | `8` | `8` | Audio card volume track and knob thickness (`panel.volumeTrackHeight`). |
 | `Theme.islandChipRadius` | `8` | `8` | Right-island service-chip corner radius (`island.chipRadius`). |
-| `Theme.islandActiveFillOpacity` | `0.18` | `0.18` | Accent-tinted fill opacity when a chip is active or warning (`island.activeFillOpacity`). |
+| `Theme.islandActiveFillOpacity` | `0.18` | `0.18` | **Superseded/inert legacy token.** Active and warning action fills use the global `Theme.buttonFill()` grammar; this name is retained only for historical context. |
 | `Theme.islandStateLayerHoverOpacity` | `0.10` | `0.10` | Hover overlay opacity on the right-island chips and power pill (`island.stateLayerHoverOpacity`). |
 | `Theme.islandStateLayerPressedOpacity` | `0.16` | `0.16` | Pressed overlay opacity on the same surfaces (`island.stateLayerPressedOpacity`). |
 | `Theme.islandSemanticGap` | `4` | `4` | Extra whitespace on each side of the service/power separator (`island.semanticGap`). |
 | `Theme.islandSeparatorWidth` | `1` | `1` | Hairline dividing service chips from the power action; `0` removes **both** the line and its semantic gap (`island.separatorWidth`). |
-| `Theme.islandPowerTintOpacity` | `0.10` | `0.10` | Resting red tint of the destructive power pill (`island.powerTintOpacity`). |
+| `Theme.islandPowerTintOpacity` | `0.10` | `0.10` | **Superseded/inert legacy token.** The destructive power action uses the global `Theme.buttonFill()` grammar; this name is retained only for historical context. |
 | `Theme.animScale` | `1.0` | `1.0` | Global motion multiplier applied by the `Motion` singleton on top of `animFast/animNormal/animSlow`; clamped to 0.25–3.0; `1.0` preserves current timing exactly (`anim.scale`). |
 | `Theme.animationsEnabled` | `true` | `true` | Global animation switch (`anim.enabled`). `false` makes all shared Motion animations instantaneous. |
 | `Theme.animationOverrides` | `{}` | wallpaper overrides enabled | Named per-part exceptions (`anim.overrides`), e.g. `wallpaper.carousel: false` while all other motion remains enabled. |
@@ -236,7 +240,8 @@ Mixed system — radius is contextual:
 - **Global policy**: `surface.mode` (`solid`, `translucent`, or `glass`) and finite clamped `surface.opacity` apply to eligible background fills across bars/islands, dashboards, control-center cards, launcher, toasts, MPRIS, and metrics dropdowns. Shipped defaults are `solid` and `1.0`.
 - `surface.cardOpacity`, `surface.nestedOpacity`, and `surface.overlayOpacity` provide role-specific background alphas; text, icons, controls, artwork, semantic state fills, masks, and transparent catchers are not attenuated.
 - Invalid modes fall back to `solid`; invalid alpha values are ignored and each accepted value is clamped to `[0, 1]`.
-- `glass` is an explicit readable translucent fallback. No genuine scoped blur is enabled: the existing in-surface layer architecture cannot prove compositor-scoped blur, so no extra window or broad blur rule was added.
+- `glass` is an explicit readable translucent fallback plus an opt-in native attempt. When `surface.nativeBlur` is true (the default), eligible PanelWindows attach `BackgroundEffect.blurRegion` to bounded `GlassEffect`/`Region` surfaces containing only their visible surface items (including the notification `toastColumn`); transparent surface margins, input catchers, and fullscreen masks are excluded. Quickshell/the compositor owns protocol support behavior: unsupported environments may warn or no-op, while the translucent fill remains readable. Setting `surface.nativeBlur` to `false` disables the attempt without changing solid/translucent modes; no extra window or broad blur rule is used.
+- **Button saturation rule:** action controls use `Theme.buttonFill()` with opaque, darkened semantic RGB fills. Primary and secondary tones plus hover/pressed lifts are configurable through `button.*`; intent colors remain in `Colors.qml`. Secondary semantic actions retain their hue/saturation, while neutral actions such as Forget remain neutral. This rule applies to reusable pills, toggles, power/disclosure controls, island actions, and audio mute buttons; it does not apply to cards, tracks, or progress bars, and no root opacity is used.
 
 ### Accent Borders
 
@@ -246,9 +251,9 @@ Cards and panels may use a **single-side color highlight** (left border) to crea
 
 The right island expresses state through **fill, shape, and a passive state layer** (adapted from Caelestia, see Inspirations):
 
-- Service chips never carry their own outline; the wrapped bar silhouette already owns the edge. States: quiet `base01` fill when off, accent-tinted fill + accent icon when active, orange-tinted fill + orange icon when warning (warning wins over active), dimmed quiet fill when the adapter is disabled. Disabled takes visual precedence over active so a powered-off radio never reads live.
+- Service chips never carry their own outline; the wrapped bar silhouette already owns the edge. States: quiet `base01` fill when off, accent-tinted fill + accent icon when active, orange-tinted fill + orange icon when warning (warning wins over active), dimmed quiet fill when the adapter is disabled. Action fills use the global `Theme.buttonFill()` grammar; disabled takes visual precedence over active so a powered-off radio never reads live.
 - Hover/press feedback is the `StateLayer` overlay at `islandStateLayerHoverOpacity` / `islandStateLayerPressedOpacity`, inheriting the owner's radius.
-- Power is a **distinct object class**: a pill silhouette (`radius = height / 2`) with a resting red tint at `islandPowerTintOpacity`, not another service tile.
+- Power is a **distinct object class**: a pill silhouette (`radius = height / 2`) using the global `Theme.buttonFill()` grammar for its destructive semantic fill, not another service tile. The former `islandPowerTintOpacity` token is inert legacy history.
 - A configurable semantic hairline separates the service group from the power action. It is purely decorative: no input, no routing change; `separatorWidth: 0` removes the line and its surrounding gap together.
 - Fill state changes animate through `Motion.EffectsColor` because service state can flip while the chip is on screen; hover-driven icon color stays instant so pointer feedback never lags.
 
@@ -394,8 +399,10 @@ Theme.dashboard.tabHeight / tabSpacing
 Theme.dashboard.cardHeight / cardGap / progressHeight / progressRadius / sparklineWidth / sparklineHeight / footerHeight
 Theme.panel.accentSeamWidth / secondarySeamWidth / volumeTrackHeight
 Theme.surface.opacity
-Theme.island.chipRadius / activeFillOpacity / stateLayerHoverOpacity / stateLayerPressedOpacity
-Theme.island.semanticGap / separatorWidth / powerTintOpacity
+Theme.island.chipRadius / stateLayerHoverOpacity / stateLayerPressedOpacity
+Theme.island.semanticGap / separatorWidth
+
+Legacy `island.activeFillOpacity` and `island.powerTintOpacity` names are retained in the historical token table only; they are superseded by the global `Theme.buttonFill()` grammar and have no runtime effect.
 Theme.tab.paddingH / paddingV / radius / collapsedHeight
 Theme.anim.fast / normal / slow / scale
 Theme.font.caption / label / body / bodyLg / icon

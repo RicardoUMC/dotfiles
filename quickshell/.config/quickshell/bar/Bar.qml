@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.Mpris
 import Quickshell.Wayland
+import Quickshell.Wayland._BackgroundEffect
 import "../services"
 import "../theme"
 
@@ -42,6 +43,19 @@ PanelWindow {
     implicitHeight: screen !== null ? screen.height : (stableSurfaceContentHeight + (Theme.barStyle === "silhouette" ? Theme.barWrapDepth : 0))
     margins { top: 0; left: 0; right: 0 }
     color: "transparent"
+    BackgroundEffect.blurRegion: Theme.nativeBlur && Theme.surfaceMode === "glass"
+        ? barGlassRegion
+        : null
+    GlassEffect {
+        id: barGlassRegion
+        Region { item: leftSection }
+        Region { item: centerSection }
+        Region { item: rightSection }
+        // The panel body is visual-only blur geometry. Keep it out of the
+        // fullscreen input mask below; its zero height while closed makes
+        // this region collapse with the panel's reveal animation.
+        Region { item: rightControlCenter.panelBodyItem }
+    }
     mask: Region {
         regions: [
             Region { item: leftSection.hit },

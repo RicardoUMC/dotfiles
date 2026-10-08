@@ -34,14 +34,34 @@ QtObject {
     property int dashboardRailWidth: 44
     property int dashboardBodyRadius: 10
     property real dashboardBodyOpacity: 0.35
-    // Global visual surface grammar. `glass` intentionally falls back to the
-    // same readable translucent fill: this in-surface architecture has no
-    // safely scoped compositor blur primitive.
+    // Global visual surface grammar. `glass` keeps the readable translucent
+    // fill and opts into the native blur attached property on bounded regions.
+    // Unsupported compositors may warn or no-op in Quickshell; the fill remains
+    // the readable fallback. This option is intentionally inert in other modes.
     property string surfaceMode: "solid" // "solid" | "translucent" | "glass"
+    property bool nativeBlur: true // `surface.nativeBlur`; only used by `glass`
     property real surfaceOpacity: 1.0
     property real surfaceCardOpacity: 0.18
     property real surfaceNestedOpacity: 0.16
     property real surfaceOverlayOpacity: 0.33
+
+    // Button grammar: semantic fills stay opaque and saturated enough to read
+    // as controls over translucent/glass surfaces. Colors remain owned by
+    // Colors.qml; these tokens only choose darkening and interaction lift.
+    property real buttonPrimaryTone: 0.32
+    property real buttonSecondaryTone: 0.22
+    property real buttonHoverLift: 0.08
+    property real buttonPressedLift: 0.14
+    function buttonFill(semanticColor, primary, state) {
+        let tone = primary ? buttonPrimaryTone : buttonSecondaryTone
+        if (state === "hover")
+            tone += buttonHoverLift
+        else if (state === "pressed")
+            tone += buttonPressedLift
+        tone = Math.min(1.0, Math.max(0.0, tone))
+        return Qt.rgba(semanticColor.r * tone, semanticColor.g * tone,
+                       semanticColor.b * tone, 1.0)
+    }
     function surfaceColor(baseColor, roleOpacity) {
         const alpha = surfaceMode === "solid" ? 1.0
             : Math.min(1.0, Math.max(0.0, surfaceOpacity * roleOpacity))
@@ -291,6 +311,8 @@ QtObject {
                 const mode = String(surfaceCfg.mode)
                 surfaceMode = ["solid", "translucent", "glass"].indexOf(mode) >= 0 ? mode : "solid"
             }
+            if (surfaceCfg?.nativeBlur !== undefined)
+                nativeBlur = surfaceCfg.nativeBlur === true
             if (surfaceCfg?.opacity !== undefined) {
                 const opacity = Number(surfaceCfg.opacity)
                 if (Number.isFinite(opacity))
@@ -310,6 +332,22 @@ QtObject {
                 const overlayOpacity = Number(surfaceCfg.overlayOpacity)
                 if (Number.isFinite(overlayOpacity))
                     surfaceOverlayOpacity = Math.min(1.0, Math.max(0.0, overlayOpacity))
+            }
+            if (cfg.button?.primaryTone !== undefined) {
+                const tone = Number(cfg.button.primaryTone)
+                if (Number.isFinite(tone)) buttonPrimaryTone = Math.min(1.0, Math.max(0.0, tone))
+            }
+            if (cfg.button?.secondaryTone !== undefined) {
+                const tone = Number(cfg.button.secondaryTone)
+                if (Number.isFinite(tone)) buttonSecondaryTone = Math.min(1.0, Math.max(0.0, tone))
+            }
+            if (cfg.button?.hoverLift !== undefined) {
+                const lift = Number(cfg.button.hoverLift)
+                if (Number.isFinite(lift)) buttonHoverLift = Math.min(1.0, Math.max(0.0, lift))
+            }
+            if (cfg.button?.pressedLift !== undefined) {
+                const lift = Number(cfg.button.pressedLift)
+                if (Number.isFinite(lift)) buttonPressedLift = Math.min(1.0, Math.max(0.0, lift))
             }
             if (cfg.rightPanel?.width       !== undefined) rightPanelWidth       = cfg.rightPanel.width
             if (cfg.rightPanel?.powerWidth  !== undefined) rightPanelPowerWidth  = cfg.rightPanel.powerWidth

@@ -2,12 +2,18 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Wayland._BackgroundEffect
 import Quickshell.Hyprland
 import "../theme"
+import "../bar"
 
 PanelWindow {
     id: root
     color: "transparent"
+
+    BackgroundEffect.blurRegion: Theme.nativeBlur && Theme.surfaceMode === "glass"
+        ? glassBlurRegion
+        : null
 
     // Screen targeting is explicit. An unpinned layer-shell surface sends a null
     // wl_output to get_layer_surface and lets the compositor choose, and the
@@ -122,6 +128,7 @@ PanelWindow {
     }
 
     Rectangle {
+        id: popupCard
         width: popupW
         height: popupH
         anchors.horizontalCenter: parent.horizontalCenter
@@ -139,6 +146,13 @@ PanelWindow {
         MouseArea {
             anchors.fill: parent
             onClicked: {}
+        }
+
+        // Bounded visual region only; never the fullscreen dismiss catcher.
+        GlassEffect {
+            id: glassBlurRegion
+            item: popupCard
+            radius: Theme.radiusLg
         }
 
         ColumnLayout {

@@ -7,6 +7,7 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.Notifications
 import Quickshell.Wayland
+import Quickshell.Wayland._BackgroundEffect
 import "../theme"
 
 // Engine, not surface. The server, the sound player, both models, the DND/mute
@@ -419,6 +420,13 @@ Item {
         visible: false
 
         color: "transparent"
+        BackgroundEffect.blurRegion: Theme.nativeBlur && Theme.surfaceMode === "glass"
+            ? toastBlurRegion
+            : null
+        Region {
+            id: toastBlurRegion
+            item: toastColumn
+        }
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore

@@ -66,11 +66,18 @@
   },
   "font": { "caption": 12, "label": 13, "body": 15, "bodyLg": 17, "icon": 22 },
   "surface": {
-    "mode": "solid",
+    "mode": "glass",
+    "nativeBlur": true,
     "opacity": 1.0,
     "cardOpacity": 0.18,
     "nestedOpacity": 0.16,
     "overlayOpacity": 0.33
+  },
+  "button": {
+    "primaryTone": 0.32,
+    "secondaryTone": 0.22,
+    "hoverLift": 0.08,
+    "pressedLift": 0.14
   },
   "rightPanel": {
     "width": 360,

@@ -356,10 +356,9 @@ Rectangle {
         implicitWidth: pillRow.implicitWidth + Theme.spacingMd
         implicitHeight: 26
         radius: Theme.radiusSm
-        opacity: enabled ? 1.0 : 0.55
-        color: pillClickArea.containsMouse
-               ? Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, 0.16)
-               : "transparent"
+        color: !enabled ? Colors.base02
+               : Theme.buttonFill(pillAction.accentColor, false,
+                                  pillClickArea.pressed ? "pressed" : (pillClickArea.containsMouse ? "hover" : "rest"))
         border.width: 0
 
         RowLayout {
@@ -395,9 +394,9 @@ Rectangle {
 
         implicitHeight: 32
         radius: Theme.radiusMd
-        color: toggleArea.containsMouse || toggleButton.active
-               ? Qt.rgba(toggleButton.accentColor.r, toggleButton.accentColor.g, toggleButton.accentColor.b, 0.18)
-               : Colors.base02
+        color: toggleButton.active
+               ? Theme.buttonFill(toggleButton.accentColor, true, toggleArea.pressed ? "pressed" : (toggleArea.containsMouse ? "hover" : "rest"))
+               : (toggleArea.containsMouse ? Theme.buttonFill(toggleButton.accentColor, false, "hover") : Colors.base02)
         border.width: Theme.dashboardBodyBorderWidth
         border.color: Qt.rgba(toggleButton.accentColor.r, toggleButton.accentColor.g, toggleButton.accentColor.b, Theme.opacityBorder * 0.8)
 

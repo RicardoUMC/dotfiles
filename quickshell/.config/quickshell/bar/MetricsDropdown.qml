@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Wayland._BackgroundEffect
 import "../theme"
 
 // Metrics dropdown overlay — fullscreen PanelWindow anchored top-right.
@@ -42,6 +43,9 @@ Item {
         // Null keeps the compositor-picks-output default; a screen pins it.
         screen: root.screenTarget
         color: "transparent"
+        BackgroundEffect.blurRegion: Theme.nativeBlur && Theme.surfaceMode === "glass"
+            ? glassBlurRegion
+            : null
         // Layer rule: transient system feedback (toasts, OSD) owns Overlay; interactive panels are Top.
         WlrLayershell.layer: WlrLayer.Top
         WlrLayershell.keyboardFocus: visible ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
@@ -77,6 +81,7 @@ Item {
 
         // Content panel anchored to top-right corner (same offset as PowerMenu)
         Rectangle {
+            id: popupCard
             anchors { top: parent.top; right: parent.right }
             anchors { topMargin: Theme.barHeight + Theme.spacingMd - 1; rightMargin: Theme.spacingMd - 1 }
             width: 200
@@ -92,6 +97,13 @@ Item {
             MouseArea {
                 anchors.fill: parent
                 onClicked: {}
+            }
+
+            // Bounded visual region only; never the fullscreen dismiss catcher.
+            GlassEffect {
+                id: glassBlurRegion
+                item: popupCard
+                radius: Theme.radiusMd
             }
 
             ColumnLayout {

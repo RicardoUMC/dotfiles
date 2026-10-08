@@ -250,9 +250,9 @@ Rectangle {
                 Layout.preferredWidth: 34
                 implicitHeight: 26
                 radius: Theme.radiusMd
-                color: muteArea.containsMouse || control.muted
-                       ? Qt.rgba(Colors.orange.r, Colors.orange.g, Colors.orange.b, 0.18)
-                       : "transparent"
+                color: control.muted
+                       ? Theme.buttonFill(Colors.orange, true, muteArea.pressed ? "pressed" : (muteArea.containsMouse ? "hover" : "rest"))
+                       : (muteArea.containsMouse ? Theme.buttonFill(Colors.muted, false, "hover") : "transparent")
                 border.width: 0
 
                 Text {
@@ -288,9 +288,9 @@ Rectangle {
         implicitHeight: 42
         radius: Theme.radiusMd
         color: row.active
-               ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.14)
+               ? Theme.buttonFill(Colors.accent, true, rowArea.pressed ? "pressed" : "rest")
                : rowArea.containsMouse
-                 ? Theme.surfaceNested(Colors.base02)
+                 ? Theme.buttonFill(Colors.accent, false, "hover")
                  : "transparent"
         border.width: 0
 

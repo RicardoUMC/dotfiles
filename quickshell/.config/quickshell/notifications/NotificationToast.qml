@@ -200,9 +200,11 @@ Item {
                         implicitHeight: 26
                         implicitWidth: actionLabel.implicitWidth + 20
                         radius: Theme.radiusSm
-                        color: actionMa.containsMouse
-                            ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.2)
-                            : Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b, 0.6)
+                        color: actionMa.pressed
+                            ? Theme.buttonFill(Colors.accent, false, "pressed")
+                            : (actionMa.containsMouse
+                               ? Theme.buttonFill(Colors.accent, false, "hover")
+                               : Theme.buttonFill(Colors.muted, false, "rest"))
                         border {
                             width: 1
                             color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.3)

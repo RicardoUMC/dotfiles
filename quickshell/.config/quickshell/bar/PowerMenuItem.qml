@@ -17,9 +17,8 @@ Rectangle {
     radius: Theme.radiusSm
 
     color: (ma.containsMouse || root.selected)
-        ? danger
-            ? Qt.rgba(Colors.red.r, Colors.red.g, Colors.red.b, 0.18)
-            : Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.12)
+        ? Theme.buttonFill(root.danger ? Colors.red : Colors.accent, root.selected,
+                           ma.pressed ? "pressed" : (ma.containsMouse ? "hover" : "rest"))
         : "transparent"
 
     RowLayout {

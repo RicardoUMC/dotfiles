@@ -1,6 +1,7 @@
 Bar 1.0 Bar.qml
 BarTab 1.0 BarTab.qml
 BarSection 1.0 BarSection.qml
+GlassEffect 1.0 GlassEffect.qml
 NotchIslandMask 1.0 NotchIslandMask.qml
 NotchCornerMask 1.0 NotchCornerMask.qml
 Workspaces 1.0 Workspaces.qml

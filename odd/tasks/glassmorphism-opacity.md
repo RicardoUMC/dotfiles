@@ -21,7 +21,7 @@ Make opacity and Glassmorphism a global visual-surface system for the bar/island
 
 ## Delivery evidence
 - Baseline global surface styling committed as `acaa105` (`feat(quickshell): add global surface styling`).
-- Native blur hooks are now uncommitted follow-up work; runtime protocol support and visual glass behavior remain pending live QA.
+- Native blur hooks and the saturated button grammar committed as `b9e7382` (`feat(quickshell): add saturated glass controls`) and pushed to `origin/feat/global-surface-system`.
 - Current working-tree glass test configuration intentionally remains `surface.mode: "glass"` with `surface.nativeBlur: true`; the shipped/default fallback contract remains solid/opaque when this test override is removed.
 - Button saturation follow-up adds the `button.*` grammar: opaque darkened semantic fills with primary/secondary tone and hover/pressed lift tokens. It leaves cards, tracks, progress, services, routing, focus, and native blur ownership unchanged. The former `island.activeFillOpacity` and `island.powerTintOpacity` names are inert historical tokens; active and destructive action fills now follow `Theme.buttonFill()`.
 

@@ -129,7 +129,9 @@ All components use font-family tokens from `Colors.qml` — never hardcode font 
 - `Theme.dashboardSparklineWidth` — Metrics card sparkline width
 - `Theme.dashboardSparklineHeight` — Metrics card sparkline height
 - `Theme.dashboardFooterHeight` — Metrics pane footer row height
-- `Theme.rightPanelOpacity` — right control-center outer surface opacity (`rightPanel.opacity`, default `0.94`); inner card surfaces stay subtly translucent
+- `Theme.surfaceMode` — global visual surface mode (`surface.mode`: `solid`, `translucent`, or `glass`; invalid values fall back to `solid`; `glass` is a readable translucent fallback because no safely scoped blur rule exists)
+- `Theme.surfaceOpacity` — global background opacity (`surface.opacity`, default `1.0`, finite values clamped to `[0,1]`; solid mode is opaque)
+- `Theme.surfaceCardOpacity`, `Theme.surfaceNestedOpacity`, `Theme.surfaceOverlayOpacity` — role-specific background alphas (`surface.cardOpacity`, `surface.nestedOpacity`, `surface.overlayOpacity`), clamped to `[0,1]`; text, controls, artwork, masks, and transparent catchers remain independent
 - `Theme.accentSeamWidth` — specialty-card hero accent seam width (`panel.accentSeamWidth`); deliberately independent from `Theme.dashboardProgressHeight`
 - `Theme.panelVolumeTrackHeight` — Audio card volume track and knob thickness (`panel.volumeTrackHeight`)
 - `Theme.islandChipRadius` — right-island service-chip corner radius (`island.chipRadius`, default `8`)

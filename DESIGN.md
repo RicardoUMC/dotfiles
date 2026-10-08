@@ -177,7 +177,9 @@ Current `config.json` keeps the scale at its defaults (`12 / 13 / 15 / 17 / 22`)
 | `Theme.dashboardSparklineWidth` | `80` | `80` | Metrics card sparkline width. |
 | `Theme.dashboardSparklineHeight` | `32` | `32` | Metrics card sparkline height. |
 | `Theme.dashboardFooterHeight` | `18` | `18` | Metrics pane footer row height. |
-| `Theme.rightPanelOpacity` | `0.94` | `0.94` | Outer background opacity of the right-island control-center surface (`rightPanel.opacity`). |
+| `Theme.surfaceMode` | `"solid"` | `"solid"` | Global visual-surface mode (`surface.mode`): `solid`, `translucent`, or `glass`; invalid values fall back to `solid`. `glass` is currently a documented translucent fallback because the shared layer surfaces have no safely scoped blur rule. |
+| `Theme.surfaceOpacity` | `1.0` | `1.0` | Configured opacity for non-solid global visual surfaces (`surface.opacity`), clamped to `[0, 1]`; solid mode remains opaque. |
+| `Theme.surfaceCardOpacity` | `0.18` | `0.18` | Shared specialty-card background opacity in non-solid modes (`surface.cardOpacity`), clamped to `[0, 1]`; text and controls remain opaque. |
 | `Theme.accentSeamWidth` | `4` | `4` | Hero accent seam width inside the three control-center specialty cards — Wi-Fi, Bluetooth, and Audio hero blocks (`panel.accentSeamWidth`). |
 | `Theme.panelSecondarySeamWidth` | `2` | `2` | Accent seam of the nested audio device panel; deliberately thinner than the `accentSeamWidth` hero seam — do not merge them (`panel.secondarySeamWidth`). |
 | `Theme.panelVolumeTrackHeight` | `8` | `8` | Audio card volume track and knob thickness (`panel.volumeTrackHeight`). |
@@ -202,7 +204,7 @@ Debug scaffolding is also configurable through `debug.*` keys. `debug.barSilhoue
 
 Dashboard body, rail, card, progress, sparkline, and footer geometry is configurable through the flat `Theme.dashboardXxx` properties above and the `dashboard.*` group in `config.json`. Defaults intentionally preserve the current center-dashboard visuals; large overrides may need proportional width/height tuning because the expanded notch remains bounded by `Theme.centerExpandedWidth` and `Theme.centerExpandedHeight`.
 
-Control-center panel chrome is a separate group: `Theme.accentSeamWidth`, `Theme.panelSecondarySeamWidth`, and `Theme.panelVolumeTrackHeight` are read from the `panel.*` group, and `Theme.rightPanelOpacity` from `rightPanel.opacity`. Within that family the seams are deliberately distinct and must not be merged:
+Control-center panel chrome is a separate group: `Theme.accentSeamWidth`, `Theme.panelSecondarySeamWidth`, and `Theme.panelVolumeTrackHeight` are read from the `panel.*` group. Surface appearance is global through `Theme.surfaceMode`, `Theme.surfaceOpacity`, and the role alpha tokens. Within that family the seams are deliberately distinct and must not be merged:
 
 - `Theme.accentSeamWidth` (`4`) is the hero accent seam of the three specialty cards (Wi-Fi, Bluetooth, Audio hero blocks).
 - `Theme.panelSecondarySeamWidth` (`2`) is the seam of the nested audio device panel — intentionally thinner than the hero seam.
@@ -231,10 +233,10 @@ Mixed system — radius is contextual:
 
 ### Transparency & Blur
 
-- **Default**: semi-transparent surfaces with moderate blur (glassmorphism light)
-- **Configurable**: blur intensity exposed as a design token — user can increase to full glassmorphism
-- Surface opacity roughly `0.93–0.97` for panels, `0.30–0.40` for background tints
-- The right control-center outer surface is driven by `Theme.rightPanelOpacity` (default `0.94`, `rightPanel.opacity`) so the panel reads as one solid sheet; inner specialty cards and slabs stay subtly translucent and are not tied to that token.
+- **Global policy**: `surface.mode` (`solid`, `translucent`, or `glass`) and finite clamped `surface.opacity` apply to eligible background fills across bars/islands, dashboards, control-center cards, launcher, toasts, MPRIS, and metrics dropdowns. Shipped defaults are `solid` and `1.0`.
+- `surface.cardOpacity`, `surface.nestedOpacity`, and `surface.overlayOpacity` provide role-specific background alphas; text, icons, controls, artwork, semantic state fills, masks, and transparent catchers are not attenuated.
+- Invalid modes fall back to `solid`; invalid alpha values are ignored and each accepted value is clamped to `[0, 1]`.
+- `glass` is an explicit readable translucent fallback. No genuine scoped blur is enabled: the existing in-surface layer architecture cannot prove compositor-scoped blur, so no extra window or broad blur rule was added.
 
 ### Accent Borders
 
@@ -391,7 +393,7 @@ Theme.dashboard.railWidth / bodyRadius / bodyOpacity / bodyBorderWidth / bodyPad
 Theme.dashboard.tabHeight / tabSpacing
 Theme.dashboard.cardHeight / cardGap / progressHeight / progressRadius / sparklineWidth / sparklineHeight / footerHeight
 Theme.panel.accentSeamWidth / secondarySeamWidth / volumeTrackHeight
-Theme.rightPanel.opacity
+Theme.surface.opacity
 Theme.island.chipRadius / activeFillOpacity / stateLayerHoverOpacity / stateLayerPressedOpacity
 Theme.island.semanticGap / separatorWidth / powerTintOpacity
 Theme.tab.paddingH / paddingV / radius / collapsedHeight

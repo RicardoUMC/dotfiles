@@ -9,8 +9,9 @@ Rectangle {
     Layout.fillWidth: true
     implicitHeight: cardColumn.implicitHeight + Theme.spacingSm * 2
     radius: Theme.radiusLg
-    color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, root.doNotDisturb ? 0.18 : 0.14)
-    border.width: 0
+    color: Theme.rightPanelCardSurface(Colors.base01)
+    border.width: Theme.dashboardBodyBorderWidth
+    border.color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder * 0.55)
 
     // notificationsState.recentModel is the persistent notification store, not the
     // live toasts: rows survive toast expiry, DND suppression, and shell reloads.
@@ -102,7 +103,7 @@ Rectangle {
                 implicitHeight: 54
                 radius: Theme.radiusMd
                 color: mainClickArea.containsMouse || root.expanded
-                       ? Qt.rgba(Colors.base02.r, Colors.base02.g, Colors.base02.b, 0.56)
+                       ? Theme.surfaceNested(Colors.base02)
                        : "transparent"
 
                 RowLayout {
@@ -200,7 +201,7 @@ Rectangle {
                 }
 
                 // Group-level reveal for the retained history that the preview
-                // hides. Borderless pill, same weight as the other cards'
+                // hides. Borderless button, same weight as the other cards'
                 // header actions; `Clear all` stays the quieter destructive text.
                 NotificationPillAction {
                     Layout.alignment: Qt.AlignVCenter
@@ -233,7 +234,7 @@ Rectangle {
                 visible: root.notificationCount === 0
                 implicitHeight: 42
                 radius: Theme.radiusMd
-                color: Qt.rgba(Colors.base02.r, Colors.base02.g, Colors.base02.b, 0.18)
+                color: Theme.surfaceNested(Colors.base02)
                 border.width: 0
 
                 Text {
@@ -258,7 +259,7 @@ Rectangle {
                     implicitHeight: rowContent.implicitHeight + Theme.spacingSm * 2
                     radius: Theme.radiusMd
                     color: rowMouse.containsMouse
-                           ? Qt.rgba(Colors.base02.r, Colors.base02.g, Colors.base02.b, 0.36)
+                           ? Theme.surfaceNested(Colors.base02)
                            : "transparent"
                     border.width: 0
 
@@ -342,7 +343,7 @@ Rectangle {
         }
     }
 
-    // Borderless tinted pill: the notification card's group-action vocabulary,
+    // Borderless tinted button: the notification card's group-action vocabulary,
     // transparent until hovered or pressed, tinted by the passed intent color.
     component NotificationPillAction: Rectangle {
         id: pillAction
@@ -354,7 +355,7 @@ Rectangle {
 
         implicitWidth: pillRow.implicitWidth + Theme.spacingMd
         implicitHeight: 26
-        radius: Theme.radiusPill
+        radius: Theme.radiusSm
         opacity: enabled ? 1.0 : 0.55
         color: pillClickArea.containsMouse
                ? Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, 0.16)
@@ -393,11 +394,12 @@ Rectangle {
         signal triggered()
 
         implicitHeight: 32
-        radius: Theme.radiusPill
+        radius: Theme.radiusMd
         color: toggleArea.containsMouse || toggleButton.active
                ? Qt.rgba(toggleButton.accentColor.r, toggleButton.accentColor.g, toggleButton.accentColor.b, 0.18)
-               : Qt.rgba(Colors.base02.r, Colors.base02.g, Colors.base02.b, 0.16)
-        border.width: 0
+               : Colors.base02
+        border.width: Theme.dashboardBodyBorderWidth
+        border.color: Qt.rgba(toggleButton.accentColor.r, toggleButton.accentColor.g, toggleButton.accentColor.b, Theme.opacityBorder * 0.8)
 
         RowLayout {
             anchors.centerIn: parent

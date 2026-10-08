@@ -111,7 +111,7 @@ Rectangle {
 
         implicitHeight: blockColumn.implicitHeight + Theme.spacingMd * 2
         radius: Theme.radiusMd
-        color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.24)
+        color: Theme.surfaceCard(Colors.base01)
         border.width: 0
 
         ColumnLayout {
@@ -192,7 +192,7 @@ Rectangle {
 
         implicitHeight: 44
         radius: Theme.radiusMd
-        color: Qt.rgba(Colors.base02.r, Colors.base02.g, Colors.base02.b, 0.22)
+        color: Theme.surfaceNested(Colors.base02)
         border.width: 0
 
         function valueFromX(x) {
@@ -249,7 +249,7 @@ Rectangle {
             Rectangle {
                 Layout.preferredWidth: 34
                 implicitHeight: 26
-                radius: Theme.radiusPill
+                radius: Theme.radiusMd
                 color: muteArea.containsMouse || control.muted
                        ? Qt.rgba(Colors.orange.r, Colors.orange.g, Colors.orange.b, 0.18)
                        : "transparent"
@@ -290,7 +290,7 @@ Rectangle {
         color: row.active
                ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.14)
                : rowArea.containsMouse
-                 ? Qt.rgba(Colors.base02.r, Colors.base02.g, Colors.base02.b, 0.42)
+                 ? Theme.surfaceNested(Colors.base02)
                  : "transparent"
         border.width: 0
 

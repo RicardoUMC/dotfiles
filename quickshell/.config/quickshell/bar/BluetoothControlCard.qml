@@ -18,8 +18,7 @@ import "../theme"
 //             battery as a compact secondary readout.
 //   Layer 3 — quiet "Available devices" group; discovery and the overflow
 //             reveal live in its header.
-//   Layer 4 — accent-tinted detail sheet for pair / connect / disconnect /
-//             forget / cancel, using borderless pill actions.
+//   Layer 4 — lightweight detail sheet for pair / connect / disconnect / forget.
 //
 // Geometry comes from Theme.qml, color and type from Colors.qml.
 Rectangle {
@@ -28,9 +27,9 @@ Rectangle {
     Layout.fillWidth: true
     implicitHeight: cardColumn.implicitHeight + Theme.spacingSm * 2
     radius: Theme.radiusLg
-    color: Qt.rgba(Colors.backgroundAlt.r, Colors.backgroundAlt.g, Colors.backgroundAlt.b,
-                   BluetoothService.bluetoothEnabled ? 0.30 : 0.18)
-    border.width: 0
+    color: Theme.rightPanelCardSurface(Colors.backgroundAlt)
+    border.width: Theme.dashboardBodyBorderWidth
+    border.color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder * 0.55)
 
     property bool expanded: false
     property bool standalone: false
@@ -244,11 +243,6 @@ Rectangle {
         detailMode = "forget"
     }
 
-    function keepDevice() {
-        detailMode = forgetReturnMode.length > 0 ? forgetReturnMode : "connected"
-        forgetReturnMode = ""
-    }
-
     function startPairing() {
         if (!selectedDevice)
             return
@@ -429,7 +423,7 @@ Rectangle {
                     Layout.preferredWidth: 28
                     Layout.preferredHeight: 28
                     Layout.alignment: Qt.AlignVCenter
-                    radius: Theme.radiusPill
+                    radius: Theme.radiusMd
                     color: chevronClickArea.containsMouse || root.expanded
                            ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
                            : "transparent"
@@ -467,7 +461,7 @@ Rectangle {
             id: connectedGroup
             Layout.fillWidth: true
             visible: root.expanded && BluetoothService.bluetoothEnabled && root.connectedCount > 0
-            spacing: Theme.spacingXs
+            spacing: Theme.spacingSm
 
             Rectangle {
                 Layout.fillWidth: true
@@ -489,7 +483,8 @@ Rectangle {
                     font {
                         family: Colors.uiFont
                         pixelSize: Theme.fontSizeCaption
-                        capitalization: Font.AllUppercase
+                        weight: Font.DemiBold
+                        capitalization: Font.MixedCase
                     }
                 }
 
@@ -505,7 +500,7 @@ Rectangle {
                     font {
                         family: Colors.uiFont
                         pixelSize: Theme.fontSizeCaption
-                        capitalization: Font.AllUppercase
+                        capitalization: Font.MixedCase
                     }
                 }
             }
@@ -546,7 +541,7 @@ Rectangle {
             id: availableGroup
             Layout.fillWidth: true
             visible: root.expanded && BluetoothService.bluetoothEnabled
-            spacing: Theme.spacingXs
+            spacing: Theme.spacingSm
 
             Rectangle {
                 Layout.fillWidth: true
@@ -568,7 +563,8 @@ Rectangle {
                     font {
                         family: Colors.uiFont
                         pixelSize: Theme.fontSizeCaption
-                        capitalization: Font.AllUppercase
+                        weight: Font.DemiBold
+                        capitalization: Font.MixedCase
                     }
                 }
 
@@ -588,7 +584,7 @@ Rectangle {
                     onTriggered: root.showAllDevices = !root.showAllDevices
                 }
 
-                // Discovery trigger: the pill starts the service's bounded
+                // Discovery trigger: the button starts the service's bounded
                 // bluetoothctl scan; the label and enabled state follow the
                 // optimistic discovering flag while that scan is in flight.
                 BtPillAction {
@@ -647,15 +643,15 @@ Rectangle {
             Rectangle {
                 Layout.fillWidth: true
                 implicitHeight: detailColumn.implicitHeight + Theme.spacingMd * 2
-            radius: Theme.radiusLg
-            color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.10)
-            border.width: 0
+                radius: Theme.radiusLg
+                color: Theme.surfaceNested(Colors.surface)
+                border.width: 0
 
             ColumnLayout {
                 id: detailColumn
                 anchors.fill: parent
-                anchors.margins: Theme.spacingMd
-                spacing: Theme.spacingSm
+                anchors.margins: Theme.spacingSm
+                spacing: Theme.spacingXs
 
                 RowLayout {
                     Layout.fillWidth: true
@@ -694,13 +690,14 @@ Rectangle {
                         }
                     }
 
-                    BtPillAction {
-                        Layout.alignment: Qt.AlignVCenter
-                        label: "Cancel"
-                        accentColor: Colors.muted
-                        quiet: true
-                        onTriggered: root.clearSelection()
-                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.topMargin: Theme.spacingXs
+                    Layout.preferredHeight: 1
+                    color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
+                    radius: Theme.radiusPill
                 }
 
                 Text {
@@ -729,6 +726,7 @@ Rectangle {
                                  && !root.selectionConnected && !root.selectionPaired
                         Layout.fillWidth: true
                         label: "Pair"
+                        primary: true
                         accentColor: Colors.accent
                         onTriggered: root.startPairing()
                     }
@@ -737,6 +735,7 @@ Rectangle {
                         visible: root.detailMode !== "forget" && root.selectionPaired && !root.selectionConnected
                         Layout.fillWidth: true
                         label: "Connect"
+                        primary: true
                         accentColor: Colors.accent
                         onTriggered: {
                             if (root.selectedDevice)
@@ -749,6 +748,7 @@ Rectangle {
                         visible: root.detailMode !== "forget" && root.selectionConnected
                         Layout.fillWidth: true
                         label: "Disconnect"
+                        primary: true
                         accentColor: Colors.yellow
                         onTriggered: {
                             if (root.selectedDevice)
@@ -761,6 +761,7 @@ Rectangle {
                         visible: root.detailMode !== "forget" && (root.selectionConnected || root.selectionPaired)
                         Layout.fillWidth: true
                         label: "Forget"
+                        primary: true
                         accentColor: Colors.orange
                         onTriggered: root.requestForget()
                     }
@@ -769,6 +770,7 @@ Rectangle {
                         visible: root.detailMode === "forget"
                         Layout.fillWidth: true
                         label: "Confirm forget"
+                        primary: true
                         accentColor: Colors.red
                         onTriggered: {
                             if (root.selectedDevice)
@@ -777,13 +779,6 @@ Rectangle {
                         }
                     }
 
-                    BtPillAction {
-                        visible: root.detailMode === "forget"
-                        Layout.fillWidth: true
-                        label: "Keep"
-                        accentColor: Colors.muted
-                        onTriggered: root.keepDevice()
-                    }
                 }
             }
             }
@@ -809,11 +804,25 @@ Rectangle {
         implicitHeight: rowContent.implicitHeight + (deviceRow.primary ? Theme.spacingSm * 2 : Theme.spacingXs * 2)
         radius: Theme.radiusMd
         color: deviceRow.isSelected
-               ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
+               ? Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b, 0.34)
                : (deviceRow.isConnected
                   ? Qt.rgba(Colors.green.r, Colors.green.g, Colors.green.b, 0.10)
-                  : (rowClickArea.containsMouse ? Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b, 0.40) : "transparent"))
+                  : (rowClickArea.containsMouse ? Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b, 0.24) : "transparent"))
         border.width: 0
+
+        Rectangle {
+            visible: deviceRow.isSelected
+            anchors {
+                left: parent.left
+                top: parent.top
+                bottom: parent.bottom
+                topMargin: Theme.radiusMd
+                bottomMargin: Theme.radiusMd
+            }
+            width: 2
+            radius: Theme.radiusPill
+            color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.55)
+        }
 
         RowLayout {
             id: rowContent
@@ -838,7 +847,7 @@ Rectangle {
                 Text {
                     anchors.centerIn: parent
                     text: deviceRow.glyphText
-                    color: deviceRow.isConnected ? Colors.green : (deviceRow.primary ? Colors.text : Colors.muted)
+                    color: deviceRow.isSelected ? Colors.accent : (deviceRow.isConnected ? Colors.green : (deviceRow.primary ? Colors.text : Colors.muted))
                     font {
                         family: Colors.monoFont
                         pixelSize: deviceRow.primary ? Theme.fontSizeBodyLg : Theme.fontSizeBody
@@ -855,7 +864,7 @@ Rectangle {
                     Layout.fillWidth: true
                     text: deviceRow.titleText
                     elide: Text.ElideRight
-                    color: deviceRow.isConnected ? Colors.textBright : (deviceRow.primary ? Colors.text : Colors.textDim)
+                    color: deviceRow.isSelected ? Colors.textBright : (deviceRow.isConnected ? Colors.textBright : (deviceRow.primary ? Colors.text : Colors.textDim))
                     font {
                         family: Colors.uiFont
                         pixelSize: deviceRow.primary ? Theme.fontSizeBody : Theme.fontSizeLabel
@@ -951,7 +960,7 @@ Rectangle {
         Layout.alignment: Qt.AlignVCenter
         implicitWidth: powerContent.implicitWidth + Theme.spacingMd
         implicitHeight: powerContent.implicitHeight + Theme.spacingXs * 2
-        radius: powerSwitch.emphasis ? Theme.radiusMd : Theme.radiusPill
+        radius: Theme.radiusMd
         opacity: powerSwitch.pending ? 0.72 : 1.0
         color: powerSwitch.emphasis
                ? (powerClickArea.containsMouse
@@ -1054,7 +1063,7 @@ Rectangle {
         }
     }
 
-    // Borderless tinted pill: quiet variant for secondary actions.
+    // Borderless tinted button: quiet variant for secondary actions.
     component BtPillAction: Rectangle {
         id: pillAction
 
@@ -1062,12 +1071,13 @@ Rectangle {
         property string glyph: ""
         property color accentColor: Colors.accent
         property bool quiet: false
+        property bool primary: false
 
         signal triggered()
 
         implicitWidth: pillRow.implicitWidth + Theme.spacingMd
         implicitHeight: 26
-        radius: Theme.radiusPill
+        radius: Theme.radiusSm
         opacity: enabled ? 1.0 : 0.55
         color: pillAction.quiet
                ? (pillClickArea.containsMouse
@@ -1076,7 +1086,10 @@ Rectangle {
                : (pillClickArea.containsMouse
                   ? Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, 0.24)
                   : Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, 0.14))
-        border.width: 0
+        border.width: pillAction.primary ? Theme.dashboardBodyBorderWidth : 0
+        border.color: pillAction.primary
+                      ? Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, Theme.opacityBorder * 0.8)
+                      : "transparent"
 
         RowLayout {
             id: pillRow

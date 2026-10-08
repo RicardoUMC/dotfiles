@@ -15,7 +15,7 @@ import "../theme"
 //                     emphasized so "turn it back on" is the one move left.
 //   Layer 2 — quiet, dense "Nearby networks" group; Scan and the overflow
 //             reveal live in its header, so the list body stays pure content.
-//   Layer 3 — accent-tinted detail sheet for connect / password / forget.
+//   Layer 3 — lightweight detail sheet for connect / password / forget.
 //
 // Geometry comes from Theme.qml, color and type from Colors.qml.
 Rectangle {
@@ -24,9 +24,9 @@ Rectangle {
     Layout.fillWidth: true
     implicitHeight: cardColumn.implicitHeight + Theme.spacingSm * 2
     radius: Theme.radiusLg
-    color: Qt.rgba(Colors.backgroundAlt.r, Colors.backgroundAlt.g, Colors.backgroundAlt.b,
-                   WifiService.wifiEnabled ? 0.30 : 0.18)
-    border.width: 0
+    color: Theme.rightPanelCardSurface(Colors.backgroundAlt)
+    border.width: Theme.dashboardBodyBorderWidth
+    border.color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder * 0.55)
 
     property bool expanded: false
     property bool standalone: false
@@ -327,7 +327,7 @@ Rectangle {
                     Layout.preferredWidth: 28
                     Layout.preferredHeight: 28
                     Layout.alignment: Qt.AlignVCenter
-                    radius: Theme.radiusPill
+                    radius: Theme.radiusMd
                     color: chevronClickArea.containsMouse || root.expanded
                            ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
                            : "transparent"
@@ -365,7 +365,7 @@ Rectangle {
             id: nearbyGroup
             Layout.fillWidth: true
             visible: root.expanded && WifiService.wifiEnabled
-            spacing: Theme.spacingXs
+            spacing: Theme.spacingSm
 
             Rectangle {
                 Layout.fillWidth: true
@@ -387,7 +387,8 @@ Rectangle {
                     font {
                         family: Colors.uiFont
                         pixelSize: Theme.fontSizeCaption
-                        capitalization: Font.AllUppercase
+                        weight: Font.DemiBold
+                        capitalization: Font.MixedCase
                     }
                 }
 
@@ -465,15 +466,15 @@ Rectangle {
                 Rectangle {
                     Layout.fillWidth: true
                     implicitHeight: detailColumn.implicitHeight + Theme.spacingMd * 2
-                radius: Theme.radiusLg
-                color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.10)
-                border.width: 0
+                    radius: Theme.radiusLg
+                    color: Theme.surfaceNested(Colors.surface)
+                    border.width: 0
 
                 ColumnLayout {
                     id: detailColumn
                     anchors.fill: parent
-                    anchors.margins: Theme.spacingMd
-                    spacing: Theme.spacingSm
+                    anchors.margins: Theme.spacingSm
+                    spacing: Theme.spacingXs
 
                     RowLayout {
                         Layout.fillWidth: true
@@ -502,13 +503,14 @@ Rectangle {
                             }
                         }
 
-                        WifiPillAction {
-                            Layout.alignment: Qt.AlignVCenter
-                            label: "Cancel"
-                            accentColor: Colors.muted
-                            quiet: true
-                            onTriggered: root.clearSelection()
-                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.topMargin: Theme.spacingXs
+                        Layout.preferredHeight: 1
+                        color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
+                        radius: Theme.radiusPill
                     }
 
                     TextInput {
@@ -530,7 +532,7 @@ Rectangle {
                             anchors.fill: parent
                             z: -1
                             radius: Theme.radiusSm
-                            color: Qt.rgba(Colors.background.r, Colors.background.g, Colors.background.b, 0.55)
+                            color: Theme.surfaceNested(Colors.background)
                             border.width: Theme.dashboardBodyBorderWidth
                             border.color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
                         }
@@ -559,10 +561,13 @@ Rectangle {
                         Layout.topMargin: Theme.spacingXs
                         spacing: Theme.spacingSm
 
+                        // Connect is the primary blue action; Forget stays a
+                        // neutral secondary action until confirmation.
                         WifiPillAction {
                             visible: root.detailMode === "known"
                             Layout.fillWidth: true
                             label: "Connect"
+                            primary: true
                             accentColor: Colors.accent
                             onTriggered: {
                                 WifiService.connectKnown(root.selectedNetwork.ssid)
@@ -574,14 +579,17 @@ Rectangle {
                             visible: root.detailMode === "known"
                             Layout.fillWidth: true
                             label: "Forget"
-                            accentColor: Colors.orange
+                            primary: true
+                            accentColor: Colors.muted
                             onTriggered: root.detailMode = "forget"
                         }
 
+                        // Destructive red is reserved for the final confirmation.
                         WifiPillAction {
                             visible: root.detailMode === "forget"
                             Layout.fillWidth: true
                             label: "Confirm forget"
+                            primary: true
                             accentColor: Colors.red
                             onTriggered: {
                                 WifiService.forget(root.selectedNetwork.uuid)
@@ -590,17 +598,10 @@ Rectangle {
                         }
 
                         WifiPillAction {
-                            visible: root.detailMode === "forget"
-                            Layout.fillWidth: true
-                            label: "Keep"
-                            accentColor: Colors.muted
-                            onTriggered: root.detailMode = "known"
-                        }
-
-                        WifiPillAction {
                             visible: root.detailMode === "password" || root.detailMode === "open"
                             Layout.fillWidth: true
                             label: "Connect"
+                            primary: true
                             accentColor: Colors.accent
                             onTriggered: {
                                 WifiService.connectWithPassword(root.selectedNetwork.ssid,
@@ -632,11 +633,25 @@ Rectangle {
         implicitHeight: rowContent.implicitHeight + Theme.spacingXs * 2
         radius: Theme.radiusMd
         color: networkRow.isSelected
-               ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
+               ? Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b, 0.34)
                : (networkRow.isActive
                   ? Qt.rgba(Colors.green.r, Colors.green.g, Colors.green.b, 0.10)
-                  : (rowClickArea.containsMouse ? Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b, 0.40) : "transparent"))
+                  : (rowClickArea.containsMouse ? Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b, 0.24) : "transparent"))
         border.width: 0
+
+        Rectangle {
+            visible: networkRow.isSelected
+            anchors {
+                left: parent.left
+                top: parent.top
+                bottom: parent.bottom
+                topMargin: Theme.radiusMd
+                bottomMargin: Theme.radiusMd
+            }
+            width: 2
+            radius: Theme.radiusPill
+            color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.55)
+        }
 
         RowLayout {
             id: rowContent
@@ -650,7 +665,7 @@ Rectangle {
             Text {
                 Layout.alignment: Qt.AlignVCenter
                 text: networkRow.glyphText
-                color: networkRow.isActive ? Colors.green : Colors.muted
+                color: networkRow.isSelected ? Colors.accent : (networkRow.isActive ? Colors.green : Colors.muted)
                 font { family: Colors.monoFont; pixelSize: Theme.fontSizeBody }
             }
 
@@ -663,7 +678,7 @@ Rectangle {
                     Layout.fillWidth: true
                     text: networkRow.titleText
                     elide: Text.ElideRight
-                    color: networkRow.isActive ? Colors.green : Colors.text
+                    color: networkRow.isSelected ? Colors.textBright : (networkRow.isActive ? Colors.green : Colors.text)
                     font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel; weight: Font.DemiBold }
                 }
 
@@ -737,7 +752,7 @@ Rectangle {
         Layout.alignment: Qt.AlignVCenter
         implicitWidth: powerContent.implicitWidth + Theme.spacingMd
         implicitHeight: powerContent.implicitHeight + Theme.spacingXs * 2
-        radius: powerSwitch.emphasis ? Theme.radiusMd : Theme.radiusPill
+        radius: Theme.radiusMd
         opacity: powerSwitch.pending ? 0.72 : 1.0
         color: powerSwitch.emphasis
                ? (powerClickArea.containsMouse
@@ -840,7 +855,7 @@ Rectangle {
         }
     }
 
-    // Borderless tinted pill: quiet variant for secondary actions.
+    // Borderless tinted button: quiet variant for secondary actions.
     component WifiPillAction: Rectangle {
         id: pillAction
 
@@ -848,12 +863,13 @@ Rectangle {
         property string glyph: ""
         property color accentColor: Colors.accent
         property bool quiet: false
+        property bool primary: false
 
         signal triggered()
 
         implicitWidth: pillRow.implicitWidth + Theme.spacingMd
         implicitHeight: 26
-        radius: Theme.radiusPill
+        radius: Theme.radiusSm
         opacity: enabled ? 1.0 : 0.55
         color: pillAction.quiet
                ? (pillClickArea.containsMouse
@@ -862,7 +878,10 @@ Rectangle {
                : (pillClickArea.containsMouse
                   ? Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, 0.24)
                   : Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, 0.14))
-        border.width: 0
+        border.width: pillAction.primary ? Theme.dashboardBodyBorderWidth : 0
+        border.color: pillAction.primary
+                      ? Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b, Theme.opacityBorder * 0.8)
+                      : "transparent"
 
         RowLayout {
             id: pillRow

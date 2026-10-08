@@ -129,7 +129,7 @@ PanelWindow {
         anchors.topMargin: Math.round((parent.height - Theme.barHeight - popupH) / 2 + Theme.barHeight)
 
         radius: Theme.radiusLg
-        color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacitySurface)
+        color: Theme.surface(Colors.base01)
         border {
             width: 1
             color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, 0.4)
@@ -153,7 +153,7 @@ PanelWindow {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 38
                 radius: Theme.radiusSm + 2
-                color: Qt.rgba(Colors.surface.r, Colors.surface.g, Colors.surface.b, 0.8)
+                color: Theme.surfaceNested(Colors.surface)
                 border {
                     width: 1
                     color: root.mode === "search"

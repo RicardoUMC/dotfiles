@@ -107,7 +107,7 @@ Item {
         width: root.width
         implicitHeight: content.implicitHeight + Theme.spacingMd * 2
         radius: Theme.radiusMd
-        color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacitySurface)
+        color: Theme.surfaceColor(Colors.base01, Theme.surfaceOverlayOpacity)
         border {
             width: 1
             color: Qt.rgba(root.urgencyColor.r, root.urgencyColor.g, root.urgencyColor.b, 0.5)

@@ -145,6 +145,32 @@ Wi-Fi signal affordance verification:
 - Audio disclosure chevrons already implement the same toggle grammar; Audio routing rows remain selection actions rather than disclosure toggles.
 - Closing a Bluetooth pairing sheet remains UI-only and does not cancel an in-flight service transaction.
 
+## Follow-up: quiet modern interaction grammar
+- Treat row selection/disclosure as the sole non-destructive navigation control: repeated row click, Escape, and outside click close it.
+- Remove redundant `Cancel` and `Keep` actions from Wi-Fi/Bluetooth detail flows; retain only actions that execute a real operation (`Connect`, `Pair`, `Disconnect`, `Forget`, and the destructive confirmation).
+- Use restrained selected-row emphasis: subtle surface lift, readable text/icon contrast, and one quiet indicator rather than strong fills, borders, or nested pills.
+- Use whitespace, small section labels, and one muted divider to separate groups; do not add ornamental containers.
+- Keep detail sheets contextual and lightweight: one quiet surface, a compact header, clear action grouping, and no duplicate dismissal affordance.
+- Applied: Wi-Fi and Bluetooth detail sheets now omit redundant Cancel/Keep controls; selected rows use a restrained surface lift with a single quiet marker, and group chrome uses whitespace plus muted dividers.
+- Preserve service behavior, list routing, focus, and outer island geometry unchanged.
+
+## Follow-up: narrower panel and selective solid borders
+- Reduce the general right control-center width from 420px to a configurable 360px baseline so content does not feel stretched; preserve the compact Power width and output-local anchoring.
+- Add a restrained solid border to primary specialty cards so card boundaries are legible without nested outlines.
+- Add solid borders only to primary operational buttons; keep secondary rows, hover layers, disclosure toggles, and dismissal paths borderless.
+- Reuse Tokyo City muted/accent roles and existing border-width/opacity tokens; do not apply borders indiscriminately.
+- Preserve the outer island silhouette and all service/routing/focus behavior.
+
+## Applied: narrower panel and selective solid borders
+- The general right control-center baseline is now 360px through the existing `Theme.rightPanelWidth` / `rightPanel.width` contract; compact Power width and right anchoring remain unchanged.
+- Wi-Fi, Bluetooth, Audio, Notifications, and Metrics primary card shells use a restrained muted 1px border. Operational detail actions use accent-colored borders; secondary rows, disclosure controls, hover layers, and dismissal paths remain borderless.
+
+## Applied: rectangular control geometry
+- Compact Wi-Fi, Bluetooth, Audio, and Notification operational action components use `Theme.radiusSm`; disclosure/toggle controls use `Theme.radiusMd`.
+- Retain `Theme.radiusPill` only for rails, sliders, seams, and linear status indicators where a capsule shape communicates continuity.
+- The same control geometry is applied to Wi-Fi, Bluetooth, Audio, Notifications, and nested Audio routing controls without changing their behavior or hit targets.
+- The outer island silhouette and existing card width/border decisions are unchanged.
+
 ## Delivery
 - Work-unit commits: `5df5c5f` (`feat(quickshell): make right panel geometry configurable`), `df64eb5` (`feat(quickshell): compact right-panel power mode`), `a80d9a9` (`fix(quickshell): open audio control center collapsed`), `bafc01b` (`feat(quickshell): simplify compact audio controls`), `356fec9` (`fix(quickshell): restore compact audio mute clicks`), `277ee7b` (`fix(quickshell): dispatch compact audio mute directly`), and `bfa42b8` (`fix(quickshell): prioritize control center input`) on `main`.
 - No push unless separately requested.

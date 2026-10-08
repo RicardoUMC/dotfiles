@@ -65,9 +65,15 @@
     "step": 90
   },
   "font": { "caption": 12, "label": 13, "body": 15, "bodyLg": 17, "icon": 22 },
+  "surface": {
+    "mode": "solid",
+    "opacity": 1.0,
+    "cardOpacity": 0.18,
+    "nestedOpacity": 0.16,
+    "overlayOpacity": 0.33
+  },
   "rightPanel": {
-    "opacity": 0.94,
-    "width": 420,
+    "width": 360,
     "powerWidth": 160,
     "maxHeight": 600,
     "topMargin": 12,

@@ -9,7 +9,7 @@ import "../theme"
 //   Layer 1 — hero block for the active output device: the module's only
 //             accent seam, a state puck, and uppercase eyebrow labels.
 //   Layer 2 — primary volume control as one inset slab; mute stays a
-//             separate borderless pill affordance.
+//             separate borderless action affordance.
 //   Layer 3 — quiet, dense "Routing" group for input selection and the
 //             remaining output devices, opened by a hairline seam.
 //
@@ -20,9 +20,9 @@ Rectangle {
     Layout.fillWidth: true
     implicitHeight: cardColumn.implicitHeight + Theme.spacingSm * 2
     radius: Theme.radiusLg
-    color: Qt.rgba(Colors.backgroundAlt.r, Colors.backgroundAlt.g, Colors.backgroundAlt.b,
-                   AudioService.outputMuted ? 0.18 : 0.30)
-    border.width: 0
+    color: Theme.rightPanelCardSurface(Colors.backgroundAlt)
+    border.width: Theme.dashboardBodyBorderWidth
+    border.color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder * 0.55)
 
     property bool standalone: false
     property bool outputDevicesExpanded: false
@@ -288,7 +288,7 @@ Rectangle {
 
         implicitHeight: compactColumn.implicitHeight + Theme.spacingSm * 2
         radius: Theme.radiusMd
-        color: Qt.rgba(Colors.background.r, Colors.background.g, Colors.background.b, 0.45)
+        color: Theme.surfaceNested(Colors.background)
         border.width: 0
 
         function valueFromX(clickX) {
@@ -333,38 +333,26 @@ Rectangle {
                     font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel; weight: Font.DemiBold }
                 }
 
+                // Icon-only control: the fixed square target keeps Output and
+                // Microphone actions aligned while orange still means muted.
                 Rectangle {
                     id: compactMuteButton
-                    Layout.preferredWidth: compactMuteContent.implicitWidth + Theme.spacingMd
-                    Layout.preferredHeight: 26
-                    radius: Theme.radiusPill
-                    color: compactMuteHover.hovered || compactControl.muted
-                           ? Qt.rgba(Colors.orange.r, Colors.orange.g, Colors.orange.b,
-                                     compactControl.muted ? 0.28 : 0.24)
-                           : Qt.rgba(Colors.orange.r, Colors.orange.g, Colors.orange.b, 0.14)
-                    border.width: 0
+                    Layout.preferredWidth: 28
+                    Layout.preferredHeight: 28
+                    radius: Theme.radiusMd
+                    color: compactControl.muted
+                           ? Qt.rgba(Colors.orange.r, Colors.orange.g, Colors.orange.b, 0.28)
+                           : Colors.backgroundAlt
+                    border.width: Theme.dashboardBodyBorderWidth
+                    border.color: compactControl.muted
+                                  ? Qt.rgba(Colors.orange.r, Colors.orange.g, Colors.orange.b, Theme.opacityBorder * 0.8)
+                                  : Colors.muted
 
-                    RowLayout {
-                        id: compactMuteContent
+                    Text {
                         anchors.centerIn: parent
-                        spacing: Theme.spacingXs
-
-                        Text {
-                            text: compactControl.muted ? "󰝟" : "󰕾"
-                            color: Colors.text
-                            font { family: Colors.monoFont; pixelSize: Theme.fontSizeLabel }
-                        }
-
-                        Text {
-                            id: compactMuteLabel
-                            text: compactControl.muted ? "Unmute" : "Mute"
-                            color: compactControl.muted ? Colors.orange : Colors.text
-                            font {
-                                family: Colors.uiFont
-                                pixelSize: Theme.fontSizeLabel
-                                weight: compactControl.muted ? Font.DemiBold : Font.Normal
-                            }
-                        }
+                        text: compactControl.muted ? "󰝟" : "󰕾"
+                        color: compactControl.muted ? Colors.orange : Colors.text
+                        font { family: Colors.monoFont; pixelSize: Theme.fontSizeLabel }
                     }
 
                     HoverHandler {
@@ -392,7 +380,7 @@ Rectangle {
                     Layout.preferredWidth: 26
                     Layout.preferredHeight: 26
                     Layout.alignment: Qt.AlignVCenter
-                    radius: Theme.radiusPill
+                    radius: Theme.radiusMd
                     color: disclosureArea.containsMouse || compactControl.expanded
                            ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
                            : "transparent"
@@ -451,7 +439,7 @@ Rectangle {
         }
     }
 
-    // Borderless tinted pill: mute is the only always-visible action affordance.
+    // Borderless tinted button: mute is the only always-visible action affordance.
     component AudioPillAction: Rectangle {
         id: pillAction
 
@@ -464,7 +452,7 @@ Rectangle {
 
         implicitWidth: pillRow.implicitWidth + Theme.spacingMd
         implicitHeight: 26
-        radius: Theme.radiusPill
+        radius: Theme.radiusSm
         opacity: enabled ? 1.0 : 0.55
         color: pillClickArea.containsMouse || pillAction.active
                ? Qt.rgba(pillAction.accentColor.r, pillAction.accentColor.g, pillAction.accentColor.b,

@@ -27,7 +27,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: Theme.radiusSm
-        color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.opacitySurface)
+        color: Theme.surfaceCard(Colors.base01)
         border {
             width: 1
             color: Qt.rgba(root.activeColor.r, root.activeColor.g, root.activeColor.b, Theme.opacityBorder)

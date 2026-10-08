@@ -23,7 +23,7 @@ Item {
         id: bgSource
         anchors.fill: parent
         radius: Theme.radiusPill
-        color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, root.bgOpacity)
+        color: Theme.surface(Colors.base01)
         visible: false
     }
 

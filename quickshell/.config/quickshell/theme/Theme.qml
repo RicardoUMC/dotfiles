@@ -34,16 +34,32 @@ QtObject {
     property int dashboardRailWidth: 44
     property int dashboardBodyRadius: 10
     property real dashboardBodyOpacity: 0.35
-    property real rightPanelOpacity: 0.94
+    // Global visual surface grammar. `glass` intentionally falls back to the
+    // same readable translucent fill: this in-surface architecture has no
+    // safely scoped compositor blur primitive.
+    property string surfaceMode: "solid" // "solid" | "translucent" | "glass"
+    property real surfaceOpacity: 1.0
+    property real surfaceCardOpacity: 0.18
+    property real surfaceNestedOpacity: 0.16
+    property real surfaceOverlayOpacity: 0.33
+    function surfaceColor(baseColor, roleOpacity) {
+        const alpha = surfaceMode === "solid" ? 1.0
+            : Math.min(1.0, Math.max(0.0, surfaceOpacity * roleOpacity))
+        return Qt.rgba(baseColor.r, baseColor.g, baseColor.b, alpha)
+    }
+    function surface(baseColor) { return surfaceColor(baseColor, 1.0) }
+    function surfaceCard(baseColor) { return surfaceColor(baseColor, surfaceCardOpacity) }
+    function surfaceNested(baseColor) { return surfaceColor(baseColor, surfaceNestedOpacity) }
+    function rightPanelSurface(baseColor) { return surface(baseColor) }
+    function rightPanelCardSurface(baseColor) { return surfaceCard(baseColor) }
     // Right control-center panel geometry (high-leverage structural tokens).
-    property int rightPanelWidth: 420
+    property int rightPanelWidth: 360
     property int rightPanelPowerWidth: 160
     property int rightPanelMaxHeight: 600
     property int rightPanelTopMargin: 12
     property int rightPanelRightMargin: 12
     property int rightPanelPadding: 12
     property int rightPanelCardGap: 8
-    property real rightPanelCardFillOpacity: 0.18
     property int dashboardBodyBorderWidth: 1
     property int dashboardBodyPadding: 12
     property int dashboardTabHeight: 40
@@ -270,7 +286,31 @@ QtObject {
             if (cfg.dashboard?.sparklineWidth   !== undefined) dashboardSparklineWidth   = cfg.dashboard.sparklineWidth
             if (cfg.dashboard?.sparklineHeight  !== undefined) dashboardSparklineHeight  = cfg.dashboard.sparklineHeight
             if (cfg.dashboard?.footerHeight     !== undefined) dashboardFooterHeight     = cfg.dashboard.footerHeight
-            if (cfg.rightPanel?.opacity !== undefined) rightPanelOpacity = cfg.rightPanel.opacity
+            const surfaceCfg = cfg.surface || cfg.rightPanel
+            if (surfaceCfg?.mode !== undefined) {
+                const mode = String(surfaceCfg.mode)
+                surfaceMode = ["solid", "translucent", "glass"].indexOf(mode) >= 0 ? mode : "solid"
+            }
+            if (surfaceCfg?.opacity !== undefined) {
+                const opacity = Number(surfaceCfg.opacity)
+                if (Number.isFinite(opacity))
+                    surfaceOpacity = Math.min(1.0, Math.max(0.0, opacity))
+            }
+            if (surfaceCfg?.cardOpacity !== undefined) {
+                const cardOpacity = Number(surfaceCfg.cardOpacity)
+                if (Number.isFinite(cardOpacity))
+                    surfaceCardOpacity = Math.min(1.0, Math.max(0.0, cardOpacity))
+            }
+            if (surfaceCfg?.nestedOpacity !== undefined) {
+                const nestedOpacity = Number(surfaceCfg.nestedOpacity)
+                if (Number.isFinite(nestedOpacity))
+                    surfaceNestedOpacity = Math.min(1.0, Math.max(0.0, nestedOpacity))
+            }
+            if (surfaceCfg?.overlayOpacity !== undefined) {
+                const overlayOpacity = Number(surfaceCfg.overlayOpacity)
+                if (Number.isFinite(overlayOpacity))
+                    surfaceOverlayOpacity = Math.min(1.0, Math.max(0.0, overlayOpacity))
+            }
             if (cfg.rightPanel?.width       !== undefined) rightPanelWidth       = cfg.rightPanel.width
             if (cfg.rightPanel?.powerWidth  !== undefined) rightPanelPowerWidth  = cfg.rightPanel.powerWidth
             if (cfg.rightPanel?.maxHeight   !== undefined) rightPanelMaxHeight   = cfg.rightPanel.maxHeight
@@ -278,7 +318,11 @@ QtObject {
             if (cfg.rightPanel?.rightMargin !== undefined) rightPanelRightMargin = cfg.rightPanel.rightMargin
             if (cfg.rightPanel?.padding     !== undefined) rightPanelPadding     = cfg.rightPanel.padding
             if (cfg.rightPanel?.cardGap     !== undefined) rightPanelCardGap     = cfg.rightPanel.cardGap
-            if (cfg.rightPanel?.cardFillOpacity !== undefined) rightPanelCardFillOpacity = cfg.rightPanel.cardFillOpacity
+            if (!cfg.surface && cfg.rightPanel?.cardFillOpacity !== undefined) {
+                const cardOpacity = Number(cfg.rightPanel.cardFillOpacity)
+                if (Number.isFinite(cardOpacity))
+                    surfaceCardOpacity = Math.min(1.0, Math.max(0.0, cardOpacity))
+            }
             const panel = cfg.panel
             if (panel && panel.accentSeamWidth   !== undefined) accentSeamWidth        = panel.accentSeamWidth
             if (panel && panel.volumeTrackHeight !== undefined) panelVolumeTrackHeight = panel.volumeTrackHeight

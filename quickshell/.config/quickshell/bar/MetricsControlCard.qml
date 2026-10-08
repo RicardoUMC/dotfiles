@@ -8,8 +8,9 @@ Rectangle {
     Layout.fillWidth: true
     implicitHeight: cardColumn.implicitHeight + Theme.spacingSm * 2
     radius: Theme.radiusLg
-    color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, 0.12)
-    border.width: 0
+    color: Theme.rightPanelCardSurface(Colors.base01)
+    border.width: Theme.dashboardBodyBorderWidth
+    border.color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder * 0.55)
 
     property var systemStatsState: null
     property bool expanded: false
@@ -116,7 +117,7 @@ Rectangle {
                 Layout.fillWidth: true
                 implicitHeight: 42
                 radius: Theme.radiusMd
-                color: Qt.rgba(Colors.base02.r, Colors.base02.g, Colors.base02.b, 0.16)
+                color: Theme.surfaceNested(Colors.base02)
                 border.width: 0
 
                 ColumnLayout {
@@ -196,7 +197,7 @@ Rectangle {
 
         implicitHeight: 42
         radius: Theme.radiusMd
-        color: Qt.rgba(Colors.base02.r, Colors.base02.g, Colors.base02.b, 0.16)
+        color: Theme.surfaceNested(Colors.base02)
         border.width: 0
 
         onHistoryChanged: spark.requestPaint()
@@ -274,7 +275,7 @@ Rectangle {
         Layout.fillWidth: true
         implicitHeight: 34
         radius: Theme.radiusMd
-        color: Qt.rgba(Colors.base02.r, Colors.base02.g, Colors.base02.b, 0.12)
+        color: Theme.surfaceNested(Colors.base02)
         border.width: 0
 
         RowLayout {

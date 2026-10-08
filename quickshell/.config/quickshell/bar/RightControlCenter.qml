@@ -193,7 +193,7 @@ Item {
             Motion.Spatial { }
         }
         radius: Theme.dashboardBodyRadius
-        color: Qt.rgba(Colors.base00.r, Colors.base00.g, Colors.base00.b, Theme.rightPanelOpacity)
+        color: Theme.rightPanelSurface(Colors.base00)
         border {
             width: Theme.dashboardBodyBorderWidth
             color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
@@ -280,7 +280,7 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: powerColumn.implicitHeight + Theme.spacingLg
                     radius: Theme.radiusLg
-                    color: Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.rightPanelCardFillOpacity)
+                    color: Theme.rightPanelCardSurface(Colors.base01)
 
                     property int selectedIndex: 0
                     readonly property int itemCount: 3

@@ -27,7 +27,7 @@ Item {
     readonly property real _wrapDepth: hasWrap ? Theme.barWrapDepth : 0
     readonly property color _segmentFill: Theme.debugBarSilhouette
         ? Qt.rgba(1.0, 0.2, 0.2, 0.65)
-        : Qt.rgba(Colors.base01.r, Colors.base01.g, Colors.base01.b, Theme.tabBgOpacity)
+        : Theme.surface(Colors.base01)
 
     x: targetItem.x - _leftExtent
     y: targetItem.y

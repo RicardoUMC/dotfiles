@@ -287,7 +287,7 @@ PanelWindow {
                     - centerTab.paddingV * 2)
                 visible: centerTab.expanded
                 radius: Theme.dashboardBodyRadius
-                color: Qt.rgba(Colors.base00.r, Colors.base00.g, Colors.base00.b, Theme.dashboardBodyOpacity)
+                color: Theme.surface(Colors.base00)
                 border {
                     width: Theme.dashboardBodyBorderWidth
                     color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)

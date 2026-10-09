@@ -114,10 +114,10 @@ Containment is fail-closed. Verified local help/static evidence requires bwrap
 `--unshare-pid`, `--unshare-net`, `--unshare-cgroup`, `--clearenv`, private
 mounts, `--new-session`, `--die-with-parent`, and `--json-status-fd`; never use
 `*-try` flags because they continue without isolation. `systemd-run` offers
-`--property`, `--wait`, `--collect`, and documented resource properties, but
-effective user-manager enforcement of those properties must be confirmed against
-the unit's cgroup files and `/proc/<pid>/limits`, never assumed from the unit
-spec alone.
+`--property`, `--wait`, `--collect`, and documented resource properties;
+effective user-manager enforcement of those properties is now verified against
+the unit's cgroup files and `/proc/<pid>/limits` (see the transient-unit
+resource-limit evidence below), never assumed from the unit spec alone.
 
 This host uses the classic kernel `core_pattern` pipe to
 `/usr/lib/systemd/systemd-coredump`
@@ -138,9 +138,18 @@ compositor):
   RLIMIT_CORE abort, so `0` and `1` are distinct behaviors.
 
 `LimitCORE=1` is the preferred fail-closed candidate for a future disposable
-unit, but actual fixture-unit enforcement and the effective resource limits
-remain to be verified against the unit's cgroup files and `/proc/<pid>/limits`,
-never assumed from the unit spec alone. The A2 control core was intentionally
+unit. Effective user-manager resource-limit enforcement is now verified against
+transient user units: with `LimitCORE=1`, `MemoryMax=32M` was observed at cgroup
+`memory.max=33554432`, `TasksMax=8` at `pids.max=8`, and `LimitNOFILE=64` plus
+`LimitAS=128M` in `/proc/self/limits`; `RuntimeMaxSec=2s` terminated a 10s sleep
+with systemd result `timeout`; and `KillMode=control-group` killed both recorded
+main and child PIDs and removed the unit cgroup. The first observation had a
+systemd `${cg}` quoting artifact, so the corrected rerun supplied the cgroup
+evidence. One stopped `tokyo-limit-kill.service` remains inactive/dead as
+evidence; no cores or unexpected artifacts were created. Actual fixture-unit
+validation, the identity launcher implementation, client protocol, and
+post-client liveness remain pending; task 11 remains incomplete and task 12
+remains blocked. The A2 control core was intentionally
 retained as evidence at its exact path
 `/var/lib/systemd/coredump/core.bash.1000.7b558ccb1abe483298c6fbe74d92e575.1809959.1791575686000000.zst`;
 the user chose retention because `coredumpctl` has no `delete` verb and the

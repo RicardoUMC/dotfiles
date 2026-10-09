@@ -101,6 +101,17 @@ captures plus protocol and liveness evidence.
 
 ## Disposable-compositor gate
 
+Containment is fail-closed. Verified local help/static evidence requires bwrap
+0.13.0 with mandatory `--unshare-all`, `--unshare-user`, `--unshare-ipc`,
+`--unshare-pid`, `--unshare-net`, `--unshare-cgroup`, `--clearenv`, private
+mounts, `--new-session`, `--die-with-parent`, and `--json-status-fd`; never use
+`*-try` flags because they continue without isolation. `systemd-run` offers
+`--property`, `--wait`, `--collect`, and documented resource properties, but
+effective user-manager enforcement and coredump suppression under this host's
+systemd-coredump pipe remain unverified. The actual containment launcher and
+runtime remain blocked pending authoritative verification of core suppression,
+identity cleanup, and post-client liveness.
+
 The installed Hyprland/Aquamarine combination is not yet a runnable isolated
 backend for this probe: Hyprland requests mandatory headless plus optional DRM and
 Wayland implementations, while Aquamarine still needs a render allocator unless

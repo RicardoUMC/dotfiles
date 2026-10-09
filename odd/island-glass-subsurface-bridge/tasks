@@ -16,6 +16,12 @@
   - [x] Compile protocol-code generation coverage for `wl_compositor`, `wl_shm`, `wl_subcompositor`, `xdg_wm_base`, and `wl_output`.
   - [x] Keep the fixture inert and unexecuted until a separate containment launcher exists.
   - [x] Document that a null protocol fixture cannot prove visual ordering without CPU composition.
+  - [x] Add the Qt-independent Wayland server lifecycle sentinel as a build-only unit: one validated private socket, no globals, and bounded timer teardown.
+    - [x] Require `--socket NAME`; bound optional `--deadline-ms` to 1..60000 and reject traversal/invalid names.
+    - [x] Build/link only against public `wayland-server` APIs; preserve the existing sentinel and fixture-core targets.
+    - [x] Do not run the executable or any compositor/client/service yet.
+    - [ ] A later runtime may run only inside the already-tested bwrap namespace with private `XDG_RUNTIME_DIR`/socket, external deadline, PID/socket identity, and post-exit cleanup.
+    - [x] Treat this as lifecycle/socket evidence only; it proves no client protocol or visual ordering.
 - [ ] Decide whether a bounded background-effect probe is justified; blocked until a separately validated containment path exists. Do not integrate production glass automatically.
 
 Stage 1 evidence: standalone CMake/build passed; Qt6 `qmllint` passed; the offscreen harness started without diagnostics and exited via the bounded timeout (`124`); `git diff --check` passed. No Quickshell reload or live-shell action was performed. The scaffold reports no surface creation support and performs no Wayland operations.

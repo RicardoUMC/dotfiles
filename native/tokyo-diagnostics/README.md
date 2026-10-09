@@ -34,17 +34,22 @@ cmake --build native/tokyo-diagnostics/build
 ```
 
 The build produces `tokyo-diagnostics-harness`, the `Tokyo.Diagnostics` QML
-module target, `tokyo-wayland-server-api-sentinel`, and the Qt-independent
+module target, `tokyo-wayland-server-api-sentinel`,
+`tokyo-wayland-server-lifecycle`, and the Qt-independent
 `tokyo-wayland-fixture-core`. The sentinel is a build/link-only shared-library
-target outside the Qt/QML module. The fixture additionally proves that the
+target outside the Qt/QML module. The lifecycle target is a Qt-independent
+C++17 executable that creates exactly one validated private socket, advertises
+no protocol globals, and tears down through a bounded timer; it is build-only
+for now and must not be run. The fixture additionally proves that the
 installed `wayland-scanner` and stable `xdg-shell` protocol data generate
-server code and that the public libwayland server interfaces link. Both targets
-are inert and must not be run: they create no socket, display, protocol globals,
-or other runtime side effect. Neither target provides a server, compositor, CPU
-composition, or runtime containment. The module URI is independent of
-Quickshell's modules. QtWaylandClient private headers are used only in
-`waylandsubsurfaceadapter.cpp`; this is an ABI risk and the module must be
-rebuilt against the exact Qt build it runs with.
+server code and that the public libwayland server interfaces link. The API
+sentinel and fixture are inert and must not be run: they create no socket,
+display, protocol globals, or other runtime side effect. None of these targets
+provides a compositor, client protocol, CPU composition, visual ordering, or
+runtime containment. The module URI is independent of Quickshell's modules.
+QtWaylandClient private headers are used only in `waylandsubsurfaceadapter.cpp`;
+this is an ABI risk and the module must be rebuilt against the exact Qt build it
+runs with.
 
 ## Run the isolated harness
 
@@ -136,9 +141,12 @@ devices. The virtual backend therefore does not establish the required no-device
 boundary.
 
 The build-only fixture now proves scanner/protocol generation and public server
-linkage. It is a null protocol fixture: it does not provide a server, compositor,
-CPU composition, or runtime containment, and therefore cannot prove visual
-ordering. Task 11 remains incomplete and task 12 remains blocked.
+linkage. The lifecycle sentinel is the next bounded safe unit: its later runtime
+may run only inside the already-tested bwrap namespace, with a private
+`XDG_RUNTIME_DIR` and socket, an external deadline, PID/socket identity checks,
+and post-exit cleanup. Do not run it yet. It still proves no client protocol,
+compositor behavior, CPU composition, or visual ordering. Task 11 remains
+incomplete and task 12 remains blocked.
 
 ## Import from another Qt/QML application
 

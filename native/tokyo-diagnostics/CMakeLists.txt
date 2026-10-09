@@ -90,6 +90,16 @@ target_link_libraries(tokyo-wayland-server-api-sentinel PRIVATE
     PkgConfig::WAYLAND_SERVER
 )
 
+# Qt-independent lifecycle sentinel. It creates one private server socket and
+# tears it down after a bounded timer; it advertises no protocol globals.
+add_executable(tokyo-wayland-server-lifecycle
+    waylandserversmoke.cpp
+)
+target_compile_features(tokyo-wayland-server-lifecycle PRIVATE cxx_std_17)
+target_link_libraries(tokyo-wayland-server-lifecycle PRIVATE
+    PkgConfig::WAYLAND_SERVER
+)
+
 # Qt-independent, build/link-only protocol fixture. This generates the stable
 # xdg-shell server API and references public libwayland interfaces without
 # creating a display, socket, global, or other runtime state.

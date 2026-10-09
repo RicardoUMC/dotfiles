@@ -64,8 +64,10 @@ The ordinary smoke command above keeps the probe disabled. The opt-in probe is
 currently blocked: do not run it against the active desktop or any inherited
 `WAYLAND_DISPLAY`. A future run requires the disposable-compositor gate described
 below, with a private socket, private runtime/config/home, no `/dev/dri`, no host
-Wayland sockets, `LimitCORE=0` or verified dump suppression, an explicit deadline,
-and identity-based cleanup.
+Wayland sockets, verified dump suppression (not `LimitCORE=0` alone, which is
+unproven under this host's pipe-mode `core_pattern`), an explicit deadline,
+and identity-based cleanup (pidfd or unique systemd unit/cgroup identity, never
+bare PIDs).
 
 The requested ordering defaults to below-parent. Always leave
 `TOKYO_DIAGNOSTICS_ENABLE_SUBSURFACE` unset for the disabled baseline; its value
@@ -112,8 +114,35 @@ Containment is fail-closed. Verified local help/static evidence requires bwrap
 mounts, `--new-session`, `--die-with-parent`, and `--json-status-fd`; never use
 `*-try` flags because they continue without isolation. `systemd-run` offers
 `--property`, `--wait`, `--collect`, and documented resource properties, but
-effective user-manager enforcement and coredump suppression under this host's
-systemd-coredump pipe remain unverified. The actual containment launcher and
+effective user-manager enforcement of those properties must be confirmed against
+the unit's cgroup files and `/proc/<pid>/limits`, never assumed from the unit
+spec alone.
+
+This host uses the classic kernel `core_pattern` pipe to
+`/usr/lib/systemd/systemd-coredump`
+(`|/usr/lib/systemd/systemd-coredump %P %u %g %s %t %c %h %d %F %I`). Under
+pipe mode, `LimitCORE=0` is NOT accepted as proven coredump suppression: the
+kernel still spawns the pipe helper, and `%c` is passed only as context (the core
+soft-limit value), not as a gate that prevents helper dispatch.
+
+Fail-closed A/B/C proof plan (future disposable unit only, using a harmless
+dedicated crash helper, never the real harness or compositor):
+- A (control): `LimitCORE=infinity`, trigger the dedicated crash helper, and
+  record the exact PID/unit journal entry plus `coredumpctl` cursors before and
+  after; expect helper dispatch and a coredump entry.
+- B (test): `LimitCORE=0`, trigger the same helper; the only acceptable
+  suppression evidence is that helper dispatch did NOT occur — the journal shows
+  no helper invocation for that PID/unit and the `coredumpctl` cursor does not
+  advance. A missing core file is not proof by itself, because pipe mode may
+  still have spawned the helper.
+- C (contrast): `LimitCORE=1`, trigger the helper and record whether dispatch
+  occurs (expected) so `0` and `1` are not conflated as identical behavior.
+
+For every case, capture the exact PID and systemd unit/cgroup identity, the
+journal lines for that unit, and the `coredumpctl` cursor. Resource limits must be
+read from the unit's cgroup files and `/proc/<pid>/limits`, not inferred from the
+unit spec. Cleanup must key on pidfd or the unique systemd unit/cgroup identity,
+never a bare PID that may be recycled. The actual containment launcher and
 runtime remain blocked pending authoritative verification of core suppression,
 identity cleanup, and post-client liveness. A harmless namespace preflight using
 exactly `--unshare-all`, private `/run` and `/tmp`, a `/dev` tmpfs, a

@@ -64,8 +64,9 @@ The ordinary smoke command above keeps the probe disabled. The opt-in probe is
 currently blocked: do not run it against the active desktop or any inherited
 `WAYLAND_DISPLAY`. A future run requires the disposable-compositor gate described
 below, with a private socket, private runtime/config/home, no `/dev/dri`, no host
-Wayland sockets, verified dump suppression (not `LimitCORE=0` alone, which is
-unproven under this host's pipe-mode `core_pattern`), an explicit deadline,
+Wayland sockets, verified dump suppression (`LimitCORE=1` is the fail-closed
+candidate on this host's pipe-mode `core_pattern`; `LimitCORE=0` alone is
+insufficient), an explicit deadline,
 and identity-based cleanup (pidfd or unique systemd unit/cgroup identity, never
 bare PIDs).
 
@@ -125,26 +126,28 @@ pipe mode, `LimitCORE=0` is NOT accepted as proven coredump suppression: the
 kernel still spawns the pipe helper, and `%c` is passed only as context (the core
 soft-limit value), not as a gate that prevents helper dispatch.
 
-Fail-closed A/B/C proof plan (future disposable unit only, using a harmless
-dedicated crash helper, never the real harness or compositor):
-- A (control): `LimitCORE=infinity`, trigger the dedicated crash helper, and
-  record the exact PID/unit journal entry plus `coredumpctl` cursors before and
-  after; expect helper dispatch and a coredump entry.
-- B (test): `LimitCORE=0`, trigger the same helper; the only acceptable
-  suppression evidence is that helper dispatch did NOT occur — the journal shows
-  no helper invocation for that PID/unit and the `coredumpctl` cursor does not
-  advance. A missing core file is not proof by itself, because pipe mode may
-  still have spawned the helper.
-- C (contrast): `LimitCORE=1`, trigger the helper and record whether dispatch
-  occurs (expected) so `0` and `1` are not conflated as identical behavior.
+Fail-closed A/B/C proof, verified against this host's classic systemd-coredump
+pipe using a harmless dedicated crash helper (never the real harness or
+compositor):
+- A (control): `LimitCORE=infinity` produced a stored 52.4 KiB `bash` core and
+  handler dispatch.
+- B (test): `LimitCORE=0` produced no stored file, but systemd-coredump still ran
+  and logged resource-limit suppression — a missing core file is therefore not
+  suppression proof by itself.
+- C (contrast): `LimitCORE=1` prevented handler dispatch and the kernel logged an
+  RLIMIT_CORE abort, so `0` and `1` are distinct behaviors.
 
-For every case, capture the exact PID and systemd unit/cgroup identity, the
-journal lines for that unit, and the `coredumpctl` cursor. Resource limits must be
-read from the unit's cgroup files and `/proc/<pid>/limits`, not inferred from the
-unit spec. Cleanup must key on pidfd or the unique systemd unit/cgroup identity,
-never a bare PID that may be recycled. The actual containment launcher and
-runtime remain blocked pending authoritative verification of core suppression,
-identity cleanup, and post-client liveness. A harmless namespace preflight using
+`LimitCORE=1` is the preferred fail-closed candidate for a future disposable
+unit, but actual fixture-unit enforcement and the effective resource limits
+remain to be verified against the unit's cgroup files and `/proc/<pid>/limits`,
+never assumed from the unit spec alone. The A2 control core was intentionally
+retained as evidence at its exact path
+`/var/lib/systemd/coredump/core.bash.1000.7b558ccb1abe483298c6fbe74d92e575.1809959.1791575686000000.zst`;
+the user chose retention because `coredumpctl` has no `delete` verb and the
+core's root ownership blocked direct removal. Cleanup must key on pidfd or the
+unique systemd unit/cgroup identity, never a bare PID that may be recycled. The
+actual containment launcher and runtime remain blocked pending authoritative
+verification of core suppression, identity cleanup, and post-client liveness. A harmless namespace preflight using
 exactly `--unshare-all`, private `/run` and `/tmp`, a `/dev` tmpfs, a
 read-only `/usr` bind, explicit `/bin`/`/lib`/`/lib64` symlinks, `--clearenv`,
 `--new-session`, and `--die-with-parent` exited 0 while checking that no

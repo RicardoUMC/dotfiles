@@ -110,7 +110,14 @@ mounts, `--new-session`, `--die-with-parent`, and `--json-status-fd`; never use
 effective user-manager enforcement and coredump suppression under this host's
 systemd-coredump pipe remain unverified. The actual containment launcher and
 runtime remain blocked pending authoritative verification of core suppression,
-identity cleanup, and post-client liveness.
+identity cleanup, and post-client liveness. A harmless namespace preflight using
+exactly `--unshare-all`, private `/run` and `/tmp`, a `/dev` tmpfs, a
+read-only `/usr` bind, explicit `/bin`/`/lib`/`/lib64` symlinks, `--clearenv`,
+`--new-session`, and `--die-with-parent` exited 0 while checking that no
+inherited display, socket, or device paths were visible. This proves only
+namespace path visibility; it does not prove coredump suppression, systemd
+limits, actual fixture correctness, or post-client liveness. Task 11 remains
+incomplete and task 12 remains blocked.
 
 The installed Hyprland/Aquamarine combination is not yet a runnable isolated
 backend for this probe: Hyprland requests mandatory headless plus optional DRM and

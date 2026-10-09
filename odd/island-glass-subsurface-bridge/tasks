@@ -1,0 +1,37 @@
+# ODD task mirror: island-glass-subsurface-bridge
+
+- [x] Create build-only CMake/module scaffold under `native/tokyo-diagnostics`.
+- [x] Add a minimal QML-facing bridge API with explicit capability/error state but no live surface mutation.
+- [x] Add an isolated ordering-probe harness boundary and dependency/build checks.
+- [x] Verify module loading in a separate process without changing the active shell.
+- [x] Review the build/ABI boundary before any subsurface or blur protocol code.
+- [x] Implement an isolated ordering-only subsurface probe behind a native capability gate.
+- [x] Verify child-surface creation and ordering requests.
+- [x] Fix unsafe subsurface teardown ordering exposed by the compositor crash.
+- [x] Harden harness opt-in and readiness-gated lifecycle evidence (offline-validated; compositor behavior remains unverified).
+- [x] Verify teardown statically/offscreen only; do not rerun against the active compositor.
+- [ ] Prepare a disposable compositor harness and verify process/socket containment before any runtime rerun.
+  - [x] Add a build-only Wayland server API sentinel proving installed `wayland-server` headers and pkg-config metadata are consumable; runtime containment remains unverified.
+  - [x] Add a Qt-independent, build-only public-libwayland fixture core target; it must not add Qt, QML, or runtime behavior.
+  - [x] Compile protocol-code generation coverage for `wl_compositor`, `wl_shm`, `wl_subcompositor`, `xdg_wm_base`, and `wl_output`.
+  - [x] Keep the fixture inert and unexecuted until a separate containment launcher exists.
+  - [x] Document that a null protocol fixture cannot prove visual ordering without CPU composition.
+- [ ] Decide whether a bounded background-effect probe is justified; blocked until a separately validated containment path exists. Do not integrate production glass automatically.
+
+Stage 1 evidence: standalone CMake/build passed; Qt6 `qmllint` passed; the offscreen harness started without diagnostics and exited via the bounded timeout (`124`); `git diff --check` passed. No Quickshell reload or live-shell action was performed. The scaffold reports no surface creation support and performs no Wayland operations.
+
+Stage 2 ordering-only: the default-disabled standalone `SubsurfaceProbe` targets only its own harness `QWindow`, waits for visible/exposed lifecycle state with bounded single-shot retries, uses an isolated QtWayland private adapter, requests bounded synthetic magenta content below the parent by default or above it when explicitly selected, and fails closed offscreen/non-Wayland. It has no blur, screencopy, Quickshell internals, or production shell integration. Paired captures establish visual ordering: magenta is absent below the opaque parent and visible above it; protocol logs confirm matching requests with no errors. The lifecycle exercise then emitted `wl_surface#56.destroy()` without `wl_subsurface#46.destroy()` before a replacement child/parent commit; Hyprland PID 2558826 crashed in `CSubsurface::recheckDamageForSubsurfaces` and restarted safe mode. Treat missing explicit subsurface destruction as the leading client defect. Suspend live probes, fix teardown order, and verify only offline/offscreen. Above-parent is comparison-only, not a production recommendation.
+
+Teardown fix: `WaylandSubsurfaceAdapter::destroy()` now destroys the `wl_subsurface` role before the child `wl_surface`, then releases the SHM wrapper and clears state. Offline build/static checks passed; compositor behavior remains unverified. Do not run the harness against a Wayland compositor.
+
+Task 10 is complete as an offline/static-only verification boundary. Task 11 begins with a build-only `wayland-server` API sentinel; it creates no socket, display, protocol globals, or runtime side effect, and does not establish disposable-compositor containment.
+
+Next evidence gate: offline hardening is complete, but compositor behavior remains unverified. Opt-in requires an affirmative value; lifecycle timers wait for observed `active`; initial/replacement/final-disable logs expose native child IDs; and native teardown logs retain IDs while destroying the role before the surface. `WAYLAND_DEBUG` remains authoritative for protocol ordering. A clean process exit without active-ID records and matching role-before-surface destroy ordering is insufficient evidence.
+
+Disposable compositor gate: installed Hyprland 0.56.2 hardcodes mandatory headless, optional DRM, and Wayland fallback implementations; no confirmed backend CLI selector exists. Aquamarine headless does not open a device itself, but startup still requires a render allocator unless NULL is first, and Hyprland does not request NULL. Do not expose `/dev/dri`, inherit the active `WAYLAND_DISPLAY`, or nest into the live desktop. Runtime validation remains blocked until an independently launched disposable outer compositor or separately built software/null allocator is available.
+
+Upstream KWin v6.7.5 is not acceptable under the current no-device gate: `--virtual` selects `VirtualBackend`, creates `Session::Type::Noop`, and `VirtualBackend::initialize()` returns true with QPainter support, but `ApplicationWayland` calls `createGpuManager()` before backend selection. `GpuManager` opens `/dev/udmabuf`, creates a udev DRM monitor, and scans render devices, so the virtual backend does not provide the required no-device boundary.
+
+The Qt-independent build-only fixture now proves scanner/protocol generation and public server linkage. It remains inert and unexecuted: it provides no server, compositor, CPU composition, or runtime containment, so it cannot prove visual ordering. Task 11 remains incomplete, and task 12 remains blocked.
+
+Production boundary: no live shell integration, no compositor plugin, no screencopy, no fullscreen blur rule, and no production input/routing/focus/overlay/service changes. Production island fallback remains authoritative.

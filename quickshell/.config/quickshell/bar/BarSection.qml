@@ -91,6 +91,9 @@ Item {
         }
     }
 
+    readonly property bool gpuPrototypeActive: Theme.islandGpuPrototypeTarget === "left"
+        && sectionId === "left"
+
     MultiEffect {
         source: bgSource
         maskEnabled: true
@@ -98,7 +101,13 @@ Item {
         maskThresholdMin: 0.5
         maskSpreadAtMin: 1.0
         anchors.fill: parent
-        visible: Theme.barStyle === "silhouette"
+        visible: Theme.barStyle === "silhouette" && !root.gpuPrototypeActive
+    }
+
+    IslandGpuPrototype {
+        anchors.fill: parent
+        active: root.gpuPrototypeActive
+        maskItem: sectionMask
     }
 
     Item {

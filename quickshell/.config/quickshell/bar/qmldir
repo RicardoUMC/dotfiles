@@ -3,6 +3,8 @@ BarTab 1.0 BarTab.qml
 BarSection 1.0 BarSection.qml
 GlassEffect 1.0 GlassEffect.qml
 IslandBlurRegion 1.0 IslandBlurRegion.qml
+IslandGpuPrototype 1.0 IslandGpuPrototype.qml
+IslandNativePrototype 1.0 IslandNativePrototype.qml
 singleton IslandGeometry 1.0 IslandGeometry.qml
 NotchIslandMask 1.0 NotchIslandMask.qml
 NotchCornerMask 1.0 NotchCornerMask.qml

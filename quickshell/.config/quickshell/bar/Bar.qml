@@ -215,6 +215,26 @@ PanelWindow {
         bottomRightRounded: true
     }
 
+    // Optional Stage-2 native feasibility surface. It is created only for
+    // the explicitly selected left island and exact owning screen; production
+    // masks, hit regions, and the bar's input union remain untouched.
+    Loader {
+        active: Theme.islandNativePrototypeTarget === "left"
+            && Theme.islandNativePrototypeScreen.length > 0
+            && root.screenName === Theme.islandNativePrototypeScreen
+        sourceComponent: Component {
+            IslandNativePrototype {
+                screenTarget: root.screen
+                sectionX: leftSection.x
+                sectionY: leftSection.y
+                sectionWidth: leftSection.width
+                sectionHeight: leftSection.targetItem.height
+                cornerRadius: leftSection._cornerSize
+                wrapDepth: leftSection._wrapDepth
+            }
+        }
+    }
+
     BarSection {
         id: centerSection
         z: 0

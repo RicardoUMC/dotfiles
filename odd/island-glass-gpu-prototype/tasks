@@ -1,0 +1,14 @@
+# ODD task mirror: island-glass-gpu-prototype
+
+- [x] Define the material/geometry boundary and opt-in configuration contract: `surface.islandGpuPrototypeTarget` defaults to `none`, accepts future target `left`, and preserves independent `surface.islandNativeBlur=false` behavior. Registered `IslandGpuPrototype` is passive, synthetic/client-owned, and not wired into `BarSection`.
+- [x] Implement a controlled-texture GPU mask prototype for the left island without changing input or routing: `BarSection` uses the authoritative `sectionMask` only for explicit `Theme.islandGpuPrototypeTarget === "left"`; normal `MultiEffect` remains fallback otherwise. Default remains `none`.
+- [x] Verify edge fidelity, animation cost, Qt6 lint, reload, and fallback behavior.
+- [x] Review Stage 1 result: native review `review-cc5b5d20cf72d3aa` approved/acknowledged with informational findings only.
+- [x] Specify a passive bounded native-blur feasibility surface for one island: Bar-owned, explicit screen pinning, Top, Ignore exclusion, empty non-null input mask, keyboard focus None, no overlay/routing/service ownership; stacking is a feasibility gate.
+- [x] Implement the one-island native feasibility prototype behind an opt-in switch: `surface.islandNativePrototypeTarget` accepts `none|left` and defaults to `none`; `surface.islandNativePrototypeScreen` is an exact selector defaulting to empty; invalid selector types disable it. The helper is passive, bounded, explicitly screen-pinned, Top-layer, keyboard-focus None, Ignore exclusion, transparent, and uses a non-null empty input mask plus a local rounded Region blur approximation.
+- [x] Verify stacking, geometry, fallback, latency, and interaction invariants: helper mapped only on DP-1 but composited above the Bar and blurred workspace chip/text; configerrors/logs were clean; interaction was not clicked.
+- [x] Review evidence and decide whether to keep, discard, or redesign the prototype: same-layer independent PanelWindow is rejected for production; keep disabled as evidence while investigating parent/subsurface or compositor-integrated ordering.
+
+Stage 2 authorization: user approved a bounded native feasibility prototype for one island. Keep it opt-in and experimental; no fullscreen rule, screencopy, production replacement, new input/focus/routing owner, or default activation.
+
+Evidence: enabled `/tmp/quickshell-recordings/island-native-prototype-dp1.png`; restored fallback `/tmp/quickshell-recordings/island-native-prototype-disabled.png`. Native helper review gate: above-Bar stacking failed; fallback restoration passed.

@@ -48,13 +48,33 @@ PanelWindow {
         : null
     GlassEffect {
         id: barGlassRegion
-        Region { item: leftSection }
-        Region { item: centerSection }
-        Region { item: rightSection }
-        // The panel body is visual-only blur geometry. Keep it out of the
-        // fullscreen input mask below; its zero height while closed makes
-        // this region collapse with the panel's reveal animation.
-        Region { item: rightControlCenter.panelBodyItem }
+        // Island blur geometry is visual-only and remains separate from the
+        // authoritative Canvas/MultiEffect and hit masks.
+        Region {
+            IslandBlurRegion {
+                targetItem: leftSection
+                intersection: Theme.islandNativeBlur ? Intersection.Combine : Intersection.Subtract
+            }
+            IslandBlurRegion {
+                targetItem: centerSection
+                intersection: Theme.islandNativeBlur ? Intersection.Combine : Intersection.Subtract
+            }
+            IslandBlurRegion {
+                targetItem: rightSection
+                intersection: Theme.islandNativeBlur ? Intersection.Combine : Intersection.Subtract
+            }
+        }
+
+        // The panel body remains a native rounded region; do not replace it
+        // with scanline geometry. Keep it out of the fullscreen input mask
+        // below; its zero height while closed collapses this region.
+        Region {
+            item: rightControlCenter.panelBodyItem
+            topLeftRadius: Theme.dashboardBodyRadius
+            topRightRadius: Theme.dashboardBodyRadius
+            bottomLeftRadius: Theme.dashboardBodyRadius
+            bottomRightRadius: Theme.dashboardBodyRadius
+        }
     }
     mask: Region {
         regions: [

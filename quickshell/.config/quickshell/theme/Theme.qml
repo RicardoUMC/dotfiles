@@ -40,14 +40,19 @@ QtObject {
     // the readable fallback. This option is intentionally inert in other modes.
     property string surfaceMode: "solid" // "solid" | "translucent" | "glass"
     property bool nativeBlur: true // `surface.nativeBlur`; only used by `glass`
+    // Island-only rollback switch for the compositor-blur experiment. The
+    // right-control-center rounded region remains native-blurred independently.
+    property bool islandNativeBlur: true // `surface.islandNativeBlur`
     property real surfaceOpacity: 1.0
-    property real surfaceCardOpacity: 0.18
-    property real surfaceNestedOpacity: 0.16
+    // Glass hierarchy: cards lift above the shell while nested slabs recede.
+    // Solid mode still resolves every role to an opaque fill.
+    property real surfaceCardOpacity: 0.24
+    property real surfaceNestedOpacity: 0.12
     property real surfaceOverlayOpacity: 0.33
 
-    // Button grammar: semantic fills stay opaque and saturated enough to read
-    // as controls over translucent/glass surfaces. Colors remain owned by
-    // Colors.qml; these tokens only choose darkening and interaction lift.
+    // Button grammar: semantic fills may use the softer alpha-tinted island
+    // treatment below; other action controls remain opaque and saturated.
+    // Colors remain owned by Colors.qml; button tokens choose darkening/lift.
     property real buttonPrimaryTone: 0.32
     property real buttonSecondaryTone: 0.22
     property real buttonHoverLift: 0.08
@@ -67,7 +72,11 @@ QtObject {
             : Math.min(1.0, Math.max(0.0, surfaceOpacity * roleOpacity))
         return Qt.rgba(baseColor.r, baseColor.g, baseColor.b, alpha)
     }
-    function surface(baseColor) { return surfaceColor(baseColor, 1.0) }
+    // Shell surfaces use the overlay role only in glass mode. Solid remains
+    // opaque, and translucent keeps its existing global surface opacity.
+    function surface(baseColor) {
+        return surfaceColor(baseColor, surfaceMode === "glass" ? surfaceOverlayOpacity : 1.0)
+    }
     function surfaceCard(baseColor) { return surfaceColor(baseColor, surfaceCardOpacity) }
     function surfaceNested(baseColor) { return surfaceColor(baseColor, surfaceNestedOpacity) }
     function rightPanelSurface(baseColor) { return surface(baseColor) }
@@ -313,6 +322,8 @@ QtObject {
             }
             if (surfaceCfg?.nativeBlur !== undefined)
                 nativeBlur = surfaceCfg.nativeBlur === true
+            if (surfaceCfg?.islandNativeBlur !== undefined)
+                islandNativeBlur = surfaceCfg.islandNativeBlur === true
             if (surfaceCfg?.opacity !== undefined) {
                 const opacity = Number(surfaceCfg.opacity)
                 if (Number.isFinite(opacity))

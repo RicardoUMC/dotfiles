@@ -1,0 +1,20 @@
+# ODD task mirror: rounded-island-blur
+
+- [x] Replace rectangular island blur geometry with scanline rasterization.
+- [x] Preserve RCC blur and translucent fallback behavior.
+- [x] Verify lint, reload, and live notch geometry.
+- [x] Run native review and record outcome.
+- [x] Align blur scanline geometry with the authoritative island mask equations and pixel boundaries.
+- [x] Re-run native review and record outcome for the alignment correction.
+- [x] Test a dedicated Hyprland namespace/rule for alpha-aware compositor blur.
+- [x] Verify the compositor experiment and review the new candidate.
+- [x] Roll back the fullscreen compositor experiment after observed latency.
+- [x] Verify rollback performance and preserve the native/translucent baseline.
+- [x] Disable scanline island blur as the stable baseline after expansion latency and edge artifacts persisted.
+- [x] Verify the stable island baseline after reload.
+- [x] Gate disabled scanline rebuilds so `islandNativeBlur: false` destroys generated slices once and skips subsequent rebuild work.
+- [x] Re-enable path rebuilds the unchanged scanline geometry normally.
+
+Current selected baseline: `surface.islandNativeBlur: false`; custom island masks use exact translucent fills, while the rounded right-control-center native blur remains enabled. No services, routing, input, focus, Escape, or multi-monitor behavior changes.
+
+Rationale: the disabled path now clears generated `Region` slices once and returns before all later geometry-triggered rebuilds, preventing dynamic Region churn. Re-enabling resets the gate and uses the existing equations unchanged; visual/input masks, RCC blur, BarSection layers, animation timing, and monitor behavior are unaffected.

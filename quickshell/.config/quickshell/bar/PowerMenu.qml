@@ -21,8 +21,8 @@ Item {
         width: 28
         height: Theme.barChipHeight
         radius: height / 2
-        color: Theme.buttonFill(Colors.red, true,
-            mouseBtn.pressed ? "pressed" : (mouseBtn.containsMouse ? "hover" : "rest"))
+        color: Qt.rgba(Colors.red.r, Colors.red.g, Colors.red.b,
+                        Theme.islandPowerTintOpacity)
 
         // Transient feedback under the icon, riding on the resting tint;
         // inherits the pill radius.

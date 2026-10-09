@@ -68,9 +68,10 @@
   "surface": {
     "mode": "glass",
     "nativeBlur": true,
+    "islandNativeBlur": false,
     "opacity": 1.0,
-    "cardOpacity": 0.18,
-    "nestedOpacity": 0.16,
+    "cardOpacity": 0.24,
+    "nestedOpacity": 0.12,
     "overlayOpacity": 0.33
   },
   "button": {

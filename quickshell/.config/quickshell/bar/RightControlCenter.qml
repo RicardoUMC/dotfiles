@@ -199,7 +199,7 @@ Item {
         color: Theme.rightPanelSurface(Colors.base00)
         border {
             width: Theme.dashboardBodyBorderWidth
-            color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
+            color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder * 0.8)
         }
 
         MouseArea {

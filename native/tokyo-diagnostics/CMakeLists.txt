@@ -120,6 +120,30 @@ target_link_libraries(tokyo-wayland-fixture-core PRIVATE
     PkgConfig::WAYLAND_SERVER
 )
 
+# Qt-independent, build-only public protocol server executable. It creates one
+# private server socket and registers the five required globals (wl_compositor,
+# wl_shm, wl_subcompositor, wl_output, and xdg_wm_base via the generated stable
+# xdg-shell server API) with no request handlers. It launches no compositor or
+# client, opens no DRM/devices, and never touches the active desktop or an
+# inherited WAYLAND_DISPLAY. It must not be run until a separate containment
+# authorization; it is a build/structural unit only.
+add_executable(tokyo-wayland-protocol-server
+    waylandprotocolserver.cpp
+    "${TOKYO_XDG_SHELL_SERVER_HEADER}"
+    "${TOKYO_XDG_SHELL_PRIVATE_CODE}"
+)
+set_source_files_properties(
+    "${TOKYO_XDG_SHELL_SERVER_HEADER}"
+    PROPERTIES HEADER_FILE_ONLY TRUE
+)
+target_compile_features(tokyo-wayland-protocol-server PRIVATE cxx_std_17)
+target_include_directories(tokyo-wayland-protocol-server PRIVATE
+    "${TOKYO_WAYLAND_FIXTURE_GENERATED_DIR}"
+)
+target_link_libraries(tokyo-wayland-protocol-server PRIVATE
+    PkgConfig::WAYLAND_SERVER
+)
+
 qt_add_executable(tokyo-diagnostics-harness
     harness/main.cpp
 )

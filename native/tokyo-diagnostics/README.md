@@ -35,18 +35,24 @@ cmake --build native/tokyo-diagnostics/build
 
 The build produces `tokyo-diagnostics-harness`, the `Tokyo.Diagnostics` QML
 module target, `tokyo-wayland-server-api-sentinel`,
-`tokyo-wayland-server-lifecycle`, and the Qt-independent
-`tokyo-wayland-fixture-core`. The sentinel is a build/link-only shared-library
+`tokyo-wayland-server-lifecycle`, the Qt-independent
+`tokyo-wayland-fixture-core`, and the Qt-independent
+`tokyo-wayland-protocol-server`. The sentinel is a build/link-only shared-library
 target outside the Qt/QML module. The lifecycle target is a Qt-independent
 C++17 executable that creates exactly one validated private socket, advertises
 no protocol globals, and tears down through a bounded timer; it is build-only
-for now and must not be run. The fixture additionally proves that the
-installed `wayland-scanner` and stable `xdg-shell` protocol data generate
-server code and that the public libwayland server interfaces link. The API
-sentinel and fixture are inert and must not be run: they create no socket,
-display, protocol globals, or other runtime side effect. None of these targets
-provides a compositor, client protocol, CPU composition, visual ordering, or
-runtime containment. The module URI is independent of Quickshell's modules.
+for now and must not be run. The protocol server target is the next
+Qt-independent C++17 unit: it creates exactly one validated private socket and
+registers the five required globals (`wl_compositor`, `wl_shm`,
+`wl_subcompositor`, `wl_output`, and `xdg_wm_base` via the generated
+xdg-shell server API) with no request handlers; it is build-only for now and
+must not be run. The fixture additionally proves that the installed
+`wayland-scanner` and stable `xdg-shell` protocol data generate server code and
+that the public libwayland server interfaces link. The API sentinel and fixture
+are inert and must not be run: they create no socket, display, protocol globals,
+or other runtime side effect. None of these targets provides a compositor,
+client protocol, CPU composition, visual ordering, or runtime containment. The
+module URI is independent of Quickshell's modules.
 QtWaylandClient private headers are used only in `waylandsubsurfaceadapter.cpp`;
 this is an ABI risk and the module must be rebuilt against the exact Qt build it
 runs with.
@@ -146,16 +152,17 @@ with systemd result `timeout`; and `KillMode=control-group` killed both recorded
 main and child PIDs and removed the unit cgroup. The first observation had a
 systemd `${cg}` quoting artifact, so the corrected rerun supplied the cgroup
 evidence. One stopped `tokyo-limit-kill.service` remains inactive/dead as
-evidence; no cores or unexpected artifacts were created. Actual fixture-unit
-validation, the identity launcher implementation, client protocol, and
-post-client liveness remain pending; task 11 remains incomplete and task 12
-remains blocked. The A2 control core was intentionally
+evidence; no cores or unexpected artifacts were created. Actual fixture-unit validation, client protocol, and post-client liveness
+remain pending; the contained launcher scaffold now exists but is unexecuted
+(static `bash -n` and `git diff --check` only). Task 11 remains incomplete and
+task 12 remains blocked. The A2 control core was intentionally
 retained as evidence at its exact path
 `/var/lib/systemd/coredump/core.bash.1000.7b558ccb1abe483298c6fbe74d92e575.1809959.1791575686000000.zst`;
 the user chose retention because `coredumpctl` has no `delete` verb and the
 core's root ownership blocked direct removal. Cleanup must key on pidfd or the
 unique systemd unit/cgroup identity, never a bare PID that may be recycled. The
-actual containment launcher and runtime remain blocked pending authoritative
+contained launcher scaffold now exists but is unexecuted (static `bash -n` and
+`git diff --check` only); runtime remains blocked pending authoritative
 verification of core suppression, identity cleanup, and post-client liveness. A harmless namespace preflight using
 exactly `--unshare-all`, private `/run` and `/tmp`, a `/dev` tmpfs, a
 read-only `/usr` bind, explicit `/bin`/`/lib`/`/lib64` symlinks, `--clearenv`,
@@ -188,6 +195,55 @@ may run only inside the already-tested bwrap namespace, with a private
 and post-exit cleanup. Do not run it yet. It still proves no client protocol,
 compositor behavior, CPU composition, or visual ordering. Task 11 remains
 incomplete and task 12 remains blocked.
+
+## Contained launcher scaffold
+
+`run-contained-server.sh` is a fail-closed launcher scaffold for the lifecycle
+sentinel's future runtime. It is a static, syntax-verified artifact only and
+must not be executed until a separate runtime authorization. It launches
+exactly one command inside a transient user systemd unit whose ExecStart is an
+unprivileged bwrap sandbox. It makes no visual, protocol, compositor, or
+runtime claim, and its only intended first command is the build-only
+`tokyo-wayland-server-lifecycle` sentinel.
+
+Boundary and checklist (scaffold only, static syntax verification first):
+
+- [x] Fail-closed argument surface: a command is required after `--`;
+  `--deadline-ms` is bounded to 100..60000 and `--socket` is restricted to
+  `[A-Za-z0-9_-]` of at most 107 bytes; defaults are deterministic and unique
+  per invocation (`tokyo-<token>` socket and a per-run `mktemp` token).
+- [x] Private 0700 runtime directory under a strict `/tmp/tokyo-diag-runtime.*`
+  prefix, an EXIT/INT/TERM/HUP trap, and cleanup that removes only that exact
+  directory; any unexpected path is refused.
+- [x] Unique transient `systemd-run --user --wait --collect --unit=...` identity
+  with `LimitCORE=1`, `MemoryMax=32M`, `TasksMax=8`, `LimitNOFILE=64`,
+  `LimitAS=128M`, `RuntimeMaxSec` derived from the deadline,
+  `KillMode=control-group`, and `NoNewPrivileges=yes`; an external `timeout`
+  deadline is the same window plus a short grace. Cleanup keys on the unit
+  identity, never a bare PID (no pkill).
+- [x] bwrap uses mandatory `--unshare-all` (never a `*-try` flag),
+  `--clearenv`, read-only `/usr`, explicit `/bin`/`/lib`/`/lib64` symlinks,
+  private `/proc`, `/dev`, `/tmp`, and `/run`, `--die-with-parent`, and
+  `--new-session`; only the fresh runtime directory is bound (at
+  `/run/tokyo-runtime`), and the command's own executable file is bound
+  read-only at its original absolute path. Env is `HOME=/home/tokyo`,
+  `XDG_RUNTIME_DIR=/run/tokyo-runtime`, and an explicit `WAYLAND_DISPLAY`
+  socket name; no host runtime, display, X11, session-bus, DRM, or udmabuf
+  state is exposed.
+- [x] The command after `--` is passed verbatim and never reinterpreted; the
+  launcher logs the unit name, runtime directory identity, socket name, and
+  deadline without secrets, and fails closed when `bwrap`, `systemd-run`, or
+  `timeout` is missing or any precondition fails.
+- [x] Static syntax verification only: `bash -n` and `git diff --check` pass.
+- [ ] Runtime execution is not yet authorized; do not run the script, a
+  compositor, a client, a harness, or a service. Task 11 remains incomplete and
+  task 12 remains blocked.
+
+The scaffold proves nothing about compositor behavior, client protocol, visual
+ordering, or liveness until a separately authorized runtime exercise. The
+`NoNewPrivileges=yes` plus unprivileged `--unshare-user` combination and the
+full resource-limit enforcement are unverified together at runtime and remain
+pending that authorization.
 
 ## Import from another Qt/QML application
 

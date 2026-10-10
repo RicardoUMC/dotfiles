@@ -30,22 +30,27 @@ Build a standalone, opt-in diagnostic C++/Qt module that can later create a same
      - [x] Require `--socket NAME`; bound optional `--deadline-ms` to 1..60000 and reject traversal/invalid names.
      - [x] Build/link only against public `wayland-server` APIs; preserve the existing sentinel and fixture-core targets.
      - [x] Do not run the executable or any compositor/client/service yet.
-     - [ ] A later runtime may run only inside the already-tested bwrap namespace with private `XDG_RUNTIME_DIR`/socket, external deadline, PID/socket identity, and post-exit cleanup.
+     - [x] Authorized server-only runtime completed inside the bwrap namespace with private `XDG_RUNTIME_DIR`/socket, external deadline, PID/socket identity, and post-exit cleanup; no compositor/client was launched.
      - [x] Treat this as lifecycle/socket evidence only; it proves no client protocol or visual ordering.
    - [x] Add the fail-closed contained launcher scaffold `native/tokyo-diagnostics/run-contained-server.sh`: command required after `--`; bounded `--deadline-ms` 100..60000 and `--socket` `[A-Za-z0-9_-]` <=107 bytes with deterministic unique defaults; private 0700 runtime directory under a strict `/tmp` prefix with a trap that removes only that directory; unique `systemd-run --user --wait --collect` unit with `LimitCORE=1`/`MemoryMax=32M`/`TasksMax=8`/`LimitNOFILE=64`/`LimitAS=128M`/`RuntimeMaxSec`/`KillMode=control-group`/`NoNewPrivileges=yes` and an external `timeout` deadline; no pkill or bare-PID cleanup.
    - [x] bwrap in the launcher: mandatory `--unshare-all` (never `*-try`), `--clearenv`, read-only `/usr`, explicit `/bin`/`/lib`/`/lib64` symlinks, private `/proc`/`/dev`/`/tmp`/`/run`, `--die-with-parent`, `--new-session`; binds only the fresh runtime dir at `/run/tokyo-runtime`; sets `HOME`/`XDG_RUNTIME_DIR`/`WAYLAND_DISPLAY` explicitly; no host runtime/display/X11/session-bus/DRM/udmabuf exposure; passes the command verbatim after `--`; logs unit/runtime/socket/deadline without secrets; fails closed on missing tools or any precondition.
    - [x] Static verification only: `bash -n` and `git diff --check` pass. Scaffold only; no runtime execution until a separate authorization.
-   - [ ] Keep runtime execution unperformed until a separate authorization; task 11 remains incomplete and task 12 remains blocked.
+   - [x] Runtime authorization was granted and the protocol-server-only containment exercise completed; compositor/client visual behavior remains unverified.
    - [x] Add the Qt-independent public protocol server executable as a build-only unit: one private socket plus the five required globals (wl_compositor, wl_shm, wl_subcompositor, wl_output, and xdg_wm_base via the generated xdg-shell server API).
      - [x] Register each global with a no-op bind implementation at a conservative advertised version; fail closed on any registration/timer error by destroying created globals before the display.
      - [x] Reuse the lifecycle sentinel's bounded `--socket`/`--deadline-ms` validation and deterministic reverse-order teardown.
      - [x] Build/link only against public `wayland-server` APIs plus the generated xdg-shell private code; preserve the existing sentinel, lifecycle, and fixture-core targets.
-     - [x] Do not run the executable or any compositor/client/service yet; it launches no compositor/client, opens no DRM/devices, and never touches the active desktop or an inherited `WAYLAND_DISPLAY`.
-     - [x] Treat this as global discovery/registration evidence only; it proves no request handling, CPU composition, or visual ordering.
+     - [x] The executable was run only through the contained launcher; no compositor/client/service was launched, no DRM/device was opened, and the inherited `WAYLAND_DISPLAY` was cleared.
+     - [x] Runtime evidence confirms private socket/global registration and bounded teardown only; it proves no request handling, CPU composition, or visual ordering.
 12. [ ] Decide whether a bounded background-effect probe is justified; blocked until a separately validated containment path exists. Do not integrate production glass automatically.
 
 ## Work-unit evidence
 - Protocol-server implementation commit: `ce99210` (`feat(diagnostics): add contained Wayland protocol server`). Native review was approved and acknowledged before runtime work; findings were informational/non-blocking.
+
+## Runtime containment evidence
+- After explicit authorization, `tokyo-wayland-protocol-server` was configured/built and run once through `native/tokyo-diagnostics/run-contained-server.sh` with a private socket and 3000 ms launcher deadline.
+- The contained unit exited successfully after the server's 2500 ms deadline; readiness identified PID 2 inside the bwrap PID namespace and the five registered globals. The launcher used `--unshare-all`, `--clearenv`, private `/run` and `/tmp`, and did not expose `/dev/dri` or `/dev/udmabuf`; the inherited host `WAYLAND_DISPLAY` was not passed through.
+- Post-run checks found no runtime-directory/socket remnants, no collected unit, and no lingering server process. This is server containment/liveness evidence only; no compositor, client, visual ordering, or active-desktop interaction was exercised.
 
 ## Stage 1 evidence
 - CMake configure/build passed for the standalone module and harness.

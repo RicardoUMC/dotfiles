@@ -188,23 +188,21 @@ Its `--virtual` path selects `VirtualBackend`, creates `Session::Type::Noop`, an
 devices. The virtual backend therefore does not establish the required no-device
 boundary.
 
-The build-only fixture now proves scanner/protocol generation and public server
-linkage. The lifecycle sentinel is the next bounded safe unit: its later runtime
-may run only inside the already-tested bwrap namespace, with a private
-`XDG_RUNTIME_DIR` and socket, an external deadline, PID/socket identity checks,
-and post-exit cleanup. Do not run it yet. It still proves no client protocol,
-compositor behavior, CPU composition, or visual ordering. Task 11 remains
-incomplete and task 12 remains blocked.
+The build-only fixture proves scanner/protocol generation and public server
+linkage. The protocol server has also completed one authorized server-only run
+inside the contained launcher with a private `XDG_RUNTIME_DIR` and socket, an
+external deadline, PID/socket identity checks, and post-exit cleanup. This does
+not prove client protocol, compositor behavior, CPU composition, or visual
+ordering; those remain outside this server-only exercise.
 
 ## Contained launcher scaffold
 
-`run-contained-server.sh` is a fail-closed launcher scaffold for the lifecycle
-sentinel's future runtime. It is a static, syntax-verified artifact only and
-must not be executed until a separate runtime authorization. It launches
-exactly one command inside a transient user systemd unit whose ExecStart is an
-unprivileged bwrap sandbox. It makes no visual, protocol, compositor, or
-runtime claim, and its only intended first command is the build-only
-`tokyo-wayland-server-lifecycle` sentinel.
+`run-contained-server.sh` is a fail-closed launcher for bounded server-only
+runtime checks. It launches exactly one command inside a transient user systemd
+unit whose ExecStart is an unprivileged bwrap sandbox. It makes no visual,
+compositor, or client-ordering claim. The authorized protocol-server exercise
+used this launcher once; future compositor/client runs require a separate
+runtime gate.
 
 Boundary and checklist (scaffold only, static syntax verification first):
 
@@ -235,15 +233,17 @@ Boundary and checklist (scaffold only, static syntax verification first):
   deadline without secrets, and fails closed when `bwrap`, `systemd-run`, or
   `timeout` is missing or any precondition fails.
 - [x] Static syntax verification only: `bash -n` and `git diff --check` pass.
-- [ ] Runtime execution is not yet authorized; do not run the script, a
-  compositor, a client, a harness, or a service. Task 11 remains incomplete and
-  task 12 remains blocked.
+- [x] Authorized protocol-server-only runtime completed once through the
+  launcher. The server exited at its bounded deadline with the private socket and
+  five globals registered; no compositor, client, harness, or service was run.
+- [ ] A compositor/client visual-ordering exercise remains unauthorized by scope
+  and requires a separately validated runtime gate.
 
-The scaffold proves nothing about compositor behavior, client protocol, visual
-ordering, or liveness until a separately authorized runtime exercise. The
-`NoNewPrivileges=yes` plus unprivileged `--unshare-user` combination and the
-full resource-limit enforcement are unverified together at runtime and remain
-pending that authorization.
+The server-only exercise proves private-socket containment, bounded liveness,
+identity cleanup, and absence of inherited active-desktop/device exposure for
+that process. It proves nothing about compositor behavior, client protocol, or
+visual ordering. The `NoNewPrivileges=yes` plus unprivileged `--unshare-user`
+combination and full resource-limit enforcement were observed for this run.
 
 ## Import from another Qt/QML application
 

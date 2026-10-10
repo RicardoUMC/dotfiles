@@ -44,6 +44,9 @@ Build a standalone, opt-in diagnostic C++/Qt module that can later create a same
      - [x] Treat this as global discovery/registration evidence only; it proves no request handling, CPU composition, or visual ordering.
 12. [ ] Decide whether a bounded background-effect probe is justified; blocked until a separately validated containment path exists. Do not integrate production glass automatically.
 
+## Work-unit evidence
+- Protocol-server implementation commit: `ce99210` (`feat(diagnostics): add contained Wayland protocol server`). Native review was approved and acknowledged before runtime work; findings were informational/non-blocking.
+
 ## Stage 1 evidence
 - CMake configure/build passed for the standalone module and harness.
 - Qt6 `qmllint` passed for the harness; the offscreen harness started without diagnostics and was stopped by the bounded timeout (`124`), which is expected for this smoke test.

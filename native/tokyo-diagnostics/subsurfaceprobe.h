@@ -25,8 +25,12 @@ class SubsurfaceProbe : public QObject
     Q_PROPERTY(QString ordering READ ordering NOTIFY stateChanged)
     Q_PROPERTY(uint surfaceId READ surfaceId NOTIFY stateChanged)
     Q_PROPERTY(uint subsurfaceId READ subsurfaceId NOTIFY stateChanged)
+    Q_PROPERTY(uint secondarySurfaceId READ secondarySurfaceId NOTIFY stateChanged)
+    Q_PROPERTY(uint secondarySubsurfaceId READ secondarySubsurfaceId NOTIFY stateChanged)
     Q_PROPERTY(uint lastDestroyedSurfaceId READ lastDestroyedSurfaceId NOTIFY stateChanged)
     Q_PROPERTY(uint lastDestroyedSubsurfaceId READ lastDestroyedSubsurfaceId NOTIFY stateChanged)
+    Q_PROPERTY(uint lastDestroyedSecondarySurfaceId READ lastDestroyedSecondarySurfaceId NOTIFY stateChanged)
+    Q_PROPERTY(uint lastDestroyedSecondarySubsurfaceId READ lastDestroyedSecondarySubsurfaceId NOTIFY stateChanged)
 
 public:
     explicit SubsurfaceProbe(QObject *parent = nullptr);
@@ -46,8 +50,12 @@ public:
     QString ordering() const;
     uint surfaceId() const;
     uint subsurfaceId() const;
+    uint secondarySurfaceId() const;
+    uint secondarySubsurfaceId() const;
     uint lastDestroyedSurfaceId() const;
     uint lastDestroyedSubsurfaceId() const;
+    uint lastDestroyedSecondarySurfaceId() const;
+    uint lastDestroyedSecondarySubsurfaceId() const;
 
 signals:
     void enabledChanged();

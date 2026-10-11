@@ -9,11 +9,15 @@
 # it MUST NOT be executed until a separate runtime authorization exists.
 #
 # Usage:
-#   run-contained-server.sh [--deadline-ms N] [--socket NAME] -- COMMAND [ARG...]
+#   run-contained-server.sh [--deadline-ms N] [--socket NAME]
+#                           [--ro-bind PATH] -- COMMAND [ARG...]
 #
 #   --deadline-ms N   bounded deadline, 100..60000 ms (default 10000)
 #   --socket NAME     abstract socket name, [A-Za-z0-9_-], <= 107 bytes
 #                     (default: deterministic unique name per invocation)
+#   --ro-bind PATH    additional absolute-path regular file bound read-only at
+#                     its own path inside the sandbox (repeatable). Use only
+#                     for a small allowlisted set of build artifacts.
 #   --                separates launcher options from the command (required)
 #
 # The command must be an absolute path to an executable file. It is passed
@@ -47,7 +51,7 @@ die() {
 }
 
 usage() {
-    printf 'usage: %s [--deadline-ms N] [--socket NAME] -- COMMAND [ARG...]\n' \
+    printf 'usage: %s [--deadline-ms N] [--socket NAME] [--ro-bind PATH] -- COMMAND [ARG...]\n' \
         "$0" >&2
 }
 
@@ -87,6 +91,7 @@ deadline_ms=$DEFAULT_DEADLINE_MS
 socket_name=""
 socket_provided=0
 separator_seen=0
+ro_bind_paths=()
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -115,6 +120,15 @@ while [ "$#" -gt 0 ]; do
         --socket=*)
             socket_name="${1#--socket=}"
             socket_provided=1
+            shift
+            ;;
+        --ro-bind)
+            [ "$#" -ge 2 ] || { usage; die "missing value for --ro-bind"; }
+            ro_bind_paths+=("$2")
+            shift 2
+            ;;
+        --ro-bind=*)
+            ro_bind_paths+=("${1#--ro-bind=}")
             shift
             ;;
         -*)
@@ -147,6 +161,22 @@ case "$command_path" in
 esac
 [ -f "$command_path" ] || die "command is not a regular file: $command_path"
 [ -x "$command_path" ] || die "command is not executable: $command_path"
+
+# ---- additional read-only binds (allowlisted build artifacts) -----------------
+# Each --ro-bind path must be an absolute path to an existing, readable regular
+# file. A directory or special file fails closed rather than being silently
+# mounted into the sandbox. Each is bound read-only at its own absolute path so
+# the command (or its dynamic loader) can open it verbatim.
+extra_ro_binds=()
+for path in "${ro_bind_paths[@]}"; do
+    case "$path" in
+        /*) : ;;
+        *) usage; die "--ro-bind must be an absolute path: $path" ;;
+    esac
+    [ -f "$path" ] || die "--ro-bind is not a regular file: $path"
+    [ -r "$path" ] || die "--ro-bind is not readable: $path"
+    extra_ro_binds+=(--ro-bind "$path" "$path")
+done
 
 # ---- private runtime directory (identity-based cleanup, never bare PIDs) -----
 runtime_dir=""
@@ -224,6 +254,7 @@ bwrap_args=(
     --bind "$runtime_dir" /run/tokyo-runtime
     --dir /home/tokyo
     --ro-bind "$command_path" "$command_path"
+    "${extra_ro_binds[@]}"
     --setenv PATH /usr/bin:/bin
     --setenv HOME /home/tokyo
     --setenv XDG_RUNTIME_DIR /run/tokyo-runtime

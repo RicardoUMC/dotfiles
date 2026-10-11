@@ -10,6 +10,7 @@ set(CMAKE_AUTOUIC ON)
 find_package(Qt6 6.2 REQUIRED COMPONENTS Core Gui Qml Quick WaylandClient WaylandClientPrivate)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(WAYLAND_SERVER REQUIRED IMPORTED_TARGET wayland-server)
+pkg_check_modules(WAYLAND_CLIENT REQUIRED IMPORTED_TARGET wayland-client)
 pkg_check_modules(WAYLAND_PROTOCOLS REQUIRED wayland-protocols)
 pkg_get_variable(WAYLAND_PROTOCOLS_DATADIR wayland-protocols pkgdatadir)
 
@@ -141,6 +142,44 @@ target_include_directories(tokyo-wayland-protocol-server PRIVATE
     "${TOKYO_WAYLAND_FIXTURE_GENERATED_DIR}"
 )
 target_link_libraries(tokyo-wayland-protocol-server PRIVATE
+    PkgConfig::WAYLAND_SERVER
+)
+
+# Qt-independent, CPU-only disposable Wayland compositor. It creates one
+# private server socket and registers the five required globals (wl_compositor,
+# wl_shm via libwayland's built-in shm implementation, wl_subcompositor,
+# wl_output, and xdg_wm_base via the generated stable xdg-shell server API),
+# implements enough request semantics for a Qt Wayland SHM client, composites a
+# bounded software framebuffer for ordering evidence, and tears down
+# deterministically after a bounded deadline or the last client disconnect. It
+# opens no DRM/udmabuf/GPU devices or seat and never touches the active desktop
+# or an inherited WAYLAND_DISPLAY. It must not be run outside an authorized
+# disposable containment boundary.
+add_executable(tokyo-wayland-compositor
+    waylandcompositor.cpp
+    "${TOKYO_XDG_SHELL_SERVER_HEADER}"
+    "${TOKYO_XDG_SHELL_PRIVATE_CODE}"
+)
+
+# Qt-independent protocol-level negative regression client. It deliberately
+# requests invalid self/ancestor subsurface parents and must observe the
+# compositor's protocol error rather than allowing a cycle into the graph.
+add_executable(tokyo-wayland-cycle-probe
+    waylandcycleprobe.cpp
+)
+target_compile_features(tokyo-wayland-cycle-probe PRIVATE cxx_std_17)
+target_link_libraries(tokyo-wayland-cycle-probe PRIVATE
+    PkgConfig::WAYLAND_CLIENT
+)
+set_source_files_properties(
+    "${TOKYO_XDG_SHELL_SERVER_HEADER}"
+    PROPERTIES HEADER_FILE_ONLY TRUE
+)
+target_compile_features(tokyo-wayland-compositor PRIVATE cxx_std_17)
+target_include_directories(tokyo-wayland-compositor PRIVATE
+    "${TOKYO_WAYLAND_FIXTURE_GENERATED_DIR}"
+)
+target_link_libraries(tokyo-wayland-compositor PRIVATE
     PkgConfig::WAYLAND_SERVER
 )
 

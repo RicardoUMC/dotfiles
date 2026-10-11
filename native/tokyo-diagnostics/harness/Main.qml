@@ -31,18 +31,30 @@ Window {
             return
         if (root.lifecyclePhase === "waiting-initial") {
             root.lifecyclePhase = "initial-active"
-            root.lifecycleStatus = "initial active; child IDs surface=" + probe.surfaceId
+            root.lifecycleStatus = "initial active; primary surface=" + probe.surfaceId
                 + " subsurface=" + probe.subsurfaceId
-            console.info("[subsurface-lifecycle] initial active: wl_surface=" + probe.surfaceId
-                + " wl_subsurface=" + probe.subsurfaceId)
+                + " secondary surface=" + probe.secondarySurfaceId
+                + " subsurface=" + probe.secondarySubsurfaceId
+                + " ordering=" + probe.ordering
+            console.info("[subsurface-lifecycle] initial active: primary wl_surface=" + probe.surfaceId
+                + " wl_subsurface=" + probe.subsurfaceId
+                + " secondary wl_surface=" + probe.secondarySurfaceId
+                + " wl_subsurface=" + probe.secondarySubsurfaceId
+                + " ordering=" + probe.ordering)
             readinessTimer.stop()
             lifecycleUpdateTimer.start()
         } else if (root.lifecyclePhase === "waiting-replacement") {
             root.lifecyclePhase = "replacement-active"
-            root.lifecycleStatus = "replacement active; child IDs surface=" + probe.surfaceId
+            root.lifecycleStatus = "replacement active; primary surface=" + probe.surfaceId
                 + " subsurface=" + probe.subsurfaceId
-            console.info("[subsurface-lifecycle] replacement active: wl_surface=" + probe.surfaceId
-                + " wl_subsurface=" + probe.subsurfaceId)
+                + " secondary surface=" + probe.secondarySurfaceId
+                + " subsurface=" + probe.secondarySubsurfaceId
+                + " ordering=" + probe.ordering
+            console.info("[subsurface-lifecycle] replacement active: primary wl_surface=" + probe.surfaceId
+                + " wl_subsurface=" + probe.subsurfaceId
+                + " secondary wl_surface=" + probe.secondarySurfaceId
+                + " wl_subsurface=" + probe.secondarySubsurfaceId
+                + " ordering=" + probe.ordering)
             replacementTimeoutTimer.stop()
             lifecycleDisableTimer.start()
         }
@@ -102,8 +114,9 @@ Window {
         onTriggered: {
             root.lifecyclePhase = "final-disable"
             root.lifecycleStatus = "final disable; explicitly tearing down active replacement"
-            console.info("[subsurface-lifecycle] final disable: probe.enabled = false; active IDs surface="
-                + probe.surfaceId + " subsurface=" + probe.subsurfaceId)
+            console.info("[subsurface-lifecycle] final disable: probe.enabled = false; active primary surface="
+                + probe.surfaceId + " subsurface=" + probe.subsurfaceId
+                + " secondary surface=" + probe.secondarySurfaceId + " subsurface=" + probe.secondarySubsurfaceId)
             probe.enabled = false
             lifecycleQuitTimer.start()
         }
@@ -115,12 +128,16 @@ Window {
         repeat: false
         onTriggered: {
             root.lifecyclePhase = "complete"
-            root.lifecycleStatus = "quit; teardown grace period elapsed; active IDs surface="
+            root.lifecycleStatus = "quit; teardown grace period elapsed; active primary surface="
                 + probe.surfaceId + " subsurface=" + probe.subsurfaceId
-            console.info("[subsurface-lifecycle] quit cleanly after teardown grace; active IDs surface="
+                + " secondary surface=" + probe.secondarySurfaceId + " subsurface=" + probe.secondarySubsurfaceId
+            console.info("[subsurface-lifecycle] quit cleanly after teardown grace; active primary surface="
                 + probe.surfaceId + " subsurface=" + probe.subsurfaceId
+                + " secondary surface=" + probe.secondarySurfaceId + " subsurface=" + probe.secondarySubsurfaceId
                 + "; last destroyed surface=" + probe.lastDestroyedSurfaceId
-                + " subsurface=" + probe.lastDestroyedSubsurfaceId)
+                + " subsurface=" + probe.lastDestroyedSubsurfaceId
+                + " secondary surface=" + probe.lastDestroyedSecondarySurfaceId
+                + " secondary subsurface=" + probe.lastDestroyedSecondarySubsurfaceId)
             Qt.quit()
         }
     }
@@ -152,7 +169,9 @@ Window {
         Text { text: "Capabilities: " + bridge.capabilityState; color: "#E7EDF2"; wrapMode: Text.Wrap }
         Text { text: bridge.diagnosticSummary(); color: "#AAB7C4"; wrapMode: Text.Wrap }
         Text { text: "Probe opt-in: " + probe.enabled + "  active: " + probe.active + "  backend: " + probe.backend; color: "#E7EDF2" }
-        Text { text: "Requested order: " + (probe.placeBelow ? "below-parent" : "above-parent"); color: "#E7EDF2" }
+        Text { text: "Requested order: " + (probe.placeBelow ? "primary-below-secondary" : "primary-above-secondary"); color: "#E7EDF2" }
+        Text { text: "Primary: surface=" + probe.surfaceId + " subsurface=" + probe.subsurfaceId
+            + "  Secondary: surface=" + probe.secondarySurfaceId + " subsurface=" + probe.secondarySubsurfaceId; color: "#E7EDF2" }
         Text { text: "Lifecycle: " + root.lifecycleStatus; color: "#8BE9FD"; wrapMode: Text.Wrap }
         Text { text: "Ordering: " + probe.ordering + "\n" + probe.status; color: "#FFB86C"; wrapMode: Text.Wrap }
     }

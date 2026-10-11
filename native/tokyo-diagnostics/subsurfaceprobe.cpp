@@ -109,6 +109,16 @@ uint SubsurfaceProbe::subsurfaceId() const
     return m_adapter->subsurfaceId();
 }
 
+uint SubsurfaceProbe::secondarySurfaceId() const
+{
+    return m_adapter->secondarySurfaceId();
+}
+
+uint SubsurfaceProbe::secondarySubsurfaceId() const
+{
+    return m_adapter->secondarySubsurfaceId();
+}
+
 uint SubsurfaceProbe::lastDestroyedSurfaceId() const
 {
     return m_adapter->lastDestroyedSurfaceId();
@@ -117,6 +127,16 @@ uint SubsurfaceProbe::lastDestroyedSurfaceId() const
 uint SubsurfaceProbe::lastDestroyedSubsurfaceId() const
 {
     return m_adapter->lastDestroyedSubsurfaceId();
+}
+
+uint SubsurfaceProbe::lastDestroyedSecondarySurfaceId() const
+{
+    return m_adapter->lastDestroyedSecondarySurfaceId();
+}
+
+uint SubsurfaceProbe::lastDestroyedSecondarySubsurfaceId() const
+{
+    return m_adapter->lastDestroyedSecondarySubsurfaceId();
 }
 
 void SubsurfaceProbe::setStatus(const QString &status)
@@ -185,8 +205,8 @@ void SubsurfaceProbe::attemptCreate()
     m_retryTimer.stop();
     m_retryCount = 0;
     setStatus(m_placeBelow
-        ? QStringLiteral("active; synthetic magenta child placed below target")
-        : QStringLiteral("active; synthetic magenta child placed above target"));
+        ? QStringLiteral("active; magenta primary placed below cyan secondary")
+        : QStringLiteral("active; magenta primary placed above cyan secondary"));
     emit stateChanged();
 }
 

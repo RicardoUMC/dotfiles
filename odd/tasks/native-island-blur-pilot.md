@@ -20,6 +20,7 @@ Enable the existing `BackgroundEffect.blurRegion` island path for exactly one na
 - `Theme.qml` resets `surface.islandNativeBlurScreen` to `""` on every config apply and accepts only a non-empty string.
 - `Bar.qml` enables all three island regions only for `glass` + native blur + the exact matching `ShellScreen.name`; `IslandBlurRegion.qml` defaults disabled and preserves the fallback geometry.
 - `config.json` enables the bounded pilot for `DP-1`; prototype selectors remain `none`/empty.
+- Implementation commit: `ebe728c` (`feat(quickshell): pilot native island blur on DP-1`).
 
 ## Acceptance criteria
 - `islandNativeBlur` remains false unless explicitly enabled with a non-empty exact screen name.

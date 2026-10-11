@@ -36,8 +36,9 @@ cmake --build native/tokyo-diagnostics/build
 The build produces `tokyo-diagnostics-harness`, the `Tokyo.Diagnostics` QML
 module target, `tokyo-wayland-server-api-sentinel`,
 `tokyo-wayland-server-lifecycle`, the Qt-independent
-`tokyo-wayland-fixture-core`, and the Qt-independent
-`tokyo-wayland-protocol-server`. The sentinel is a build/link-only shared-library
+`tokyo-wayland-fixture-core`, the Qt-independent
+`tokyo-wayland-protocol-server`, and the Qt-independent
+`tokyo-wayland-compositor`, and `tokyo-wayland-cycle-probe`. The sentinel is a build/link-only shared-library
 target outside the Qt/QML module. The lifecycle target is a Qt-independent
 C++17 executable that creates exactly one validated private socket, advertises
 no protocol globals, and tears down through a bounded timer; it is build-only
@@ -50,8 +51,32 @@ must not be run. The fixture additionally proves that the installed
 `wayland-scanner` and stable `xdg-shell` protocol data generate server code and
 that the public libwayland server interfaces link. The API sentinel and fixture
 are inert and must not be run: they create no socket, display, protocol globals,
-or other runtime side effect. None of these targets provides a compositor,
-client protocol, CPU composition, visual ordering, or runtime containment. The
+or other runtime side effect.
+
+The compositor target (`tokyo-wayland-compositor`) is the first Qt-independent
+unit with real request semantics: it creates exactly one validated private
+socket, registers `wl_compositor`, `wl_shm` (via libwayland's built-in shm
+implementation), `wl_subcompositor`, `wl_output`, and `xdg_wm_base`, and
+handles enough requests for a Qt Wayland SHM client (surface create/commit, shm
+pool/buffer, xdg surface/toplevel configure + ack, subsurface position and
+below/above placement, frame callbacks, and buffer release). It composites each
+committed toplevel scene into a bounded in-memory ARGB framebuffer and reduces
+it to a bounded textual frame record (`TOKYO_FRAME`) carrying a 32-bit pixel
+digest and the ordered subsurface stack. Each created subsurface receives a
+bounded per-process creation index, included in `TOKYO_FRAME` entries alongside
+the per-run resource ID. The driver selects the last frame containing a
+subsurface stack (`sub:`), after placement has taken effect and before teardown.
+A digest difference is CPU framebuffer evidence only; it is not a claim of visual
+ordering on a real display. Ordering is claimed only when normalized stable
+child-index stacks reverse between below and above. The event loop terminates on the bounded
+`--deadline-ms` timer or when the last client disconnects, then destroys
+clients, globals, and the display deterministically. It opens no DRM, udmabuf,
+GPU device, or seat and never touches the active desktop or an inherited
+`WAYLAND_DISPLAY`; it must not be run outside an authorized disposable
+containment boundary. Synchronized-vs-desynchronized subsurface commit
+deferral and popup positioning are intentionally not modeled; every commit is
+applied immediately. None of these targets provides visual-ordering proof or
+runtime containment on its own. The
 module URI is independent of Quickshell's modules.
 QtWaylandClient private headers are used only in `waylandsubsurfaceadapter.cpp`;
 this is an ABI risk and the module must be rebuilt against the exact Qt build it
@@ -232,18 +257,138 @@ Boundary and checklist (scaffold only, static syntax verification first):
   launcher logs the unit name, runtime directory identity, socket name, and
   deadline without secrets, and fails closed when `bwrap`, `systemd-run`, or
   `timeout` is missing or any precondition fails.
+- [x] A repeatable `--ro-bind PATH` option binds an additional absolute-path
+  regular file read-only at its own path inside the sandbox (for a small
+  allowlisted set of build artifacts). Relative, missing, directory, special,
+  or unreadable paths fail closed. The server-only default behavior is
+  unchanged: the command after `--` is still required and passed verbatim.
 - [x] Static syntax verification only: `bash -n` and `git diff --check` pass.
 - [x] Authorized protocol-server-only runtime completed once through the
-  launcher. The server exited at its bounded deadline with the private socket and
-  five globals registered; no compositor, client, harness, or service was run.
-- [ ] A compositor/client visual-ordering exercise remains unauthorized by scope
-  and requires a separately validated runtime gate.
+  launcher.
+- [x] The contained compositor/client ordering exercise and protocol-negative
+  regression cases completed through the separately validated runtime gate.
 
 The server-only exercise proves private-socket containment, bounded liveness,
 identity cleanup, and absence of inherited active-desktop/device exposure for
-that process. It proves nothing about compositor behavior, client protocol, or
+that process. The ordering driver additionally proves contained protocol
+handling, fail-closed exit status, and CPU framebuffer ordering evidence. It
+still proves nothing about live Hyprland rendering, blur, or GPU behavior. It proves nothing about compositor behavior, client protocol, or
 visual ordering. The `NoNewPrivileges=yes` plus unprivileged `--unshare-user`
 combination and full resource-limit enforcement were observed for this run.
+
+## Ordering driver and negative regression checks
+
+`run-contained-ordering.sh` is the bounded, fail-closed driver for the paired
+compositor/client subsurface-ordering exercise and the protocol-level negative
+regressions. The current verification ran it through the existing bwrap and
+transient systemd boundary: both positive cases passed, and the self-parent and
+ancestor-cycle cases each observed nonzero client and compositor exits. This is
+contained protocol/CPU-frame evidence only; blur and live-shell integration
+remain out of scope.
+
+Usage:
+
+```sh
+native/tokyo-diagnostics/run-contained-ordering.sh [--deadline-ms N] [--socket-prefix NAME]
+```
+
+- `--deadline-ms N` — bounded CLIENT deadline in ms (default `8000`, range
+  `100..60000`). The compositor deadline is `N + 8000` clamped to `60000`; the
+  transient unit `RuntimeMaxSec` is the compositor deadline plus a `5000` ms
+  backstop, and an outer `timeout` is that value plus another `5000` ms.
+- `--socket-prefix NAME` — validated `[A-Za-z0-9_-]` prefix of at most 101
+  bytes; cases append `-below`, `-above`, `-self`, and `-cycle`. Default:
+  `tokyo-ordering-<token>`.
+
+Behavior, per case (all four cases use their own private sandbox/unit):
+
+1. One `bwrap --unshare-all --clearenv` sandbox ro-binds `/usr`, the three
+   allowlisted build artifacts (compositor binary, harness binary, and
+   `libtokyo-diagnostics.so` at their absolute paths), and the private runtime
+   directory (rw at `/run/tokyo-runtime`). `/dev` is a private device set, so
+   `/dev/dri` and `/dev/udmabuf` are absent; `--clearenv` plus an explicit
+   private `WAYLAND_DISPLAY` remove inherited display state.
+2. A generated orchestration script inside the sandbox starts the compositor
+   (`--socket <case-socket> --deadline-ms <compositor deadline>`) in the
+   background, waits (bounded) for `TOKYO_WAYLAND_COMPOSITOR_READY`, then runs
+   either the positive harness under `QT_QPA_PLATFORM=wayland`,
+   `TOKYO_DIAGNOSTICS_ENABLE_SUBSURFACE=1`,
+   `TOKYO_DIAGNOSTICS_SUBSURFACE_ORDER=<order>`, `WAYLAND_DEBUG=1`, and
+   `--enable-subsurface-probe --subsurface-order=<order>`, bounded by
+   `timeout --signal=TERM --kill-after=5s` (a process-group bound, never a bare
+   PID). For `self` and `cycle`, it instead runs the installed-libwayland
+   `tokyo-wayland-cycle-probe`; the probe expects a protocol error and exits
+   nonzero, while the compositor also exits nonzero with `reason=protocol-error`.
+3. It waits for the compositor to terminate on client disconnect or protocol
+   rejection, then writes
+   deterministic evidence under the private runtime directory:
+   `<case>/compositor.log`, `<case>/client.log`, `<case>/frames.txt`,
+   `<case>/compositor-exit.txt`, and `<case>/result.txt`.
+
+Exact evidence emitted on stdout (the durable record; the runtime directory is
+removed on exit):
+
+- `CASE below|above|self|cycle`, `STATUS: ok|failed (exit N)`, `CLEANUP: ok|failed`.
+- `RESULT`-prefixed `<case>/result.txt` (`ORDER`, `BOUNDARY`, `CLIENT_EXIT`,
+  `COMPOSITOR_EXIT`, `RESULT`).
+- `COMPOSITOR`-prefixed full `compositor.log` (READY line, `TOKYO_FRAME` lines,
+  `TOKYO_STATE` role/place lines, `TOKYO_WAYLAND_COMPOSITOR_EXIT`). Stack entries
+  retain resource IDs and include stable `child=<creation-index>` values.
+- `CLIENT`-prefixed full `client.log` (`WAYLAND_DEBUG` trace plus the
+  `[subsurface-native] active child pair ... ordering=...` line, or the strict
+  fallback described below).
+- `ORDERING DISTINGUISHABILITY` with the last child-bearing `TOKYO_FRAME` line
+  per case (the last line containing `sub:`), its `digest=0x...`, normalized
+  child-index stack, and separate CPU-digest and ordering verdicts. Both selected
+  frames are required before either comparison is made. The digest verdict says
+  only that CPU framebuffers differ; the ordering verdict requires two normalized
+  stable child-index stacks in reverse order.
+
+Fail-closed conditions (any one fails the driver with a nonzero exit): missing
+or non-executable build artifacts; a visible `/dev/dri` or `/dev/udmabuf` node
+inside the sandbox; the compositor never reaching READY; the client log missing
+both the explicit `active child pair` line and the strict protocol fallback; no
+`TOKYO_FRAME`; either case lacking a last child-bearing frame; or the compositor
+exit reason not being `client-disconnect` for positive cases; negative cases
+require both child statuses to be nonzero, a `TOKYO_CYCLE_PROBE` record, and
+`reason=protocol-error`. The fallback requires at least two
+`wl_subcompositor.get_subsurface` requests and at least two
+`wl_subsurface.place_above`/`place_below` requests in `WAYLAND_DEBUG`. Cleanup
+requires the private socket file
+to be removed and the transient unit to be collected (checked by unit name,
+never a bare PID); the private runtime directory is removed on exit.
+
+The transient unit carries `LimitCORE=1`, `MemoryMax=512M`, `TasksMax=16`,
+`LimitNOFILE=128`, `LimitAS=4096M`, `RuntimeMaxSec`, `KillMode=control-group`,
+and `NoNewPrivileges=yes`. These limits are static, bounded guesses sized for a
+single Qt Quick window plus the compositor; the verifier must confirm they are
+sufficient yet still enforced.
+
+Limitations:
+
+- The compositor guard rejects self-parenting and any ancestor cycle before
+  assigning the subsurface role. The cycle probe independently verifies both
+  guards through the installed Wayland client/server APIs; it does not prove
+  behavior of other compositors.
+- The contained run is regression evidence for protocol handling, process exit
+  status, cleanup, and CPU framebuffer ordering. It does not prove visual
+  ordering on a real display, live Hyprland rendering, blur, `BackgroundEffect`,
+  or GPU behavior.
+- A framebuffer digest difference is CPU framebuffer distinguishability only,
+  not visual ordering on a real display, and not proof from a clean exit alone.
+  The compositor's bounded per-process child-creation index is the stable
+  cross-case identity. The driver ignores per-run resource IDs and placement
+  labels when normalizing stack order, and claims ordering only when the two
+  stable child-index sequences reverse.
+- The compositor advertises `wl_compositor`, `wl_shm`, `wl_subcompositor`,
+  `wl_output`, and `xdg_wm_base` but no `wl_seat`; the ordering probe needs no
+  input, but the verifier must confirm the Qt Wayland client still maps and
+  exposes the window without a seat.
+- The sandbox binds no `/etc/fonts`, so fontconfig/text rendering may be
+  degraded inside the sandbox; subsurface evidence uses solid-color SHM fills
+  and is unaffected.
+- `MemoryMax`/`LimitAS` are the first static guesses for a Qt client and may
+  need adjustment at runtime if the unit is OOM-killed.
 
 ## Import from another Qt/QML application
 

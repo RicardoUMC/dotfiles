@@ -1,0 +1,9 @@
+# Disposable Wayland compositor — task projection
+
+- [x] Define minimal server contract and evidence format
+- [x] Implement CPU-only Wayland compositor
+- [x] Integrate paired Qt client exercise
+- [x] Integrate isolated compositor/client launcher and verify containment, ordering, teardown, and liveness
+- [x] Review and document limitations; verify self-parent and ancestor-cycle rejection through the contained negative regression probe
+
+Feature document: `odd/tasks/disposable-wayland-compositor.md`

@@ -6,7 +6,7 @@ Provide a CPU-only, no-device Wayland compositor for validating `Tokyo.Diagnosti
 ## Constraints
 - Never inherit or connect to the active `WAYLAND_DISPLAY`.
 - Never expose `/dev/dri` or `/dev/udmabuf`.
-- No package installation and no push.
+- No package installation. Push is allowed only after explicit user authorization.
 - Run through the existing fail-closed `bwrap`/`systemd-run` boundary with a private runtime directory, bounded deadline, and identity-based cleanup.
 - Keep blur and `BackgroundEffect` out of scope.
 - Do not claim visual ordering from protocol success or clean process exit alone.

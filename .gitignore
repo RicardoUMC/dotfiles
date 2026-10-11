@@ -10,3 +10,6 @@ openspec/
 
 # CodeGraph local index
 .codegraph/
+
+# Native diagnostics build output
+native/tokyo-diagnostics/build/

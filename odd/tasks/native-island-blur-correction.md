@@ -5,7 +5,7 @@ Improve the opt-in island blur shape after live screenshots showed fluency retur
 
 ## Context
 - Work branch: `feat/global-surface-system`.
-- Current test configuration: `surface.mode="glass"`, `surface.nativeBlur=true`, `surface.islandNativeBlur=true`, and `surface.islandNativeBlurScreen="DP-1"`. This remains an explicit one-screen opt-in for live validation, not a default claim.
+- Current committed configuration: `surface.mode="glass"`, `surface.nativeBlur=true`, `surface.islandNativeBlur=false`, and `surface.islandNativeBlurScreen=""`. The DP-1 validation was a live test only and must not remain enabled by default.
 - The previous DP-1 pilot used dynamically rebuilt one-pixel `Region` scanlines and was rolled back because dashboard expansion/collapse felt slow/stuck and the shape did not track accurately enough.
 - The visible Canvas/MultiEffect island mask and input mask remain authoritative.
 - The right-control-center rounded native blur is independent and must remain intact.
@@ -38,9 +38,9 @@ Improve the opt-in island blur shape after live screenshots showed fluency retur
 - Exploration confirmed current branch `feat/global-surface-system` is ahead of origin by one commit and working config keeps `islandNativeBlur=false` / `islandNativeBlurScreen=""`.
 - The retained opt-in now uses five statically declared `Region` bands per island, with declarative geometry bindings and no generated slices or destroy/recreate loop. The bands add coarse corner coverage while intentionally omitting decorative wraps; the visible Canvas mask and input mask remain authoritative.
 - Static verification passed through `gentle-ai-verify`: Qt 6 `qmllint` for `IslandBlurRegion.qml` and `git diff --check` produced no diagnostics.
-- Ricardo authorized a one-screen opt-in validation. The live test configuration remains `surface.islandNativeBlur=true` and `surface.islandNativeBlurScreen="DP-1"` until the pilot is kept or rolled back deliberately.
+- Ricardo authorized a one-screen opt-in validation. The live test temporarily used `surface.islandNativeBlur=true` and `surface.islandNativeBlurScreen="DP-1"`; native review required restoring the committed safe default.
 - First live screenshot feedback confirmed fluency returned, but the single interior rectangle shape was too narrow.
 - The opt-in path now uses twenty-nine fixed declarative bands derived from `IslandGeometry` instead of one narrow rectangle or dynamic scanlines. The finer bands retain a bounded approximation: decorative wraps remain excluded and the visible Canvas mask remains authoritative.
 - Twenty-nine-band verification passed: JSON parse, Qt 6 `qmllint`, `git diff --check`, soft reload, and log check with no post-reload `ERROR`; screenshot captured at `/tmp/native-blur-twenty-nine-bands-DP-1.png`.
 - User screenshot showed the twenty-nine-band shape still wrong; the likely issue was not just band count, but coordinate mapping through synthetic `Item` geometry inside `Region`. The bands now use direct `Region` `x`/`y`/`width`/`height` bindings, matching the historical scanline coordinate space while retaining fixed no-churn objects.
-- Work-unit commit recorded: `ee982ed` (`feat(quickshell): refine native island blur pilot`). This preserves the current DP-1 pilot state for history; lower edges and visible band homogeneity remain follow-up tuning work.
+- Work-unit commit recorded: `ee982ed` (`feat(quickshell): refine native island blur pilot`). Follow-up correction restores the committed safe default; lower edges and visible band homogeneity remain future opt-in tuning work.

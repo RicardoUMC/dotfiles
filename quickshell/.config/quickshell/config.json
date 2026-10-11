@@ -68,8 +68,8 @@
   "surface": {
     "mode": "glass",
     "nativeBlur": true,
-    "islandNativeBlur": true,
-    "islandNativeBlurScreen": "DP-1",
+    "islandNativeBlur": false,
+    "islandNativeBlurScreen": "",
     "islandGpuPrototypeTarget": "none",
     "islandNativePrototypeTarget": "none",
     "islandNativePrototypeScreen": "",

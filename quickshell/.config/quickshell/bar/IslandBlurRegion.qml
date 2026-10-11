@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import "."
-import "../theme"
 
 // Rectangle-only approximation of one BarSection's visual silhouette. This is
 // deliberately independent from BarSection's Canvas/MultiEffect and hit item:
@@ -11,7 +10,9 @@ Region {
 
     required property BarSection targetItem
     property var generatedRegions: []
-    readonly property bool nativeBlurEnabled: Theme.islandNativeBlur
+    // Injected by Bar.qml so each screen independently opts into the pilot.
+    // The default is fail-closed and preserves the visible fallback.
+    property bool nativeBlurEnabled: false
     property bool disabledRegionsCleared: false
 
     readonly property real targetHeight: Math.max(0, Number(targetItem.targetItem.height || 0))

@@ -46,6 +46,15 @@ PanelWindow {
     BackgroundEffect.blurRegion: Theme.nativeBlur && Theme.surfaceMode === "glass"
         ? barGlassRegion
         : null
+    // The island pilot is independently fail-closed per Bar instance. The
+    // selector is an exact ShellScreen.name match; other bars retain their
+    // readable translucent fallback and do not generate native island regions.
+    readonly property bool islandNativeBlurEnabled: Theme.surfaceMode === "glass"
+        && Theme.nativeBlur
+        && Theme.islandNativeBlur
+        && Theme.islandNativeBlurScreen.length > 0
+        && root.screenName.length > 0
+        && root.screenName === Theme.islandNativeBlurScreen
     GlassEffect {
         id: barGlassRegion
         // Island blur geometry is visual-only and remains separate from the
@@ -53,15 +62,18 @@ PanelWindow {
         Region {
             IslandBlurRegion {
                 targetItem: leftSection
-                intersection: Theme.islandNativeBlur ? Intersection.Combine : Intersection.Subtract
+                nativeBlurEnabled: root.islandNativeBlurEnabled
+                intersection: root.islandNativeBlurEnabled ? Intersection.Combine : Intersection.Subtract
             }
             IslandBlurRegion {
                 targetItem: centerSection
-                intersection: Theme.islandNativeBlur ? Intersection.Combine : Intersection.Subtract
+                nativeBlurEnabled: root.islandNativeBlurEnabled
+                intersection: root.islandNativeBlurEnabled ? Intersection.Combine : Intersection.Subtract
             }
             IslandBlurRegion {
                 targetItem: rightSection
-                intersection: Theme.islandNativeBlur ? Intersection.Combine : Intersection.Subtract
+                nativeBlurEnabled: root.islandNativeBlurEnabled
+                intersection: root.islandNativeBlurEnabled ? Intersection.Combine : Intersection.Subtract
             }
         }
 

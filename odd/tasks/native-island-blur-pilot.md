@@ -13,7 +13,7 @@ Enable the existing `BackgroundEffect.blurRegion` island path for exactly one na
 1. [x] Add exact-screen selector and fail-closed parsing.
 2. [x] Gate island blur regions per Bar instance.
 3. [x] Enable DP-1 pilot and document configuration contract.
-4. [ ] Run lint, reload, capture, rollback, and native review.
+4. [x] Run lint, reload, capture, rollback, and native review.
 
 ## Implementation evidence
 
@@ -21,6 +21,9 @@ Enable the existing `BackgroundEffect.blurRegion` island path for exactly one na
 - `Bar.qml` enables all three island regions only for `glass` + native blur + the exact matching `ShellScreen.name`; `IslandBlurRegion.qml` defaults disabled and preserves the fallback geometry.
 - `config.json` enables the bounded pilot for `DP-1`; prototype selectors remain `none`/empty.
 - Implementation commit: `ebe728c` (`feat(quickshell): pilot native island blur on DP-1`).
+- Verification: JSON parse, Qt 6 `qmllint` (exit 0 with known warnings), `git diff --check`, `hyprctl configerrors`, and soft reload passed; reload reached `Configuration Loaded` with no `ERROR`.
+- Live capture: `DP-1` captured at `/tmp/native-blur-pilot/DP-1.png`; `DP-2` was not connected, so its fallback was not visually captured. No visual blur claim is made from this capture.
+- Native review: lineage `review-d58670c7db512f09` approved and acknowledged against the reduced candidate; one informational warning (`R3-pilot-coverage`) only.
 
 ## Acceptance criteria
 - `islandNativeBlur` remains false unless explicitly enabled with a non-empty exact screen name.

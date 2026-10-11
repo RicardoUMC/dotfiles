@@ -46,6 +46,7 @@ Build a standalone, opt-in diagnostic C++/Qt module that can later create a same
 
 ## Work-unit evidence
 - Protocol-server implementation commit: `ce99210` (`feat(diagnostics): add contained Wayland protocol server`). Native review was approved and acknowledged before runtime work; findings were informational/non-blocking.
+- Background-effect probe commit: `386382c` (`feat(diagnostics): add contained background effect probe`). Contained verification observed capability `1`, copied-region set/commit, clear commit, frames 1–8, client timeout `124` by design, compositor exit `0`, and systemd success; no visual blur claim.
 
 ## Runtime containment evidence
 - After explicit authorization, `tokyo-wayland-protocol-server` was configured/built and run once through `native/tokyo-diagnostics/run-contained-server.sh` with a private socket and 3000 ms launcher deadline.

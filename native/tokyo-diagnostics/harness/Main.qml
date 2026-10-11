@@ -64,6 +64,13 @@ Window {
         id: bridge
     }
 
+    BackgroundEffectProbe {
+        id: backgroundEffect
+        enabled: backgroundEffectOptIn
+        targetWindow: root
+        onStatusChanged: console.info("[background-effect] " + status)
+    }
+
     SubsurfaceProbe {
         id: probe
         enabled: nativeProbeOptIn || nativeProbeLifecycleExercise
@@ -174,5 +181,6 @@ Window {
             + "  Secondary: surface=" + probe.secondarySurfaceId + " subsurface=" + probe.secondarySubsurfaceId; color: "#E7EDF2" }
         Text { text: "Lifecycle: " + root.lifecycleStatus; color: "#8BE9FD"; wrapMode: Text.Wrap }
         Text { text: "Ordering: " + probe.ordering + "\n" + probe.status; color: "#FFB86C"; wrapMode: Text.Wrap }
+        Text { text: "Background effect: " + backgroundEffect.status + "\n" + backgroundEffect.sequencing; color: "#50FA7B"; wrapMode: Text.Wrap }
     }
 }

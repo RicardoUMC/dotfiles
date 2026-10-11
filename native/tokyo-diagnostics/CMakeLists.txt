@@ -35,6 +35,39 @@ set(TOKYO_WAYLAND_FIXTURE_GENERATED_DIR
 set(TOKYO_XDG_SHELL_SERVER_HEADER
     "${TOKYO_WAYLAND_FIXTURE_GENERATED_DIR}/xdg-shell-server-protocol.h"
 )
+set(TOKYO_BACKGROUND_EFFECT_XML
+    "${WAYLAND_PROTOCOLS_DATADIR}/staging/ext-background-effect/ext-background-effect-v1.xml"
+)
+if(NOT EXISTS "${TOKYO_BACKGROUND_EFFECT_XML}")
+    message(FATAL_ERROR "ext-background-effect-v1 protocol XML was not found: ${TOKYO_BACKGROUND_EFFECT_XML}")
+endif()
+set(TOKYO_BACKGROUND_EFFECT_GENERATED_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/wayland-background-effect"
+)
+set(TOKYO_BACKGROUND_EFFECT_CLIENT_HEADER
+    "${TOKYO_BACKGROUND_EFFECT_GENERATED_DIR}/ext-background-effect-v1-client-protocol.h"
+)
+set(TOKYO_BACKGROUND_EFFECT_SERVER_HEADER
+    "${TOKYO_BACKGROUND_EFFECT_GENERATED_DIR}/ext-background-effect-v1-server-protocol.h"
+)
+set(TOKYO_BACKGROUND_EFFECT_PRIVATE_CODE
+    "${TOKYO_BACKGROUND_EFFECT_GENERATED_DIR}/ext-background-effect-v1-protocol.c"
+)
+add_custom_command(
+    OUTPUT
+        "${TOKYO_BACKGROUND_EFFECT_CLIENT_HEADER}"
+        "${TOKYO_BACKGROUND_EFFECT_SERVER_HEADER}"
+        "${TOKYO_BACKGROUND_EFFECT_PRIVATE_CODE}"
+    COMMAND "${CMAKE_COMMAND}" -E make_directory "${TOKYO_BACKGROUND_EFFECT_GENERATED_DIR}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" client-header
+        "${TOKYO_BACKGROUND_EFFECT_XML}" "${TOKYO_BACKGROUND_EFFECT_CLIENT_HEADER}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" server-header
+        "${TOKYO_BACKGROUND_EFFECT_XML}" "${TOKYO_BACKGROUND_EFFECT_SERVER_HEADER}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" private-code
+        "${TOKYO_BACKGROUND_EFFECT_XML}" "${TOKYO_BACKGROUND_EFFECT_PRIVATE_CODE}"
+    DEPENDS "${TOKYO_BACKGROUND_EFFECT_XML}"
+    VERBATIM
+)
 set(TOKYO_XDG_SHELL_PRIVATE_CODE
     "${TOKYO_WAYLAND_FIXTURE_GENERATED_DIR}/xdg-shell-protocol.c"
 )
@@ -67,6 +100,10 @@ qt_add_qml_module(tokyo-diagnostics
         subsurfaceprobe.cpp
         waylandsubsurfaceadapter.h
         waylandsubsurfaceadapter.cpp
+        backgroundeffectprobe.h
+        backgroundeffectprobe.cpp
+        "${TOKYO_BACKGROUND_EFFECT_CLIENT_HEADER}"
+        "${TOKYO_BACKGROUND_EFFECT_PRIVATE_CODE}"
 )
 target_link_libraries(tokyo-diagnostics PUBLIC
     Qt6::Core
@@ -77,6 +114,13 @@ target_link_libraries(tokyo-diagnostics PUBLIC
     Qt6::WaylandClientPrivate
 )
 
+set_source_files_properties(
+    "${TOKYO_BACKGROUND_EFFECT_CLIENT_HEADER}"
+    PROPERTIES HEADER_FILE_ONLY TRUE
+)
+target_include_directories(tokyo-diagnostics PRIVATE
+    "${TOKYO_BACKGROUND_EFFECT_GENERATED_DIR}"
+)
 target_compile_definitions(tokyo-diagnostics PRIVATE
     TOKYO_DIAGNOSTICS_VERSION="${PROJECT_VERSION}"
 )
@@ -159,6 +203,8 @@ add_executable(tokyo-wayland-compositor
     waylandcompositor.cpp
     "${TOKYO_XDG_SHELL_SERVER_HEADER}"
     "${TOKYO_XDG_SHELL_PRIVATE_CODE}"
+    "${TOKYO_BACKGROUND_EFFECT_SERVER_HEADER}"
+    "${TOKYO_BACKGROUND_EFFECT_PRIVATE_CODE}"
 )
 
 # Qt-independent protocol-level negative regression client. It deliberately
@@ -173,7 +219,11 @@ target_link_libraries(tokyo-wayland-cycle-probe PRIVATE
 )
 set_source_files_properties(
     "${TOKYO_XDG_SHELL_SERVER_HEADER}"
+    "${TOKYO_BACKGROUND_EFFECT_SERVER_HEADER}"
     PROPERTIES HEADER_FILE_ONLY TRUE
+)
+target_include_directories(tokyo-wayland-compositor PRIVATE
+    "${TOKYO_BACKGROUND_EFFECT_GENERATED_DIR}"
 )
 target_compile_features(tokyo-wayland-compositor PRIVATE cxx_std_17)
 target_include_directories(tokyo-wayland-compositor PRIVATE

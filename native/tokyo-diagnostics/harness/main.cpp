@@ -22,6 +22,8 @@ int main(int argc, char *argv[])
     const bool nativeProbeOptIn = affirmativeEnvironmentValue(qgetenv("TOKYO_DIAGNOSTICS_ENABLE_SUBSURFACE"))
         || arguments.contains(QStringLiteral("--enable-subsurface-probe"));
     const bool lifecycleExercise = arguments.contains(QStringLiteral("--exercise-subsurface-lifecycle"));
+    const bool backgroundEffectOptIn = affirmativeEnvironmentValue(qgetenv("TOKYO_DIAGNOSTICS_ENABLE_BACKGROUND_EFFECT"))
+        || arguments.contains(QStringLiteral("--enable-background-effect-probe"));
     bool placeBelow = true;
     const QString requestedOrder = qEnvironmentVariable("TOKYO_DIAGNOSTICS_SUBSURFACE_ORDER").trimmed().toLower();
     if (requestedOrder == QStringLiteral("above"))
@@ -37,6 +39,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("nativeProbeOptIn"), nativeProbeOptIn);
     engine.rootContext()->setContextProperty(QStringLiteral("nativeProbeLifecycleExercise"), lifecycleExercise);
     engine.rootContext()->setContextProperty(QStringLiteral("nativeProbePlaceBelow"), placeBelow);
+    engine.rootContext()->setContextProperty(QStringLiteral("backgroundEffectOptIn"), backgroundEffectOptIn);
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
                      &app, [] { QCoreApplication::exit(EXIT_FAILURE); },

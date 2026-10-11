@@ -22,11 +22,13 @@
 #include <wayland-server-core.h>
 #include <wayland-server-protocol.h>
 #include <xdg-shell-server-protocol.h>
+#include <ext-background-effect-v1-server-protocol.h>
 
 #include <unistd.h>
 #include <time.h>
 
 #include <algorithm>
+#include <array>
 #include <cerrno>
 #include <cctype>
 #include <cstddef>
@@ -58,9 +60,13 @@ constexpr int kOutputHeight = 600;
 
 struct Compositor;
 struct Surface;
+struct RegionData {
+    std::vector<std::array<int32_t, 4>> rectangles;
+};
 struct Subsurface;
 struct XdgSurface;
 struct XdgToplevel;
+struct BackgroundEffect;
 
 struct Compositor {
     wl_display* display = nullptr;
@@ -99,6 +105,10 @@ struct Surface {
     struct wl_listener current_buffer_listener;
     bool has_current_buffer = false;
 
+    BackgroundEffect* background_effect = nullptr;
+    std::vector<std::array<int32_t, 4>> pending_background_rectangles;
+    std::vector<std::array<int32_t, 4>> current_background_rectangles;
+
     std::vector<wl_resource*> pending_frames;
     std::vector<wl_resource*> committed_frames;
 
@@ -133,6 +143,11 @@ struct XdgSurface {
 struct XdgToplevel {
     wl_resource* resource = nullptr;
     XdgSurface* xdg = nullptr;
+};
+
+struct BackgroundEffect {
+    wl_resource* resource = nullptr;
+    Surface* surface = nullptr;
 };
 
 Surface* get_surface(wl_resource* resource)
@@ -715,6 +730,80 @@ void surface_set_opaque_region(struct wl_client*, struct wl_resource*, struct wl
 {
 }
 
+void background_effect_destroyed(struct wl_resource* resource)
+{
+    auto* effect = static_cast<BackgroundEffect*>(wl_resource_get_user_data(resource));
+    if (!effect)
+        return;
+    if (effect->surface && effect->surface->background_effect == effect) {
+        effect->surface->background_effect = nullptr;
+        effect->surface->pending_background_rectangles.clear();
+        effect->surface->current_background_rectangles.clear();
+    }
+    delete effect;
+}
+
+void background_effect_destroy(struct wl_client*, struct wl_resource* resource)
+{
+    wl_resource_destroy(resource);
+}
+
+void background_effect_set_blur_region(struct wl_client*, struct wl_resource* resource,
+                                       struct wl_resource* region)
+{
+    auto* effect = static_cast<BackgroundEffect*>(wl_resource_get_user_data(resource));
+    if (!effect || !effect->surface)
+        return;
+    effect->surface->pending_background_rectangles.clear();
+    if (region) {
+        auto *data = static_cast<RegionData *>(wl_resource_get_user_data(region));
+        if (data)
+            effect->surface->pending_background_rectangles = data->rectangles;
+    }
+    emit(std::string("TOKYO_BACKGROUND_EFFECT event=set-region surface=") +
+         std::to_string(wl_resource_get_id(effect->surface->resource)) +
+         " region=" + (region ? "copied" : "none") +
+         " rects=" + std::to_string(effect->surface->pending_background_rectangles.size()));
+}
+
+const struct ext_background_effect_surface_v1_interface background_effect_impl = {
+    background_effect_destroy,
+    background_effect_set_blur_region,
+};
+
+void background_effect_manager_destroy(struct wl_client*, struct wl_resource* resource)
+{
+    wl_resource_destroy(resource);
+}
+
+void background_effect_manager_get(struct wl_client* client, struct wl_resource* resource,
+                                   uint32_t id, struct wl_resource* surface_resource)
+{
+    auto* surface = get_surface(surface_resource);
+    if (!surface || surface->background_effect) {
+        wl_resource_post_error(resource, EXT_BACKGROUND_EFFECT_MANAGER_V1_ERROR_BACKGROUND_EFFECT_EXISTS,
+                               "surface already has a background effect");
+        return;
+    }
+    auto* effect = new BackgroundEffect;
+    effect->surface = surface;
+    effect->resource = create_resource(client, &ext_background_effect_surface_v1_interface,
+                                       &background_effect_impl, 1, id, effect,
+                                       background_effect_destroyed);
+    if (!effect->resource) {
+        delete effect;
+        return;
+    }
+    surface->background_effect = effect;
+    emit(std::string("TOKYO_BACKGROUND_EFFECT event=created surface=") +
+         std::to_string(wl_resource_get_id(surface_resource)));
+}
+
+const struct ext_background_effect_manager_v1_interface background_effect_manager_impl = {
+    background_effect_manager_destroy,
+    background_effect_manager_get,
+};
+
 void surface_set_input_region(struct wl_client*, struct wl_resource*, struct wl_resource*)
 {
 }
@@ -746,6 +835,14 @@ void surface_commit(struct wl_client*, struct wl_resource* resource)
         surface->has_pending_buffer = false;
         surface_set_current_buffer(surface, new_buffer);
         surface->has_current_buffer = (new_buffer != nullptr);
+    }
+
+    if (surface->background_effect) {
+        surface->current_background_rectangles = surface->pending_background_rectangles;
+        emit(std::string("TOKYO_BACKGROUND_EFFECT event=commit surface=") +
+             std::to_string(wl_resource_get_id(resource)) +
+             " region=" + (surface->current_background_rectangles.empty() ? "none" : "copied") +
+             " rects=" + std::to_string(surface->current_background_rectangles.size()));
     }
 
     // Move frame callbacks into the committed set.
@@ -820,17 +917,34 @@ const struct wl_surface_interface surface_impl = {
 
 // ---- wl_region ------------------------------------------------------------
 
+void region_resource_destroyed(struct wl_resource* resource)
+{
+    delete static_cast<RegionData *>(wl_resource_get_user_data(resource));
+}
+
 void region_destroy(struct wl_client*, struct wl_resource* resource)
 {
     wl_resource_destroy(resource);
 }
 
-void region_add(struct wl_client*, struct wl_resource*, int32_t, int32_t, int32_t, int32_t)
+void region_add(struct wl_client*, struct wl_resource* resource,
+                int32_t x, int32_t y, int32_t width, int32_t height)
 {
+    auto *data = static_cast<RegionData *>(wl_resource_get_user_data(resource));
+    if (data)
+        data->rectangles.push_back({x, y, width, height});
 }
 
-void region_subtract(struct wl_client*, struct wl_resource*, int32_t, int32_t, int32_t, int32_t)
+void region_subtract(struct wl_client*, struct wl_resource* resource,
+                     int32_t x, int32_t y, int32_t width, int32_t height)
 {
+    auto *data = static_cast<RegionData *>(wl_resource_get_user_data(resource));
+    if (!data)
+        return;
+    data->rectangles.erase(std::remove_if(data->rectangles.begin(), data->rectangles.end(),
+        [=](const auto &rect) {
+            return rect[0] == x && rect[1] == y && rect[2] == width && rect[3] == height;
+        }), data->rectangles.end());
 }
 
 const struct wl_region_interface region_impl = {
@@ -854,8 +968,10 @@ void compositor_create_surface(struct wl_client* client, struct wl_resource* res
 
 void compositor_create_region(struct wl_client* client, struct wl_resource* resource, uint32_t id)
 {
-    create_resource(client, &wl_region_interface, &region_impl, wl_resource_get_version(resource),
-                    id, nullptr, nullptr);
+    auto *data = new RegionData;
+    if (!create_resource(client, &wl_region_interface, &region_impl, wl_resource_get_version(resource),
+                         id, data, region_resource_destroyed))
+        delete data;
 }
 
 void compositor_release(struct wl_client*, struct wl_resource*)
@@ -1323,6 +1439,18 @@ void bind_xdg_wm_base(struct wl_client* client, void*, uint32_t version, uint32_
                     static_cast<int>(version), id, nullptr, nullptr);
 }
 
+void bind_background_effect_manager(struct wl_client* client, void*, uint32_t version, uint32_t id)
+{
+    auto* resource = create_resource(client, &ext_background_effect_manager_v1_interface,
+                                     &background_effect_manager_impl,
+                                     static_cast<int>(version), id, nullptr, nullptr);
+    if (resource)
+        // Advertise protocol capability for request sequencing only. This fixture
+        // performs no blur or GPU work; the bit is not visual evidence.
+        ext_background_effect_manager_v1_send_capabilities(
+            resource, EXT_BACKGROUND_EFFECT_MANAGER_V1_CAPABILITY_BLUR);
+}
+
 // ---- Bounded event loop ---------------------------------------------------
 
 int timer_callback(void* data)
@@ -1388,7 +1516,7 @@ int main(int argc, char** argv)
     compositor.display = display;
     g_compositor = &compositor;
 
-    struct wl_global* globals[4] = {};
+    struct wl_global* globals[5] = {};
     std::size_t global_count = 0;
     auto register_global = [&](const struct wl_interface* interface,
                                int version,
@@ -1405,7 +1533,8 @@ int main(int argc, char** argv)
         register_global(&wl_compositor_interface, kCompositorVersion, bind_compositor) &&
         register_global(&wl_subcompositor_interface, kSubcompositorVersion, bind_subcompositor) &&
         register_global(&wl_output_interface, kOutputVersion, bind_output) &&
-        register_global(&xdg_wm_base_interface, kXdgWmBaseVersion, bind_xdg_wm_base);
+        register_global(&xdg_wm_base_interface, kXdgWmBaseVersion, bind_xdg_wm_base) &&
+        register_global(&ext_background_effect_manager_v1_interface, 1, bind_background_effect_manager);
 
     if (!registered) {
         std::cerr << "wl_global_create failed\n";

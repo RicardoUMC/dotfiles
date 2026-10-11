@@ -5,7 +5,11 @@ Quickshell and never discovers or attaches to Quickshell. `SubsurfaceProbe` can 
 one bounded, synthetic-color Wayland child surface under the harness's own window.
 It requests below-parent ordering by default; an explicit above-parent selector is
 available only for comparison. Both variants use an empty input region. It does not implement blur,
-screen capture, input routing, or live-shell integration.
+screen capture, input routing, or live-shell integration. `BackgroundEffectProbe` is a
+separate, disabled-by-default protocol probe: with explicit opt-in it binds the
+installed `ext-background-effect-v1`, sets and clears one bounded region, and
+commits each state. It reports protocol request/commit evidence only; it never
+claims visual blur.
 
 ## Dependencies
 
@@ -38,7 +42,8 @@ module target, `tokyo-wayland-server-api-sentinel`,
 `tokyo-wayland-server-lifecycle`, the Qt-independent
 `tokyo-wayland-fixture-core`, the Qt-independent
 `tokyo-wayland-protocol-server`, and the Qt-independent
-`tokyo-wayland-compositor`, and `tokyo-wayland-cycle-probe`. The sentinel is a build/link-only shared-library
+`tokyo-wayland-compositor`, and `tokyo-wayland-cycle-probe`, plus the opt-in `BackgroundEffectProbe` protocol
+path. The sentinel is a build/link-only shared-library
 target outside the Qt/QML module. The lifecycle target is a Qt-independent
 C++17 executable that creates exactly one validated private socket, advertises
 no protocol globals, and tears down through a bounded timer; it is build-only
@@ -101,7 +106,21 @@ insufficient), an explicit deadline,
 and identity-based cleanup (pidfd or unique systemd unit/cgroup identity, never
 bare PIDs).
 
-The requested ordering defaults to below-parent. Always leave
+The requested ordering defaults to below-parent. Background effect probing is
+opt-in only (`TOKYO_DIAGNOSTICS_ENABLE_BACKGROUND_EFFECT=1` or
+`--enable-background-effect-probe`) and must use the contained launcher:
+
+```sh
+native/tokyo-diagnostics/run-contained-background-effect.sh --deadline-ms 8000
+```
+
+The launcher preserves the no-DRM/udmabuf, cleared-environment, private-socket,
+bounded-deadline, and identity-cleanup boundary. If the protocol global is absent,
+the client fails closed. The disposable compositor advertises the protocol with
+the blur capability bit for request sequencing only, accepts region set/clear requests, and logs their surface
+commit sequencing; the fixture copies region rectangles before the client destroys
+its wl_region. This is an ABI/request probe only: it does not provide GPU
+blur, visual capture, or evidence that a real compositor applies an effect. Always leave
 `TOKYO_DIAGNOSTICS_ENABLE_SUBSURFACE` unset for the disabled baseline; its value
 must be affirmative (`1`, `true`, `yes`, or `on`) to enable the probe.
 
@@ -358,8 +377,8 @@ requires the private socket file
 to be removed and the transient unit to be collected (checked by unit name,
 never a bare PID); the private runtime directory is removed on exit.
 
-The transient unit carries `LimitCORE=1`, `MemoryMax=512M`, `TasksMax=16`,
-`LimitNOFILE=128`, `LimitAS=4096M`, `RuntimeMaxSec`, `KillMode=control-group`,
+The transient unit carries `LimitCORE=1`, `MemoryMax=256M`, `TasksMax=32`,
+`LimitNOFILE=256`, `LimitAS=512M`, `RuntimeMaxSec`, `KillMode=control-group`,
 and `NoNewPrivileges=yes`. These limits are static, bounded guesses sized for a
 single Qt Quick window plus the compositor; the verifier must confirm they are
 sufficient yet still enforced.

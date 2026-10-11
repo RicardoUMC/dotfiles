@@ -42,7 +42,7 @@ Build a standalone, opt-in diagnostic C++/Qt module that can later create a same
      - [x] Build/link only against public `wayland-server` APIs plus the generated xdg-shell private code; preserve the existing sentinel, lifecycle, and fixture-core targets.
      - [x] The executable was run only through the contained launcher; no compositor/client/service was launched, no DRM/device was opened, and the inherited `WAYLAND_DISPLAY` was cleared.
      - [x] Runtime evidence confirms private socket/global registration and bounded teardown only; it proves no request handling, CPU composition, or visual ordering.
-12. [ ] Decide whether a bounded background-effect probe is justified; blocked until a separately validated containment path exists. Do not integrate production glass automatically.
+12. [x] Add an isolated, opt-in `ext-background-effect-v1` protocol probe behind the disposable compositor boundary; bounded capability readiness, copied region lifetime, set/clear commits, and contained exit evidence verified. No visual blur claim.
 
 ## Work-unit evidence
 - Protocol-server implementation commit: `ce99210` (`feat(diagnostics): add contained Wayland protocol server`). Native review was approved and acknowledged before runtime work; findings were informational/non-blocking.

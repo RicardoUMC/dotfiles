@@ -423,6 +423,18 @@ Rectangle {
             Text {
                 Layout.fillWidth: true
                 Layout.topMargin: Theme.spacingXs
+                visible: WifiService.scanStatus === "success" || WifiService.scanStatus === "error"
+                text: WifiService.scanStatus === "error"
+                      ? (WifiService.scanErrorMessage || "Scan failed")
+                      : "Networks updated"
+                color: WifiService.scanStatus === "error" ? Colors.red : Colors.green
+                elide: Text.ElideRight
+                font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
+            }
+
+            Text {
+                Layout.fillWidth: true
+                Layout.topMargin: Theme.spacingXs
                 visible: root.visibleNetworks.length === 0
                 text: WifiService.scanning ? "Searching…" : "No networks found"
                 color: Colors.textDim

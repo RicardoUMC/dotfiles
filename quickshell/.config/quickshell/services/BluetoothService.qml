@@ -13,6 +13,16 @@ Item {
     property var availableDevices: []
     property var pairedDevices: []
     property string errorMessage: ""
+    property string actionKind: "" // pair | connect | disconnect | forget
+    property string actionAddress: ""
+    property string actionStatus: "idle" // idle | running | success | error
+    property string actionError: ""
+    property bool refreshQueued: false
+    property bool actionOutputReceived: false
+    property bool actionAwaitingRefresh: false
+    property bool actionRefreshQueued: false
+    property bool actionOutcomeOk: false
+    property string actionOutcomeError: ""
 
     readonly property string refreshScript: String.raw`
 import json
@@ -158,10 +168,46 @@ except Exception as exc:
     }
 
     function refresh() {
-        if (refreshProcess.running)
+        if (refreshProcess.running) {
+            refreshQueued = true
             return
+        }
         refreshProcess.command = ["python3", "-c", refreshScript]
         refreshProcess.running = true
+    }
+
+    function actionSnapshotConfirmed() {
+        if (!actionOutcomeOk || !actionAddress)
+            return actionOutcomeOk
+        const all = (connectedDevices || []).concat(availableDevices || [])
+        let device = null
+        for (const item of all) {
+            if (item && String(item.address || "").toUpperCase() === actionAddress) {
+                device = item
+                break
+            }
+        }
+        if (actionKind === "pair")
+            return !!device && (!!device.paired || !!device.trusted)
+        if (actionKind === "connect")
+            return !!device && !!device.connected
+        if (actionKind === "disconnect")
+            return !device || !device.connected
+        if (actionKind === "forget")
+            return !device
+        return true
+    }
+
+    function finishActionRefresh() {
+        actionAwaitingRefresh = false
+        if (actionOutcomeOk && !actionSnapshotConfirmed()) {
+            actionOutcomeOk = false
+            actionOutcomeError = "Bluetooth state did not refresh"
+        }
+        actionStatus = actionOutcomeOk ? "success" : "error"
+        actionError = actionOutcomeOk ? "" : (actionOutcomeError || "Bluetooth action failed")
+        if (!actionOutcomeOk)
+            errorMessage = actionError
     }
 
     function scan() {
@@ -177,77 +223,129 @@ except Exception as exc:
     }
 
     function connectDevice(address) {
-        if (address)
-            runAction("connect", address)
+        return address ? runAction("connect", address) : false
     }
 
     function disconnectDevice(address) {
-        if (address)
-            runAction("disconnect", address)
+        return address ? runAction("disconnect", address) : false
     }
 
     function pairDevice(address) {
-        if (address)
-            runAction("pair", address)
+        return address ? runAction("pair", address) : false
     }
 
     function forgetDevice(address) {
-        if (address)
-            runAction("forget", address)
+        return address ? runAction("forget", address) : false
     }
 
     function runAction(action, address) {
-        if (actionProcess.running)
-            return
+        if (actionProcess.running || actionStatus === "running")
+            return false
+        actionKind = action
+        actionAddress = String(address || "").toUpperCase()
+        actionStatus = "running"
+        actionError = ""
+        errorMessage = ""
+        actionOutputReceived = false
+        actionAwaitingRefresh = false
+        actionOutcomeOk = false
+        actionOutcomeError = ""
         actionProcess.command = ["python3", "-c", actionScript, action, address || ""]
         actionProcess.running = true
+        return true
+    }
+
+    function finishActionProcess() {
+        if (!actionOutputReceived) {
+            actionOutcomeOk = false
+            actionOutcomeError = "Bluetooth action returned no result"
+        }
+        actionAwaitingRefresh = true
+        actionRefreshQueued = refreshProcess.running
+        refresh()
     }
 
     Process {
         id: refreshProcess
+        property bool outputReceived: false
         stdout: SplitParser {
             onRead: data => {
+                refreshProcess.outputReceived = true
                 try {
-                    root.applyState(JSON.parse(data.trim()))
+                    const payload = JSON.parse(data.trim())
+                    root.applyState(payload)
+                    if (root.actionAwaitingRefresh && payload.errorMessage) {
+                        root.actionOutcomeOk = false
+                        root.actionOutcomeError = payload.errorMessage
+                    }
                 } catch (error) {
                     root.errorMessage = String(error)
+                    if (root.actionAwaitingRefresh) {
+                        root.actionOutcomeOk = false
+                        root.actionOutcomeError = String(error)
+                    }
                 }
-                refreshProcess.running = false
+            }
+        }
+        onStarted: outputReceived = false
+        onExited: {
+            if (!outputReceived && root.actionAwaitingRefresh) {
+                root.actionOutcomeOk = false
+                root.actionOutcomeError = "Bluetooth refresh returned no result"
+            }
+            if (root.actionAwaitingRefresh && root.actionRefreshQueued)
+                root.actionRefreshQueued = false
+            else if (root.actionAwaitingRefresh)
+                root.finishActionRefresh()
+            if (root.refreshQueued) {
+                root.refreshQueued = false
+                root.refresh()
             }
         }
     }
 
     Process {
         id: scanProcess
+        property bool outputReceived: false
         stdout: SplitParser {
             onRead: data => {
+                scanProcess.outputReceived = true
                 try {
                     const payload = JSON.parse(data.trim())
                     root.errorMessage = payload.ok ? "" : (payload.errorMessage || "Bluetooth scan failed")
                 } catch (error) {
                     root.errorMessage = String(error)
                 }
-                root.discovering = false
-                scanProcess.running = false
-                root.refresh()
             }
+        }
+        onStarted: outputReceived = false
+        onExited: {
+            if (!outputReceived)
+                root.errorMessage = "Bluetooth scan returned no result"
+            root.discovering = false
+            root.refresh()
         }
     }
 
     Process {
         id: actionProcess
+        property bool outputReceived: false
         stdout: SplitParser {
             onRead: data => {
+                actionProcess.outputReceived = true
+                root.actionOutputReceived = true
                 try {
                     const payload = JSON.parse(data.trim())
-                    root.errorMessage = payload.ok ? "" : (payload.errorMessage || "Bluetooth action failed")
+                    root.actionOutcomeOk = payload.ok === true
+                    root.actionOutcomeError = root.actionOutcomeOk ? "" : (payload.errorMessage || "Bluetooth action failed")
                 } catch (error) {
-                    root.errorMessage = String(error)
+                    root.actionOutcomeOk = false
+                    root.actionOutcomeError = String(error)
                 }
-                actionProcess.running = false
-                root.refresh()
             }
         }
+        onStarted: outputReceived = false
+        onExited: root.finishActionProcess()
     }
 
     Timer {

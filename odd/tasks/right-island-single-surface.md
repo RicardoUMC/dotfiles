@@ -39,6 +39,9 @@ Give each monitor ONE input-authority surface: the per-screen Bar. The right con
 - [ ] T5 Live behavior matrix on both outputs (Ricardo): same-chip toggle ×N; sibling switch; descendant open (Wi-Fi detail / Audio panel); outside click closes; Escape closes; workspace switch closes; power pill while open replaces root; desktop click pass-through while closed; tiled windows unmoved
 - [ ] T6 Record results here + Engram; note residual deferred items
 
+## Resolved interaction note
+The non-blocking focus/cross-monitor interaction issue caused by `Bar.qml` using `WlrKeyboardFocus.Exclusive` while the RCC was open was fixed in another session. Ricardo confirmed the fix; detailed test conditions are not recorded here. The remaining live behavior matrix below is otherwise unchanged.
+
 ## Implementation notes (writer handoff, verified by parent)
 - One deviation from the literal brief, accepted: `restartPanelReveal()` added to `open()` and to `openSection()`'s closed→open branch, because the removed popup `onVisibleChanged` used to be the only reveal trigger. Without it `panelBody.height` would stay 0.
 - Dead imports (`Quickshell`, `Quickshell.Wayland`) removed from `RightControlCenter.qml` with the PanelWindow; no `rightControlCenterOpen` consumers existed.

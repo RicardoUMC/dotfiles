@@ -27,6 +27,7 @@ Make the validated native island blur apply automatically to every connected scr
 - `Theme.qml` no longer exposes or parses `surface.islandNativeBlurScreen`; `config.json` no longer contains that selector.
 - `AGENTS.md`, `DESIGN.md`, and the correction task describe the global opt-out and the bounded approximation/RCC independence.
 - Verification: JSON validation, Qt6 lint for `Bar.qml`, `Theme.qml`, and `IslandBlurRegion.qml`, and `git diff --check` passed. Soft reload produced `Configuration Loaded` with no subsequent `ERROR`; `/tmp/native-blur-all-screens.png` was captured successfully. Current `hyprctl monitors` reports connected `DP-1` and `DP-2`.
+- Work-unit commit: `063d1ee` (`feat(quickshell): apply island blur to connected screens`). Native review lineage `review-39f4a914e5199815` approved and acknowledged with one informational verification warning.
 
 ## Non-goals
 - Do not change Bar screen selection (`bar.screens`).

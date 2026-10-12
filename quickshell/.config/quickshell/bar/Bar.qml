@@ -46,6 +46,15 @@ PanelWindow {
     BackgroundEffect.blurRegion: Theme.nativeBlur && Theme.surfaceMode === "glass"
         ? barGlassRegion
         : null
+    // The island pilot is independently fail-closed per Bar instance. The
+    // selector is an exact ShellScreen.name match; other bars retain their
+    // readable translucent fallback and do not generate native island regions.
+    readonly property bool islandNativeBlurEnabled: Theme.surfaceMode === "glass"
+        && Theme.nativeBlur
+        && Theme.islandNativeBlur
+        && Theme.islandNativeBlurScreen.length > 0
+        && root.screenName.length > 0
+        && root.screenName === Theme.islandNativeBlurScreen
     GlassEffect {
         id: barGlassRegion
         // Island blur geometry is visual-only and remains separate from the
@@ -53,15 +62,18 @@ PanelWindow {
         Region {
             IslandBlurRegion {
                 targetItem: leftSection
-                intersection: Theme.islandNativeBlur ? Intersection.Combine : Intersection.Subtract
+                nativeBlurEnabled: root.islandNativeBlurEnabled
+                intersection: root.islandNativeBlurEnabled ? Intersection.Combine : Intersection.Subtract
             }
             IslandBlurRegion {
                 targetItem: centerSection
-                intersection: Theme.islandNativeBlur ? Intersection.Combine : Intersection.Subtract
+                nativeBlurEnabled: root.islandNativeBlurEnabled
+                intersection: root.islandNativeBlurEnabled ? Intersection.Combine : Intersection.Subtract
             }
             IslandBlurRegion {
                 targetItem: rightSection
-                intersection: Theme.islandNativeBlur ? Intersection.Combine : Intersection.Subtract
+                nativeBlurEnabled: root.islandNativeBlurEnabled
+                intersection: root.islandNativeBlurEnabled ? Intersection.Combine : Intersection.Subtract
             }
         }
 
@@ -213,6 +225,26 @@ PanelWindow {
         rightCornerEnabled: true
         bottomLeftRounded: false
         bottomRightRounded: true
+    }
+
+    // Optional Stage-2 native feasibility surface. It is created only for
+    // the explicitly selected left island and exact owning screen; production
+    // masks, hit regions, and the bar's input union remain untouched.
+    Loader {
+        active: Theme.islandNativePrototypeTarget === "left"
+            && Theme.islandNativePrototypeScreen.length > 0
+            && root.screenName === Theme.islandNativePrototypeScreen
+        sourceComponent: Component {
+            IslandNativePrototype {
+                screenTarget: root.screen
+                sectionX: leftSection.x
+                sectionY: leftSection.y
+                sectionWidth: leftSection.width
+                sectionHeight: leftSection.targetItem.height
+                cornerRadius: leftSection._cornerSize
+                wrapDepth: leftSection._wrapDepth
+            }
+        }
     }
 
     BarSection {

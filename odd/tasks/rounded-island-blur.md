@@ -18,6 +18,7 @@ Restore native `BackgroundEffect.blurRegion` blur for the custom bar islands wit
 12. Verify the stable island baseline after reload.
 13. Gate disabled scanline rebuilds so islandNativeBlur=false avoids dynamic Region churn.
 14. Verify center expansion after the rebuild gate.
+15. Replace retained scanline rasterization with a bounded declarative interior region per island.
 
 ## Non-goals
 - No changes to services, IPC, routing, focus, Escape, input masks, overlay ownership, or monitor selection.
@@ -70,4 +71,5 @@ Restore native `BackgroundEffect.blurRegion` blur for the custom bar islands wit
 - `IslandBlurRegion` now imports `Theme.islandNativeBlur` directly and gates its rebuild path. Disabling native island blur destroys generated scanline slices once, then ignores geometry/state-triggered rebuilds while disabled; re-enabling clears the gate and rebuilds the same scanline geometry normally.
 - The gate is deliberately limited to generated blur regions. Visual Canvas/MultiEffect masks, the input mask, RCC rounded native region, routing, focus, Escape, services, animation timing, BarSection layers, and multi-monitor behavior are unchanged.
 - This is a lifecycle/churn fix only: all existing geometry equations and pixel-boundary calculations remain untouched.
+- The retained opt-in was subsequently corrected to one declaratively bound interior rectangle per island. It avoids generated QML objects and destroy/recreate loops during geometry animation, while intentionally trading curved-edge, notch, and wrap coverage for bounded protocol geometry. The safe default remains disabled.
 - Focused Qt 6 lint and `git diff --check` are the applicable static checks for this correction; runtime/live verification remains the parent task's responsibility.

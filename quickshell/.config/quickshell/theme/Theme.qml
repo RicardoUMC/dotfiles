@@ -42,7 +42,17 @@ QtObject {
     property bool nativeBlur: true // `surface.nativeBlur`; only used by `glass`
     // Island-only rollback switch for the compositor-blur experiment. The
     // right-control-center rounded region remains native-blurred independently.
-    property bool islandNativeBlur: true // `surface.islandNativeBlur`
+    property bool islandNativeBlur: false // `surface.islandNativeBlur`
+    // Exact screen-name selector for the bounded island blur pilot. Empty is
+    // the fail-closed default; the parser resets it when missing or invalid.
+    property string islandNativeBlurScreen: "" // `surface.islandNativeBlurScreen`
+    // Stage-1 synthetic GPU prototype target. `none` is the disabled default;
+    // `left` is reserved for the future BarSection integration task.
+    property string islandGpuPrototypeTarget: "none"
+    // Stage-2 bounded native feasibility target. Both this and the exact
+    // screen-name selector must opt in; empty selector means disabled.
+    property string islandNativePrototypeTarget: "none"
+    property string islandNativePrototypeScreen: ""
     property real surfaceOpacity: 1.0
     // Glass hierarchy: cards lift above the shell while nested slabs recede.
     // Solid mode still resolves every role to an opaque fill.
@@ -322,8 +332,29 @@ QtObject {
             }
             if (surfaceCfg?.nativeBlur !== undefined)
                 nativeBlur = surfaceCfg.nativeBlur === true
+            // Reset the pilot selector on every config application so a
+            // missing, empty, or malformed value can never retain a stale
+            // authorization for a monitor that is no longer selected.
+            islandNativeBlurScreen = ""
+            if (surfaceCfg?.islandNativeBlurScreen !== undefined
+                    && typeof surfaceCfg.islandNativeBlurScreen === "string"
+                    && surfaceCfg.islandNativeBlurScreen.length > 0)
+                islandNativeBlurScreen = surfaceCfg.islandNativeBlurScreen
             if (surfaceCfg?.islandNativeBlur !== undefined)
                 islandNativeBlur = surfaceCfg.islandNativeBlur === true
+            if (surfaceCfg?.islandNativePrototypeTarget !== undefined) {
+                const nativeTarget = String(surfaceCfg.islandNativePrototypeTarget)
+                islandNativePrototypeTarget = ["none", "left"].indexOf(nativeTarget) >= 0
+                    ? nativeTarget : "none"
+            }
+            if (surfaceCfg?.islandNativePrototypeScreen !== undefined)
+                islandNativePrototypeScreen = typeof surfaceCfg.islandNativePrototypeScreen === "string"
+                    ? surfaceCfg.islandNativePrototypeScreen : ""
+            if (surfaceCfg?.islandGpuPrototypeTarget !== undefined) {
+                const prototypeTarget = String(surfaceCfg.islandGpuPrototypeTarget)
+                islandGpuPrototypeTarget = ["none", "left"].indexOf(prototypeTarget) >= 0
+                    ? prototypeTarget : "none"
+            }
             if (surfaceCfg?.opacity !== undefined) {
                 const opacity = Number(surfaceCfg.opacity)
                 if (Number.isFinite(opacity))

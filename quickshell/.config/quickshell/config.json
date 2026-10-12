@@ -68,7 +68,11 @@
   "surface": {
     "mode": "glass",
     "nativeBlur": true,
-    "islandNativeBlur": false,
+    "islandNativeBlur": true,
+    "islandNativeBlurScreen": "DP-1",
+    "islandGpuPrototypeTarget": "none",
+    "islandNativePrototypeTarget": "none",
+    "islandNativePrototypeScreen": "",
     "opacity": 1.0,
     "cardOpacity": 0.24,
     "nestedOpacity": 0.12,

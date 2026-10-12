@@ -19,6 +19,8 @@ Make asynchronous Wi-Fi and Bluetooth actions visibly communicate progress, succ
 - `WifiService.qml` now keeps scan state through the post-scan refresh and retains a recoverable result/error state.
 - `BluetoothService.qml` now exposes address-bound action kind/status/error and confirms successful actions against a fresh device snapshot.
 - `WifiControlCard.qml` and `BluetoothControlCard.qml` render compact loading/error/retry feedback without changing the service commands or overlay architecture.
+- Implementation commit on `feat/global-surface-system`: `44083a5` (`feat(quickshell): add network action feedback`).
+- Static/reload verification passed: JSON parse, focused Qt6 `qmllint` exit 0, `git diff --check`, soft reload, and `Configuration Loaded` with no subsequent `ERROR`. Interactive service actions remain unverified by design.
 
 ## Non-goals
 - No backend migration from CLI services.

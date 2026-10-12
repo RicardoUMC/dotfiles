@@ -21,10 +21,12 @@ QtObject {
     }
 
     // Inset of a bottom rounded corner at the near edge of a pixel row.
+    // The fixed native-blur composition does not currently use this helper,
+    // but keep its quarter-circle formula correct for future approximations.
     function bottomInset(rowStart, radius) {
         const r = Math.max(0, Number(radius || 0))
         const y = Math.max(0, Math.min(r, Number(rowStart || 0)))
-        return r - Math.sqrt(Math.max(0, r * r - (r - y) * (r - y)))
+        return r - Math.sqrt(Math.max(0, r * r - y * y))
     }
 
     // Width of a wrap's top-left/top-right quarter-circle at a row. The

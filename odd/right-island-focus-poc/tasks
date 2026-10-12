@@ -1,0 +1,5 @@
+1. [x] Define the non-modal Right-island focus policy.
+2. [x] Implement OnDemand focus and focused-monitor dismissal.
+3. [x] Run static checks and soft-reload verification.
+4. [x] Confirm cross-monitor dismissal with the user.
+5. [ ] Follow up on keyboard and same-monitor interactive checks.

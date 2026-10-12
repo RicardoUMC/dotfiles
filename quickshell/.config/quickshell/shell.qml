@@ -305,6 +305,11 @@ ShellRoot {
             // focus-loss/close paths for interactive panels.
             if (["workspace","workspacev2","moveworkspace","movewindow","fullscreen"].includes(n))
                 overlayManager.closeAll()
+            if (n === "focusedmon"
+                    && overlayManager.activeOverlay === "right-control-center"
+                    && Hyprland.focusedMonitor
+                    && Hyprland.focusedMonitor.name !== overlayManager.activeScreenName)
+                overlayManager.closeAll()
         }
     }
 

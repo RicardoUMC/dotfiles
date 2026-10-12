@@ -9,10 +9,19 @@ Item {
 
     property bool wifiEnabled: false
     property bool scanning: false
+    property string scanStatus: "idle" // idle | scanning | success | error
+    property string scanErrorMessage: ""
     property string activeSsid: ""
     property int activeSignal: 0
     property var networks: []
     property string errorMessage: ""
+    property bool refreshQueued: false
+    property bool scanOutputReceived: false
+    property bool scanAwaitingRefresh: false
+    property bool scanRefreshQueued: false
+    property bool scanOutcomeOk: false
+    property string scanOutcomeError: ""
+    property bool actionOutputReceived: false
 
     readonly property string refreshScript: String.raw`
 import json
@@ -148,18 +157,44 @@ except Exception as exc:
     }
 
     function refresh() {
-        if (refreshProcess.running)
+        if (refreshProcess.running) {
+            refreshQueued = true
             return
+        }
         refreshProcess.command = ["python3", "-c", refreshScript]
         refreshProcess.running = true
     }
 
     function scan() {
-        if (scanProcess.running)
-            return
+        if (scanning || scanProcess.running)
+            return false
         scanning = true
+        scanStatus = "scanning"
+        scanErrorMessage = ""
+        scanOutputReceived = false
+        scanAwaitingRefresh = false
+        scanOutcomeOk = false
+        scanOutcomeError = ""
         scanProcess.command = ["python3", "-c", scanScript]
         scanProcess.running = true
+        return true
+    }
+
+    function finishScanProcess() {
+        if (!scanOutputReceived) {
+            scanOutcomeOk = false
+            scanOutcomeError = "Wi-Fi scan returned no result"
+        }
+        scanAwaitingRefresh = true
+        scanRefreshQueued = refreshProcess.running
+        refresh()
+    }
+
+    function finishScanRefresh() {
+        scanning = false
+        scanAwaitingRefresh = false
+        scanStatus = scanOutcomeOk ? "success" : "error"
+        scanErrorMessage = scanOutcomeOk ? "" : (scanOutcomeError || "Wi-Fi scan failed")
     }
 
     function setWifiEnabled(enabled) {
@@ -192,18 +227,42 @@ except Exception as exc:
             next.push(String(arg))
         actionProcess.command = next
         actionProcess.running = true
+        actionProcess.outputReceived = false
     }
 
     Process {
         id: refreshProcess
+        property bool outputReceived: false
         stdout: SplitParser {
             onRead: data => {
+                refreshProcess.outputReceived = true
                 try {
-                    root.applyState(JSON.parse(data.trim()))
+                    const payload = JSON.parse(data.trim())
+                    root.applyState(payload)
+                    if (root.scanAwaitingRefresh && payload.errorMessage) {
+                        root.scanOutcomeOk = false
+                        root.scanOutcomeError = payload.errorMessage
+                    }
                 } catch (error) {
                     root.errorMessage = String(error)
+                    if (root.scanAwaitingRefresh) {
+                        root.scanOutcomeOk = false
+                        root.scanOutcomeError = String(error)
+                    }
                 }
-                refreshProcess.running = false
+            }
+        }
+        onStarted: outputReceived = false
+        onExited: {
+            if (!outputReceived)
+                root.errorMessage = "Wi-Fi refresh returned no result"
+            if (root.scanAwaitingRefresh && root.scanRefreshQueued)
+                root.scanRefreshQueued = false
+            else if (root.scanAwaitingRefresh)
+                root.finishScanRefresh()
+            if (root.refreshQueued) {
+                root.refreshQueued = false
+                root.refresh()
             }
         }
     }
@@ -212,32 +271,38 @@ except Exception as exc:
         id: scanProcess
         stdout: SplitParser {
             onRead: data => {
+                root.scanOutputReceived = true
                 try {
                     const payload = JSON.parse(data.trim())
-                    root.errorMessage = payload.ok ? "" : (payload.errorMessage || "Wi-Fi scan failed")
+                    root.scanOutcomeOk = payload.ok === true
+                    root.scanOutcomeError = root.scanOutcomeOk ? "" : (payload.errorMessage || "Wi-Fi scan failed")
                 } catch (error) {
-                    root.errorMessage = String(error)
+                    root.scanOutcomeOk = false
+                    root.scanOutcomeError = String(error)
                 }
-                root.scanning = false
-                scanProcess.running = false
-                root.refresh()
             }
         }
+        onExited: root.finishScanProcess()
     }
 
     Process {
         id: actionProcess
+        property bool outputReceived: false
         stdout: SplitParser {
             onRead: data => {
+                actionProcess.outputReceived = true
                 try {
                     const payload = JSON.parse(data.trim())
                     root.errorMessage = payload.ok ? "" : (payload.errorMessage || "Wi-Fi action failed")
                 } catch (error) {
                     root.errorMessage = String(error)
                 }
-                actionProcess.running = false
-                root.refresh()
             }
+        }
+        onExited: {
+            if (!outputReceived)
+                root.errorMessage = "Wi-Fi action returned no result"
+            root.refresh()
         }
     }
 

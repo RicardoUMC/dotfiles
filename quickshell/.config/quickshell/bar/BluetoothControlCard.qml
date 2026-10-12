@@ -202,13 +202,31 @@ Rectangle {
         return "󰁹"
     }
 
+    function actionPendingFor(address) {
+        return BluetoothService.actionStatus === "running"
+               && BluetoothService.actionAddress === String(address || "").toUpperCase()
+    }
+
+    function actionText(address) {
+        if (!actionPendingFor(address))
+            return ""
+        if (BluetoothService.actionKind === "pair")
+            return "Pairing…"
+        if (BluetoothService.actionKind === "connect")
+            return "Connecting…"
+        if (BluetoothService.actionKind === "disconnect")
+            return "Disconnecting…"
+        return "Updating…"
+    }
+
     function stateText(device) {
         if (!device)
             return "Unknown"
+        const pending = root.actionText(device.address)
+        if (pending.length > 0)
+            return pending
         if (device.connected)
             return "Connected"
-        if (root.selectedAddress === device.address && root.detailMode === "pairing")
-            return "Pairing…"
         if (device.paired)
             return "Paired"
         if (device.trusted)
@@ -226,16 +244,15 @@ Rectangle {
     }
 
     function selectAvailable(device) {
-        if (device.paired || device.trusted) {
-            selectedAddress = device.address || ""
-            BluetoothService.connectDevice(selectedAddress)
+        const address = String(device.address || "")
+        if (address.length === 0)
+            return
+        if (selectedAddress === address) {
             clearSelection()
-        } else if (selectedAddress === device.address) {
-            clearSelection()
-        } else {
-            selectedAddress = device.address || ""
-            detailMode = "pair"
+            return
         }
+        selectedAddress = address
+        detailMode = (device.paired || device.trusted) ? "available" : "pair"
     }
 
     function requestForget() {
@@ -244,10 +261,10 @@ Rectangle {
     }
 
     function startPairing() {
-        if (!selectedDevice)
+        if (!selectedDevice || root.actionPendingFor(selectedDevice.address))
             return
-        detailMode = "pairing"
-        BluetoothService.pairDevice(selectedDevice.address)
+        if (BluetoothService.pairDevice(selectedDevice.address))
+            detailMode = "pairing"
     }
 
     function clearSelection() {
@@ -703,9 +720,20 @@ Rectangle {
 
                 Text {
                     Layout.fillWidth: true
-                    visible: root.detailMode === "pairing" && !root.selectionConnected
-                    text: "Pairing… check the device for confirmation."
+                    visible: root.selectedDevice !== null && root.actionPendingFor(root.selectedAddress)
+                    text: root.actionText(root.selectedAddress)
                     color: Colors.accent
+                    font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    visible: root.selectedDevice !== null
+                             && BluetoothService.actionStatus === "error"
+                             && BluetoothService.actionAddress === String(root.selectedAddress || "").toUpperCase()
+                    text: BluetoothService.actionError || "Action failed — retry"
+                    color: Colors.red
+                    elide: Text.ElideRight
                     font { family: Colors.uiFont; pixelSize: Theme.fontSizeCaption }
                 }
 
@@ -723,7 +751,9 @@ Rectangle {
                     spacing: Theme.spacingSm
 
                     BtPillAction {
-                        visible: root.detailMode !== "forget" && root.detailMode !== "pairing"
+                        visible: root.detailMode !== "forget"
+                                 && (root.detailMode !== "pairing" || BluetoothService.actionStatus === "error")
+                                 && !root.actionPendingFor(root.selectedAddress)
                                  && !root.selectionConnected && !root.selectionPaired
                         Layout.fillWidth: true
                         label: "Pair"
@@ -733,28 +763,28 @@ Rectangle {
                     }
 
                     BtPillAction {
-                        visible: root.detailMode !== "forget" && root.selectionPaired && !root.selectionConnected
+                        visible: root.detailMode !== "forget" && !root.actionPendingFor(root.selectedAddress)
+                                 && root.selectionPaired && !root.selectionConnected
                         Layout.fillWidth: true
                         label: "Connect"
                         primary: true
                         accentColor: Colors.accent
                         onTriggered: {
-                            if (root.selectedDevice)
-                                BluetoothService.connectDevice(root.selectedDevice.address)
-                            root.clearSelection()
+                            if (root.selectedDevice && BluetoothService.connectDevice(root.selectedDevice.address))
+                                root.detailMode = "connecting"
                         }
                     }
 
                     BtPillAction {
-                        visible: root.detailMode !== "forget" && root.selectionConnected
+                        visible: root.detailMode !== "forget" && !root.actionPendingFor(root.selectedAddress)
+                                 && root.selectionConnected
                         Layout.fillWidth: true
                         label: "Disconnect"
                         primary: true
                         accentColor: Colors.yellow
                         onTriggered: {
-                            if (root.selectedDevice)
-                                BluetoothService.disconnectDevice(root.selectedDevice.address)
-                            root.clearSelection()
+                            if (root.selectedDevice && BluetoothService.disconnectDevice(root.selectedDevice.address))
+                                root.detailMode = "disconnecting"
                         }
                     }
 
@@ -774,9 +804,8 @@ Rectangle {
                         primary: true
                         accentColor: Colors.red
                         onTriggered: {
-                            if (root.selectedDevice)
-                                BluetoothService.forgetDevice(root.selectedDevice.address)
-                            root.clearSelection()
+                            if (root.selectedDevice && BluetoothService.forgetDevice(root.selectedDevice.address))
+                                root.clearSelection()
                         }
                     }
 

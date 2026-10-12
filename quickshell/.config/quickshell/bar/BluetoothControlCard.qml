@@ -244,17 +244,15 @@ Rectangle {
     }
 
     function selectAvailable(device) {
-        if (device.paired || device.trusted) {
-            selectedAddress = device.address || ""
-            detailMode = "connecting"
-            if (!BluetoothService.connectDevice(selectedAddress))
-                detailMode = "connected"
-        } else if (selectedAddress === device.address) {
+        const address = String(device.address || "")
+        if (address.length === 0)
+            return
+        if (selectedAddress === address) {
             clearSelection()
-        } else {
-            selectedAddress = device.address || ""
-            detailMode = "pair"
+            return
         }
+        selectedAddress = address
+        detailMode = (device.paired || device.trusted) ? "available" : "pair"
     }
 
     function requestForget() {

@@ -17,10 +17,10 @@ Evaluate a non-modal RightControlCenter focus policy: retain the panel while foc
 ## Acceptance checks
 
 - [x] Qt 6 lint has no new diagnostics from the POC.
-- [ ] Opening the Right-island does not leave the application keyboard globally blocked (not separately verified).
+- [x] Opening the Right-island does not leave the application keyboard globally blocked (user-confirmed).
 - [x] A focus change to another monitor closes the Right-island (user-confirmed).
-- [ ] Same-monitor external focus does not close it unless the existing backdrop receives the click (not separately verified).
-- [ ] Escape closes it when the Bar key handler owns focus (not separately verified).
+- [x] Same-monitor external focus does not close it unless the existing backdrop receives the click (user-confirmed).
+- [x] Escape closes it when the Bar key handler owns focus (user-confirmed).
 - [x] Media/volume key binds remain compositor-global by Hyprland configuration inspection.
 - [x] Runtime reload completes with `Configuration Loaded` and no `ERROR`.
 
@@ -29,11 +29,11 @@ Evaluate a non-modal RightControlCenter focus policy: retain the panel while foc
 - `git diff --check`: passed.
 - Qt 6.11 `qmllint`: no diagnostics at the POC lines; only pre-existing Quickshell/type-resolution warnings remain.
 - Soft reload: passed; log contained `Reloading configuration...` followed by `Configuration Loaded`, with no `ERROR`.
-- Interactive verification was partial; the user confirmed that moving to the other monitor closes the panel and accepted this behavior.
+- Interactive verification was confirmed by the user: keyboard, same-monitor focus, cross-monitor dismissal, Escape, and media-key behavior are correct.
 
 ## Delivery
 
-The POC is accepted for normal use based on the user-confirmed cross-monitor behavior. Remaining keyboard and same-monitor checks are follow-up verification, not blockers for this focused-monitor dismissal policy.
+The POC is accepted for normal use based on user-confirmed keyboard, pointer, cross-monitor, Escape, and media-key behavior.
 
 ## Known limitation to verify
 

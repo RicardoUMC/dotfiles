@@ -40,12 +40,10 @@ QtObject {
     // the readable fallback. This option is intentionally inert in other modes.
     property string surfaceMode: "solid" // "solid" | "translucent" | "glass"
     property bool nativeBlur: true // `surface.nativeBlur`; only used by `glass`
-    // Island-only rollback switch for the compositor-blur experiment. The
+    // Island-only switch for the bounded compositor-blur composition. The
     // right-control-center rounded region remains native-blurred independently.
+    // Each active Bar instance follows the existing screen Variants model.
     property bool islandNativeBlur: false // `surface.islandNativeBlur`
-    // Exact screen-name selector for the bounded island blur pilot. Empty is
-    // the fail-closed default; the parser resets it when missing or invalid.
-    property string islandNativeBlurScreen: "" // `surface.islandNativeBlurScreen`
     // Stage-1 synthetic GPU prototype target. `none` is the disabled default;
     // `left` is reserved for the future BarSection integration task.
     property string islandGpuPrototypeTarget: "none"
@@ -332,14 +330,6 @@ QtObject {
             }
             if (surfaceCfg?.nativeBlur !== undefined)
                 nativeBlur = surfaceCfg.nativeBlur === true
-            // Reset the pilot selector on every config application so a
-            // missing, empty, or malformed value can never retain a stale
-            // authorization for a monitor that is no longer selected.
-            islandNativeBlurScreen = ""
-            if (surfaceCfg?.islandNativeBlurScreen !== undefined
-                    && typeof surfaceCfg.islandNativeBlurScreen === "string"
-                    && surfaceCfg.islandNativeBlurScreen.length > 0)
-                islandNativeBlurScreen = surfaceCfg.islandNativeBlurScreen
             if (surfaceCfg?.islandNativeBlur !== undefined)
                 islandNativeBlur = surfaceCfg.islandNativeBlur === true
             if (surfaceCfg?.islandNativePrototypeTarget !== undefined) {

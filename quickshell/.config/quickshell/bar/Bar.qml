@@ -46,15 +46,13 @@ PanelWindow {
     BackgroundEffect.blurRegion: Theme.nativeBlur && Theme.surfaceMode === "glass"
         ? barGlassRegion
         : null
-    // The island pilot is independently fail-closed per Bar instance. The
-    // selector is an exact ShellScreen.name match; other bars retain their
-    // readable translucent fallback and do not generate native island regions.
+    // Island blur follows this Bar instance: Quickshell's screen Variants
+    // create one Bar for each selected connected screen. The global switch
+    // remains the only island-specific opt-out; visible and input masks stay
+    // independent from this bounded native Region composition.
     readonly property bool islandNativeBlurEnabled: Theme.surfaceMode === "glass"
         && Theme.nativeBlur
         && Theme.islandNativeBlur
-        && Theme.islandNativeBlurScreen.length > 0
-        && root.screenName.length > 0
-        && root.screenName === Theme.islandNativeBlurScreen
     GlassEffect {
         id: barGlassRegion
         // Island blur geometry is visual-only and remains separate from the

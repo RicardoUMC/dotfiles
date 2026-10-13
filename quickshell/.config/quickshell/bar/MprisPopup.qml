@@ -12,6 +12,7 @@ Item {
     property real anchorX: 0
     property real anchorY: 0
     property bool vertical: false
+    property real barWidth: 0
     property string barPosition: "top"
 
     // Wayland output this overlay pins itself to, passed down from the Bar
@@ -62,7 +63,9 @@ Item {
             width: popupW
             height: popupH
             x: root.vertical
-                ? (root.barPosition === "right" ? popup.width - popupW - 44 : 44)
+                ? (root.barPosition === "right"
+                   ? popup.width - popupW - 44
+                   : root.barPosition === "left" ? root.barWidth + 44 : 44)
                 : Math.min(Math.max(root.anchorX - popupW / 2, 8), popup.width - popupW - 8)
             y: root.vertical
                 ? Math.min(Math.max(root.anchorY - popupH / 2, 8), popup.height - popupH - 8)

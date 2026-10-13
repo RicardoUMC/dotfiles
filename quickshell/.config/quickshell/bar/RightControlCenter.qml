@@ -24,6 +24,7 @@ Item {
     property var systemStatsState: null
     property string barPosition: "top"
     property bool vertical: false
+    property real barWidth: 0
 
     signal opened()
     signal closed()
@@ -170,7 +171,9 @@ Item {
     Rectangle {
         id: panelBody
         x: root.vertical
-            ? (root.barPosition === "right" ? root.width - width - Theme.rightPanelRightMargin : Theme.rightPanelRightMargin)
+            ? (root.barPosition === "right"
+               ? root.width - width - Theme.rightPanelRightMargin
+               : root.barWidth + Theme.rightPanelRightMargin)
             : root.width - width - Theme.rightPanelRightMargin
         y: root.vertical
             ? (root.barPosition === "bottom" ? root.height - height - Theme.rightPanelTopMargin : Theme.rightPanelTopMargin)

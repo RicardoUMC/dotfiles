@@ -31,7 +31,13 @@ PanelWindow {
     readonly property real sideTabHeight: Math.max(leftTab.implicitHeight, rightTab.implicitHeight)
     readonly property real sideTabWidth: Math.max(leftTab.implicitWidth, rightTab.implicitWidth)
     readonly property real stableSurfaceContentHeight: Math.max(sideTabHeight, Theme.centerExpandedHeight)
-    readonly property real stableSurfaceContentWidth: Math.max(sideTabWidth, Theme.centerExpandedWidth)
+    // A left bar's cross-axis width follows the rotated dashboard: the top
+    // dashboard height becomes the left bar's expanded width. Keep the
+    // collapsed surface narrow instead of reserving the horizontal dashboard
+    // width on every left-positioned monitor.
+    readonly property real stableSurfaceContentWidth: Math.max(
+        sideTabWidth,
+        vertical ? Theme.centerExpandedHeight : Theme.centerExpandedWidth)
     readonly property real centerCollapsedHeight: centerHeader.implicitHeight + centerTab.paddingV * 2
     readonly property real reservedBarContentHeight: Math.max(
         leftSection.reservedHeight,
@@ -500,6 +506,7 @@ PanelWindow {
         systemStatsState: root.systemStatsState
         barPosition: root.barPosition
         vertical: root.vertical
+        barWidth: root.reservedBarContentWidth
         onOpened: root.metricsOpened()
         onClosed: root.metricsClosed()
     }
@@ -511,6 +518,7 @@ PanelWindow {
         screenTarget: root.screen
         vertical: root.vertical
         barPosition: root.barPosition
+        barWidth: root.reservedBarContentWidth
         anchorY: root.mprisChipGlobalY
         onClosed: root.mprisClosed()
     }
@@ -538,5 +546,6 @@ PanelWindow {
         onClosed: root.rightControlCenterClosed()
         barPosition: root.barPosition
         vertical: root.vertical
+        barWidth: root.reservedBarContentWidth
     }
 }

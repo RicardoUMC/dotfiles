@@ -23,6 +23,7 @@ Item {
     property var screenTarget: null
     property string barPosition: "top"
     property bool vertical: false
+    property real barWidth: 0
 
     signal opened()
     signal closed()
@@ -86,7 +87,9 @@ Item {
         Rectangle {
             id: popupCard
             x: root.vertical
-                ? (root.barPosition === "right" ? parent.width - width - Theme.spacingMd : Theme.spacingMd)
+                ? (root.barPosition === "right"
+                   ? parent.width - width - Theme.spacingMd
+                   : root.barPosition === "left" ? root.barWidth + Theme.spacingMd : Theme.spacingMd)
                 : parent.width - width - Theme.spacingMd
             y: root.vertical
                 ? (root.barPosition === "bottom" ? parent.height - height - Theme.spacingMd : Theme.spacingMd)

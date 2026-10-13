@@ -78,8 +78,40 @@ Item {
             edge: root.edge
         }
 
+        // Left reuses the top horizontal wrap source and rotates it with the
+        // mask, keeping the wrap radii/extents identical to the top geometry.
+        Item {
+            id: leftWrapSource
+            visible: root.vertical && root.edge === "left"
+            width: root.height
+            height: root.width
+            transform: Rotation { angle: -90; origin.x: leftWrapSource.width / 2; origin.y: leftWrapSource.height / 2 }
+
+            NotchCornerMask {
+                x: root._leftExtent
+                y: root.targetItem.x + root.targetItem.width
+                width: root._cornerSize
+                height: root._wrapDepth
+                radius: root._cornerSize
+                corner: "topLeft"
+                color: "white"
+                visible: root.hasWrap && !root.bottomLeftRounded && width > 0 && height > 0
+            }
+
+            NotchCornerMask {
+                x: root._leftExtent + root.targetItem.height - root._cornerSize
+                y: root.targetItem.x + root.targetItem.width
+                width: root._cornerSize
+                height: root._wrapDepth
+                radius: root._cornerSize
+                corner: "topRight"
+                color: "white"
+                visible: root.hasWrap && !root.bottomRightRounded && width > 0 && height > 0
+            }
+        }
+
         // The wrap follows the owning output edge: below for top, above for
-        // bottom, and inward for either vertical edge.
+        // bottom, and inward for the existing right vertical path.
         NotchCornerMask {
             x: root.vertical ? (root.edge === "left" ? targetProxy.x + targetProxy.width : targetProxy.x - root._wrapDepth) : targetProxy.x
             y: root.vertical ? targetProxy.y : (root.edge === "bottom" ? targetProxy.y - root._wrapDepth : targetProxy.y + targetProxy.height)
@@ -93,7 +125,7 @@ Item {
                 yScale: !root.vertical && root.edge === "bottom" ? -1 : 1
             }
             color: "white"
-            visible: root.hasWrap && (root.vertical || !root.bottomLeftRounded) && width > 0 && height > 0
+            visible: root.hasWrap && ((root.vertical && root.edge !== "left") || (!root.vertical && !root.bottomLeftRounded)) && width > 0 && height > 0
         }
 
         NotchCornerMask {
@@ -109,7 +141,7 @@ Item {
                 yScale: !root.vertical && root.edge === "bottom" ? -1 : 1
             }
             color: "white"
-            visible: root.hasWrap && (root.vertical || !root.bottomRightRounded) && width > 0 && height > 0
+            visible: root.hasWrap && ((root.vertical && root.edge !== "left") || (!root.vertical && !root.bottomRightRounded)) && width > 0 && height > 0
         }
     }
 

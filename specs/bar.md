@@ -9,7 +9,7 @@ Per-screen floating bar composed of independent wrapped-silhouette islands. Each
 
 ## Future evolution
 
-The configurable-bar foundation is implemented and specified in [Configurable Bar](configurable-bar.md). It validates global defaults and sparse exact-name per-monitor overrides, and `Bar.qml` applies the resolved position while preserving the top/island baseline. Top and bottom physical positioning are implemented; bottom visible masks and wraps mirror top around a centered vertical transform, native blur follows the bottom edge geometry, and the `CenterPanel` cutout follows bottom centerY. Left/right positioning exists as the next visual refinement, with 90-degree notch rotation and vertical icon stacking as the intended direction. `disabled` visibility filtering and removal of the Bar-owned surface set are implemented. Edge reveal remains always-visible; continuous rendering and detached dashboard attachment remain inert. Future style configuration is intentionally inert. This spec remains the source of truth for the implemented bar.
+The configurable-bar foundation is implemented and specified in [Configurable Bar](configurable-bar.md). It validates global defaults and sparse exact-name per-monitor overrides, and `Bar.qml` applies the resolved position while preserving the top/island baseline. Top and bottom physical positioning remain the baseline; bottom visible masks and wraps mirror top around a centered vertical transform, native blur follows the bottom edge geometry, and the `CenterPanel` cutout follows bottom centerY. Left physical placement is implemented by reusing the horizontal top island source and applying a 90-degree counter-clockwise rotation to visible notch masks, decorative wraps, and bounded native blur Regions; content remains upright and stacked vertically, with left-side overlay offsets. Right refinement is next. `disabled` visibility filtering and removal of the Bar-owned surface set are implemented. Edge reveal remains always-visible; continuous rendering and detached dashboard attachment remain inert. Manual pointer-level dashboard/input verification is still pending; this spec makes no native-review approval claim. Future style configuration is intentionally inert. This spec remains the source of truth for the implemented bar.
 
 ## Behavior
 
@@ -27,7 +27,7 @@ The configurable-bar foundation is implemented and specified in [Configurable Ba
 
 ### Layout
 - Anchored to the configured edge: top/bottom span the output width; left/right span the output height.
-- Top/bottom compose islands horizontally; bottom mirrors the top visible silhouette around a centered vertical transform. Left/right positioning exists as the next visual refinement; the intended composition rotates notches by 90 degrees and stacks icons vertically.
+- Top/bottom compose islands horizontally; bottom mirrors the top visible silhouette around a centered vertical transform. Left reuses the horizontal top island source with a 90-degree counter-clockwise rotation for visible notch masks, decorative wraps, and bounded native blur Regions; content remains upright and stacked vertically. Right refinement is next.
 - Contains three visible islands: left (workspaces), center (clock + optional MPRIS chip when collapsed, dashboard body when expanded), right (four control-center icons + power button)
 - Reserves only the interactive content height on a horizontal edge, or interactive content width on a vertical edge, through `exclusiveZone`.
 - Decorative wrapped silhouette depth follows the configured edge: below top, above bottom, and inward from either vertical edge when `Theme.barStyle === "silhouette"`.
@@ -40,7 +40,7 @@ The configurable-bar foundation is implemented and specified in [Configurable Ba
 
 ### Silhouette mask
 - `Bar.qml` coordinates three independent `BarSection` surfaces rather than one shared silhouette surface
-- `BarSection` and `NotchIslandMask` provide the selected-edge geometry. Bottom reuses the top mask and wrap primitives through a centered vertical mirror, and the native-blur region is edge-aware; left/right remain the foundation for the intended 90-degree notch rotation and vertical icon stacking.
+- `BarSection` and `NotchIslandMask` provide the selected-edge geometry. Bottom reuses the top mask and wrap primitives through a centered vertical mirror, and the native-blur region is edge-aware. Left reuses the horizontal top island source with a 90-degree counter-clockwise rotation for visible notch masks, decorative wraps, and bounded native blur Regions; content remains upright and stacked vertically. Right refinement remains next.
 - Each `BarSection` owns a hidden fill surface clipped through a `MultiEffect` mask
 - The `PanelWindow` input mask is the union of the left, center, and right section hit regions, so transparent gaps remain click-through
 - `NotchIslandMask` defines each island region with gap-facing top corner pieces

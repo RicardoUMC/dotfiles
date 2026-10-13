@@ -32,6 +32,7 @@ Refine the `left` physical bar position as a distinct visual unit. The bar remai
 - Source/runtime work establishes left placement by rotating the horizontal top island source 90 degrees counter-clockwise for visible notch masks, decorative wraps, and bounded native blur Regions; content remains upright and vertically stacked, with left-side overlay offsets.
 - Manual pointer-level dashboard/input verification is still pending.
 - This task does not claim native review approval.
+- Work-unit commit: `307bc06 feat(bar): rotate left island geometry`.
 
 ## Decisions
 - Existing top/bottom implementation is the baseline and must not regress.

@@ -9,9 +9,13 @@ Top-anchored floating bar composed of independent wrapped-silhouette islands. Ea
 
 ## Future evolution
 
-The future, not-yet-implemented configurable bar design is specified in [Configurable Bar](configurable-bar.md). That design preserves this current top/island behavior as the baseline while adding per-monitor position and visibility policies, a separate continuous style, and embedded or detached dashboard attachment. This spec remains the source of truth for the implemented bar until that design is implemented and verified.
+The configuration-only foundation for the future configurable bar is implemented and specified in [Configurable Bar](configurable-bar.md). It validates global defaults and sparse exact-name per-monitor overrides while preserving this current top/island behavior. It does not yet apply per-monitor position, orientation, visibility, edge reveal, continuous rendering, disabled surface creation, or detached dashboard attachment; future style configuration is intentionally inert. This spec remains the source of truth for the implemented bar.
 
 ## Behavior
+
+### Configuration foundation
+
+`Theme.qml` resolves one normalized future configuration per `ShellScreen.name`, including bar position/visibility/style/reveal policy and dashboard attachment. Legacy `bar.screens` and `bar.style` remain compatible. Invalid values safely use defaults, unknown monitor names are inert, and a successful reload replaces the snapshot so removed overrides inherit again; malformed JSON preserves the last good snapshot. These values are declarative only in the current implementation.
 
 ### One instance per screen
 

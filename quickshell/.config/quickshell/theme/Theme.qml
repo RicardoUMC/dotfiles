@@ -119,8 +119,102 @@ QtObject {
     // (e.g. ["DP-1"]). Matched by ShellScreen.name only, never by index.
     property var barScreens: "all"
 
-    property string barStyle: "silhouette"         // "silhouette" | "plain"
+    property string barStyle: "silhouette"         // legacy: "silhouette" | "plain"
     property real barCurveDepthRatio: 0.2           // concave depth = height × ratio (legacy, use barNotchDepthRatio)
+    // Future bar configuration is normalized independently from legacy bar.* keys.
+    property var configurableBarSnapshot: ({
+        bar: { position: "top", visibility: "always", style: "islands", revealPolicy: "external-edges" },
+        dashboard: { attachment: "embedded" },
+        monitors: ({})
+    })
+    property int configurableBarRevision: 0
+
+    function _isConfigObject(value) {
+        return value !== null && typeof value === "object" && !Array.isArray(value)
+    }
+
+    function _validConfigEnum(value, allowed, fallback) {
+        if (typeof value !== "string") return fallback
+        return allowed.indexOf(value) >= 0 ? value : fallback
+    }
+
+    function _normalizedBarDefaults(value) {
+        const source = _isConfigObject(value) ? value : ({})
+        return {
+            position: _validConfigEnum(source.position, ["top", "bottom", "left", "right"], "top"),
+            visibility: _validConfigEnum(source.visibility, ["always", "edge-reveal", "disabled"], "always"),
+            style: _validConfigEnum(source.style, ["islands", "continuous"], "islands"),
+            revealPolicy: _validConfigEnum(source.revealPolicy, ["external-edges"], "external-edges")
+        }
+    }
+
+    function _normalizedBarOverride(value) {
+        if (!_isConfigObject(value)) return ({})
+        const normalized = ({})
+        if (typeof value.position === "string" && ["top", "bottom", "left", "right"].indexOf(value.position) >= 0)
+            normalized.position = value.position
+        if (typeof value.visibility === "string" && ["always", "edge-reveal", "disabled"].indexOf(value.visibility) >= 0)
+            normalized.visibility = value.visibility
+        if (typeof value.style === "string" && ["islands", "continuous"].indexOf(value.style) >= 0)
+            normalized.style = value.style
+        if (typeof value.revealPolicy === "string" && value.revealPolicy === "external-edges")
+            normalized.revealPolicy = value.revealPolicy
+        return normalized
+    }
+
+    function _normalizedBarConfig(cfg) {
+        const bar = _isConfigObject(cfg.bar) ? cfg.bar : ({})
+        const dashboard = _isConfigObject(cfg.dashboard) ? cfg.dashboard : ({})
+        const monitors = _isConfigObject(cfg.monitors) ? cfg.monitors : ({})
+        const normalizedMonitors = ({})
+        Object.keys(monitors).forEach(function(name) {
+            if (typeof name !== "string" || !_isConfigObject(monitors[name])) return
+            const monitor = monitors[name]
+            const normalized = ({})
+            const barOverride = _normalizedBarOverride(monitor.bar)
+            if (Object.keys(barOverride).length > 0) normalized.bar = barOverride
+            if (_isConfigObject(monitor.dashboard)) {
+                const attachment = monitor.dashboard.attachment
+                if (typeof attachment === "string" && ["embedded", "detached"].indexOf(attachment) >= 0)
+                    normalized.dashboard = { attachment: attachment }
+            }
+            if (Object.keys(normalized).length > 0) normalizedMonitors[name] = normalized
+        })
+        return {
+            bar: _normalizedBarDefaults(bar.defaults),
+            dashboard: {
+                attachment: _validConfigEnum(dashboard.attachment, ["embedded", "detached"], "embedded")
+            },
+            monitors: normalizedMonitors
+        }
+    }
+
+    // The sole resolver for future per-screen configuration. The revision read
+    // is intentional: bindings calling this function re-evaluate on reload.
+    function effectiveBarConfig(screenName) {
+        const revision = configurableBarRevision
+        const snapshot = configurableBarSnapshot
+        const result = {
+            bar: {
+                position: snapshot.bar.position,
+                visibility: snapshot.bar.visibility,
+                style: snapshot.bar.style,
+                revealPolicy: snapshot.bar.revealPolicy
+            },
+            dashboard: { attachment: snapshot.dashboard.attachment }
+        }
+        const monitor = snapshot.monitors && typeof screenName === "string"
+            ? snapshot.monitors[screenName] : null
+        if (monitor && monitor.bar) {
+            if (monitor.bar.position !== undefined) result.bar.position = monitor.bar.position
+            if (monitor.bar.visibility !== undefined) result.bar.visibility = monitor.bar.visibility
+            if (monitor.bar.style !== undefined) result.bar.style = monitor.bar.style
+            if (monitor.bar.revealPolicy !== undefined) result.bar.revealPolicy = monitor.bar.revealPolicy
+        }
+        if (monitor && monitor.dashboard && monitor.dashboard.attachment !== undefined)
+            result.dashboard.attachment = monitor.dashboard.attachment
+        return result
+    }
     property real barNotchGapWidth: 30              // px gap at each section boundary
     property real barNotchDepthRatio: 0.2           // all segments share the same notch depth = height × ratio
 
@@ -216,6 +310,9 @@ QtObject {
     function applyConfig() {
         try {
             const cfg = JSON.parse(configFile.text())
+            if (!_isConfigObject(cfg)) throw new Error("config root must be an object")
+            configurableBarSnapshot = _normalizedBarConfig(cfg)
+            configurableBarRevision++
             if (cfg.radius?.sm   !== undefined) radiusSm   = cfg.radius.sm
             if (cfg.radius?.md   !== undefined) radiusMd   = cfg.radius.md
             if (cfg.radius?.lg   !== undefined) radiusLg   = cfg.radius.lg

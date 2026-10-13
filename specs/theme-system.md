@@ -149,9 +149,15 @@ The control-center panel-chrome family has three deliberately distinct seam/trac
 
 One-bar-per-screen architecture, per-screen surface ownership, and overlay coordination are specified in `specs/multi-monitor.md`; this spec covers only the token contract.
 
+### Requirement: Configuration-Only Bar Foundation
+
+The single `config.json` file retains compatible legacy keys `bar.screens` and `bar.style`. The approved future schema adds `bar.defaults.position` (`top`, `bottom`, `left`, `right`), `bar.defaults.visibility` (`always`, `edge-reveal`, `disabled`), `bar.defaults.style` (`islands`, `continuous`), `bar.defaults.revealPolicy` (`external-edges`), global `dashboard.attachment` (`embedded`, `detached`), and sparse exact-name `monitors.<ShellScreen.name>.bar` / `.dashboard` overrides.
+
+`Theme.qml` validates and normalizes this model into one snapshot, and `effectiveBarConfig(screenName)` applies sparse name-based overrides without using monitor indexes or ordering. Invalid values fall back safely to the documented defaults; unknown names are inert. A successful reload replaces the normalized snapshot, so removed overrides inherit again. Malformed JSON preserves the last good snapshot. This session only supplies configuration data: placement, orientation, edge reveal, continuous rendering, disabled surface creation, detached dashboard rendering, and dynamic colors are not implemented. The current top/always/islands/embedded defaults preserve behavior, and future style configuration is intentionally inert.
+
 ### Requirement: Hot-Reload via config.json
 
-`Theme.qml` watches `~/.config/quickshell/config.json` via `FileView` with `watchChanges: true`. On file change, `FileView.reload()` refreshes the text content before a 100ms debounce `Timer` fires and re-parses the config, preventing reactions to partial writes while still applying live edits. Missing file uses defaults silently.
+`Theme.qml` watches `~/.config/quickshell/config.json` via `FileView` with `watchChanges: true`. On file change, `FileView.reload()` refreshes the text content before a 100ms debounce `Timer` fires and re-parses the config, preventing reactions to partial writes while still applying live edits. Missing file uses defaults silently. The same watcher and debounce refresh the configuration-only bar foundation.
 
 ### Requirement: Robust Configuration Parsing
 
@@ -168,8 +174,9 @@ Every key `Theme.applyConfig()` accepts, with the value it currently resolves to
   "radius":  { "sm": 6,    "md": 10,   "lg": 12,   "pill": 999 },
   "spacing": { "xs": 4,    "sm": 8,    "md": 12,  "lg": 16, "xl": 24 },
   "opacity": { "surface": 0.97, "overlay": 0.33, "border": 0.30, "dim": 0.15 },
-  "bar":     { "height": 37, "style": "silhouette", "screens": "all", "chipHeight": 30, "curveRadius": 16, "wrapDepth": 12, "notchGapWidth": 30, "notchDepthRatio": 0.2, "centerCollapsedWidth": 360, "centerExpandedWidth": 520, "centerExpandedHeight": 260 },
-  "dashboard": { "railWidth": 44, "bodyRadius": 10, "bodyOpacity": 0.35, "bodyBorderWidth": 1, "bodyPadding": 12, "tabHeight": 40, "tabSpacing": 8, "cardHeight": 42, "cardGap": 4, "progressHeight": 4, "progressRadius": 2, "sparklineWidth": 80, "sparklineHeight": 32, "footerHeight": 18 },
+  "bar":     { "height": 37, "style": "silhouette", "screens": "all", "defaults": { "position": "top", "visibility": "always", "style": "islands", "revealPolicy": "external-edges" }, "chipHeight": 30, "curveRadius": 16, "wrapDepth": 12, "notchGapWidth": 30, "notchDepthRatio": 0.2, "centerCollapsedWidth": 360, "centerExpandedWidth": 520, "centerExpandedHeight": 260 },
+  "monitors": {},
+  "dashboard": { "attachment": "embedded", "railWidth": 44, "bodyRadius": 10, "bodyOpacity": 0.35, "bodyBorderWidth": 1, "bodyPadding": 12, "tabHeight": 40, "tabSpacing": 8, "cardHeight": 42, "cardGap": 4, "progressHeight": 4, "progressRadius": 2, "sparklineWidth": 80, "sparklineHeight": 32, "footerHeight": 18 },
   "panel":   { "accentSeamWidth": 4, "secondarySeamWidth": 2, "volumeTrackHeight": 8 },
   "island":  { "chipRadius": 8, "activeFillOpacity": 0.18, "stateLayerHoverOpacity": 0.1, "stateLayerPressedOpacity": 0.16, "semanticGap": 4, "separatorWidth": 1, "powerTintOpacity": 0.1 },
   "rightPanel": { "opacity": 0.94 },
@@ -232,7 +239,19 @@ Dashboard overrides are grouped under `dashboard.*` in `config.json` but exposed
 
 - **GIVEN** `config.json` contains invalid JSON
 - **WHEN** the file is parsed
-- **THEN** parsing fails silently and all tokens retain their current values
+- **THEN** parsing fails silently and all tokens, including the normalized bar snapshot, retain their current values
+
+### Scenario: Configurable Bar Snapshot Replacement
+
+- **GIVEN** a valid configuration removes a previously declared monitor override
+- **WHEN** the debounced reload succeeds
+- **THEN** the normalized snapshot is replaced and that monitor inherits the global defaults again
+
+### Scenario: Configurable Bar Invalid Values
+
+- **GIVEN** a future bar or dashboard enum is invalid
+- **WHEN** the configuration is normalized
+- **THEN** the relevant safe default is used and unknown monitor names have no effect
 
 ### Scenario: Live Configuration Update
 

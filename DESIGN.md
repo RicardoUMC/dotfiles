@@ -73,7 +73,9 @@ Status: implemented and verified by Qt 6 lint plus offscreen runtime probes; **l
 
 ### Future configurable bar direction
 
-The current top-anchored island bar remains the implemented baseline. The future design is documented in [`specs/configurable-bar.md`](specs/configurable-bar.md) and is intentionally not represented as implemented configuration today.
+The current top-anchored island bar remains the implemented baseline. The configuration-only foundation is now implemented in `Theme.qml`: one normalized snapshot accepts compatible legacy `bar.screens` / `bar.style`, global `bar.defaults`, global `dashboard.attachment`, and sparse exact-name `monitors.<ShellScreen.name>.bar` / `.dashboard` overrides. Invalid values fall back safely, unknown names are inert, successful reloads replace the snapshot so removed overrides inherit again, and malformed JSON preserves the last good snapshot. Hot reload uses the existing `Theme` `FileView` watcher/debounce.
+
+The future rendering design is documented in [`specs/configurable-bar.md`](specs/configurable-bar.md), but placement, orientation, edge reveal, continuous rendering, disabled surface creation, detached dashboard rendering, and dynamic colors are not implemented. Current top/always/islands/embedded defaults preserve behavior, and future style configuration is intentionally inert.
 
 The design separates four independent decisions:
 

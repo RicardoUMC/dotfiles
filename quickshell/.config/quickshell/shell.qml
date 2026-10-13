@@ -328,6 +328,7 @@ ShellRoot {
 
             screen: modelData
             screenName: modelData === null ? "" : modelData.name
+            barConfig: Theme.effectiveBarConfig(modelData === null ? "" : modelData.name)
             // Hyprland monitor behind this bar's screen, injected so no
             // per-screen component resolves compositor identity itself.
             // Hyprland.monitorFor() is a plain invokable that emits nothing,

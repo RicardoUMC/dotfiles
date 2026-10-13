@@ -6,6 +6,12 @@
     "height": 37,
     "style": "silhouette",
     "screens": "all",
+    "defaults": {
+      "position": "top",
+      "visibility": "always",
+      "style": "islands",
+      "revealPolicy": "external-edges"
+    },
     "notchGapWidth": 30,
     "notchDepthRatio": 0.2,
     "curveRadius": 16,
@@ -26,8 +32,10 @@
     "progressRadius": 2,
     "sparklineWidth": 80,
     "sparklineHeight": 32,
-    "footerHeight": 18
+    "footerHeight": 18,
+    "attachment": "embedded"
   },
+  "monitors": {},
   "panel": {
     "accentSeamWidth": 4,
     "volumeTrackHeight": 8,

@@ -131,14 +131,18 @@ Per-screen UI may duplicate **views** (islands, masks, cards, toast surfaces) bu
 
 ## Configuration
 
-`bar.screens` selects which monitors get a bar:
+`bar.screens` selects which monitors get a bar and remains compatible with the legacy selector:
 
 | Value                | Meaning                                        |
 | -------------------- | ---------------------------------------------- |
 | `"all"` (default)    | one bar on every connected screen              |
 | `[ "DP-1", ... ]`    | only the named screens                         |
 
-Semantics are described under [Bar instantiation](#bar-instantiation): name-only resolution, unmatched names ignored, empty result falls back to all screens, reactive on `screensChanged`. Currently `config.json` sets `"all"`.
+The configuration-only foundation also normalizes the approved future model in the same file: legacy `bar.screens` and `bar.style`; `bar.defaults.position` (`top`/`bottom`/`left`/`right`), `bar.defaults.visibility` (`always`/`edge-reveal`/`disabled`), `bar.defaults.style` (`islands`/`continuous`), `bar.defaults.revealPolicy` (`external-edges`); global `dashboard.attachment` (`embedded`/`detached`); and sparse exact-name `monitors.<ShellScreen.name>.bar` / `.dashboard` overrides.
+
+Invalid values fall back safely, unknown names are inert, and resolution uses names only. A successful reload replaces the normalized snapshot, so removed overrides inherit again. Malformed JSON preserves the last good snapshot. Hot reload uses the existing `Theme` `FileView` watcher and debounce. This foundation does not apply placement, orientation, edge reveal, continuous rendering, disabled surface creation, detached dashboard rendering, or dynamic colors; top/always/islands/embedded defaults preserve current behavior, and future style configuration is intentionally inert.
+
+Semantics for the current selector are described under [Bar instantiation](#bar-instantiation): unmatched names are ignored, an empty result falls back to all screens, and the binding reacts to `screensChanged`. Currently, `config.json` selects `"all"`.
 
 ## Current implementation status
 
@@ -148,6 +152,7 @@ Statuses are per `SPECS.md` rules: `Implemented` requires both code and verifica
 | --- | --- |
 | Per-screen `Bar` via `Variants` + `screen: modelData` | **Implemented** — code in `shell.qml`; two bar surfaces observed on the live compositor, one per output, each sized to its own monitor |
 | `bar.screens` config (`"all"` or name array) with empty-set fallback to all screens | **Implemented** — code in `Theme.qml` / `config.json` / `shell.qml` |
+| Configuration-only future bar foundation: normalized defaults, sparse exact-name overrides, safe fallback, snapshot replacement, and resolver | **Implemented in code; rendering intentionally pending** — code in `Theme.qml` / `Bar.qml`; see [Configurable Bar](configurable-bar.md) |
 | Global overlay exclusivity keyed by `(activeOverlay, activeScreenName)`, all routing through `barForScreen()` | **Implemented** — code in `shell.qml` |
 | Per-instance signal routing carrying `barInstance.screenName` | **Implemented** — inline handlers in the `Variants` delegate |
 | Bar-owned overlays pin to their bar's screen (`screenTarget: root.screen` → inner `PanelWindow.screen`, all five surfaces) | **Implemented in code.** Observed: the power-menu overlay covered `DP-1` at exactly `1920 0 2560 1440` while `DP-2` held focus. Honest caveat — this rules out *"follows the focused monitor"*, and is consistent with pinning, but an unpinned surface is free to land anywhere the compositor chooses, so the observation is supporting rather than conclusive proof. Conclusive read: open the same overlay from a right-island click on `DP-2` and confirm it appears there. |

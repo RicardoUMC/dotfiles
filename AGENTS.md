@@ -58,7 +58,7 @@ notifications/Notifications.qml ← ENGINE (non-surface `Item`): one Notificatio
                                    Presentation is a per-screen `Variants` of PanelWindow toast surfaces (Overlay, top-right),
                                    with a bounded native blur Region over visible `toastColumn` content in glass mode
 theme/Colors.qml        ← pragma Singleton — readonly color + font tokens
-theme/Theme.qml         ← pragma Singleton — mutable structural tokens from config.json
+theme/Theme.qml         ← pragma Singleton — mutable structural tokens from config.json, including the configuration-only future bar snapshot/resolver
 theme/Motion.qml        ← pragma Singleton — shared motion vocabulary: named intents (Effects / EffectsColor / Spatial) as drop-in inline animation types; see "Motion system" below
 ```
 
@@ -83,7 +83,7 @@ Behavior on height  { Motion.Spatial { } }       // geometry that moves or grows
 
 The right island's Caelestia-inspired visual pass (state-layer chips, semantic divider, power pill, Motion pilot) is **implemented and lint/offscreen-verified but not yet confirmed on the live compositor**; the feature document is `odd/tasks/caelestia-right-island.md`.
 
-The future configurable-bar design is documented in `specs/configurable-bar.md` and is **not implemented**. It defines global defaults with name-based per-monitor overrides for position (`top`/`bottom`/`left`/`right`), visibility (`always`/`edge-reveal`/`disabled`), style (`islands`/`continuous`), and dashboard attachment (`embedded`/`detached`). Edge reveal must use only external monitor edges; shared monitor seams remain pointer-traversal space. Do not treat these planned keys as current `Theme.qml` or `config.json` behavior.
+The configuration-only foundation for the future configurable-bar design is implemented in `Theme.qml` and documented in `specs/configurable-bar.md`. One file retains legacy `bar.screens` and `bar.style` and adds validated `bar.defaults` for position (`top`/`bottom`/`left`/`right`), visibility (`always`/`edge-reveal`/`disabled`), style (`islands`/`continuous`), and reveal policy (`external-edges`), plus global dashboard attachment (`embedded`/`detached`) and sparse exact-name `monitors.<ShellScreen.name>.bar` / `.dashboard` overrides. Invalid values fall back safely, unknown names are inert, successful reload replaces the normalized snapshot so removed overrides inherit again, malformed JSON preserves the last good snapshot, and hot reload uses the existing `Theme` FileView/debounce. This session does **not** implement placement, orientation, edge reveal, continuous rendering, disabled surface creation, detached dashboard rendering, or dynamic colors; current top/always/islands/embedded defaults preserve behavior and future style configuration is intentionally inert. Shared monitor seams remain pointer-traversal space.
 
 ## Overlay system rules (enforced in shell.qml)
 - Overlay exclusivity is a **single global slot**: one `activeOverlay` plus one `activeScreenName`. Opening any overlay closes whatever was active, on any screen. There are **no context groups** — the `bar-primary` / `bar-secondary` grouping older notes described was never implemented. See `specs/overlay-manager.md`.

@@ -1,9 +1,9 @@
 # Configurable Bar
 
-**Status:** Planned — design captured, implementation not started.
+**Status:** Configuration-only foundation implemented; rendering remains planned.
 **Related current spec:** [Bar](bar.md)
 
-This specification defines the future bar model. It does not change the current implementation: the live shell still renders a top-anchored bar with left, center, and right islands, and the center dashboard remains embedded in that bar.
+This specification defines the future bar model and the implemented configuration foundation. The live shell still renders a top-anchored bar with left, center, and right islands, and the center dashboard remains embedded in that bar. The foundation normalizes and resolves declarative configuration but intentionally does not apply future placement or rendering choices.
 
 ## Design goals
 
@@ -17,23 +17,33 @@ This specification defines the future bar model. It does not change the current 
 
 Global configuration provides defaults. A monitor-specific configuration overrides only the values it declares. Runtime visibility and hover state belong to each monitor's `Bar` instance; they are never one global session-wide bar state.
 
-Conceptual shape:
+Approved single-file schema:
 
 ```json
 {
   "bar": {
-    "position": "top",
-    "visibility": "always",
-    "style": "islands",
-    "revealPolicy": "external-edges"
+    "screens": "all",
+    "style": "silhouette",
+    "defaults": {
+      "position": "top",
+      "visibility": "always",
+      "style": "islands",
+      "revealPolicy": "external-edges"
+    }
   },
-  "dashboard": {
-    "attachment": "embedded"
+  "dashboard": { "attachment": "embedded" },
+  "monitors": {
+    "DP-1": {
+      "bar": { "position": "bottom" },
+      "dashboard": { "attachment": "detached" }
+    }
   }
 }
 ```
 
-Monitor overrides follow the existing name-based monitor identity rule. They must not use monitor indexes or assume a stable ordering.
+Legacy `bar.screens` and `bar.style` remain compatible with the current shell. Future defaults live under `bar.defaults`; `dashboard.attachment` is global, while `monitors.<ShellScreen.name>.bar` and `.dashboard` are sparse exact-name overrides. Unknown monitor names are inert, and monitor indexes or ordering are never used.
+
+The normalized snapshot validates each enum and safely falls back to `top`, `always`, `islands`, `external-edges`, or `embedded` as appropriate. A successful reload replaces the normalized snapshot, so removed overrides inherit global defaults again. Malformed JSON preserves the last good snapshot. Hot reload uses the existing `Theme` `FileView` watcher and debounce.
 
 ## Position
 
@@ -93,17 +103,22 @@ The dashboard must be separated as a component boundary before implementation, e
 
 ## Compatibility with the current shell
 
-The current implementation remains the baseline until this design is implemented:
+The configuration foundation is implemented, but its future values are declarative only. Current behavior remains the baseline:
 
 - `Bar.qml` is top-anchored and full-width.
 - It is instantiated once per enabled screen.
 - It renders left, center, and right islands.
 - The center island expands in place into `CenterDashboard.qml`.
-- `Theme.barStyle` currently selects the existing silhouette/plain bar treatment; it is not yet the future `islands`/`continuous` mode described here.
+- Legacy `Theme.barStyle` still selects the existing silhouette/plain bar treatment.
+- The future `style` value is normalized and resolved per screen, but is intentionally inert; `islands` preserves the current behavior by default.
 
-## Out of scope
+This session does **not** implement placement, orientation, edge reveal, continuous rendering, disabled surface creation, detached dashboard rendering, or dynamic colors. The current top/always/islands/embedded defaults preserve behavior.
 
-- Implementing the new configuration keys.
-- Refactoring `Bar.qml` or `CenterDashboard.qml`.
-- Choosing final default values for every future token.
+## Remaining implementation scope
+
+- Applying resolved position and orientation to `Bar.qml`.
+- Implementing edge reveal using only external edges.
+- Rendering the `continuous` style and suppressing surface creation for `disabled`.
+- Supporting a detached dashboard surface.
+- Defining dynamic color behavior separately; this foundation does not implement it.
 - Defining a compositor-specific cursor API or requiring a particular external auto-hide helper.

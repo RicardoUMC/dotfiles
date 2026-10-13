@@ -525,6 +525,7 @@ PanelWindow {
         centerWidth: centerSection.centerWidth
         centerHeight: centerSection.centerHeight
         vertical: root.vertical
+        barPosition: root.barPosition
         onOpened: root.centerPanelOpened()
         onClosed: root.centerPanelClosed()
     }

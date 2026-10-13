@@ -11,6 +11,7 @@ Item {
     property real centerHeight: 0
     property real centerY: 0
     property bool vertical: false
+    property string barPosition: "top"
 
     // Wayland output this overlay pins itself to, passed down from the Bar
     // instance that owns it. An unpinned layer-shell surface sends a null
@@ -56,7 +57,7 @@ Item {
         Item {
             id: centerHole
             x: root.vertical ? 0 : root.centerX
-            y: root.vertical ? root.centerY : 0
+            y: root.vertical || root.barPosition === "bottom" ? root.centerY : 0
             width: root.vertical ? root.centerWidth : root.centerWidth
             height: root.vertical ? root.centerHeight : root.centerHeight
         }

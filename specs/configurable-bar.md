@@ -1,6 +1,6 @@
 # Configurable Bar
 
-**Status:** Configuration foundation, `disabled` visibility filtering, and per-monitor physical positioning implemented; edge reveal, continuous style, and detached dashboard rendering remain inert.
+**Status:** Configuration foundation, `disabled` visibility filtering, and top/bottom per-monitor physical positioning implemented. Bottom mirrors the top visible masks and wraps around a centered vertical transform, with edge-aware native-blur geometry and a bottom-center `CenterPanel` cutout. Left/right positioning exists as the next visual refinement; 90-degree notch rotation and vertical icon stacking are the intended direction. Edge reveal, continuous style, and detached dashboard rendering remain inert.
 **Related current spec:** [Bar](bar.md)
 
 This specification defines the configurable bar model and its current implementation boundary. Each `Bar` resolves its position through `Theme.effectiveBarConfig(screenName)`, so exact-name monitor overrides can place the existing island bar at the top, bottom, left, or right edge. The top position remains the baseline behavior.
@@ -54,7 +54,7 @@ The normalized snapshot validates each enum and safely falls back to `top`, `alw
 | `left` | Vertical bar anchored to the left edge. |
 | `right` | Vertical bar anchored to the right edge. |
 
-Changing position changes layout orientation, anchors, reserved edge, hit regions, and ornament placement together. Top/bottom use horizontal islands; left/right use a vertical `GridLayout` composition without rotating the finished surface. Masks, wraps, input regions, native-blur geometry, and `exclusiveZone` follow the selected edge. It is not a visual rotation of the current top-bar surface.
+Changing position changes layout orientation, anchors, reserved edge, hit regions, and ornament placement together. Top/bottom use horizontal islands; bottom mirrors the top visible masks and wraps around a centered vertical transform, including edge-aware native-blur geometry and the bottom-center `CenterPanel` cutout. Left/right positioning exists as the next visual refinement, with 90-degree notch rotation and vertical icon stacking as the intended design direction. Masks, wraps, input regions, native-blur geometry, and `exclusiveZone` follow the selected edge.
 
 ## Visibility
 
@@ -103,7 +103,7 @@ The dashboard must be separated as a component boundary before implementation, e
 
 ## Compatibility with the current shell
 
-The current implementation applies the normalized `disabled` visibility filter and the resolved physical position. `Bar.qml` remains one instance per enabled screen, renders left/center/right islands, and expands the center island in place into `CenterDashboard.qml`. Top remains the baseline; bottom mirrors the horizontal placement, while left/right stack the same child controls vertically without rotating them. `exclusiveZone` reserves the collapsed content dimension on the selected edge, and the input union follows that geometry. `edge-reveal` remains always-visible behavior. Continuous style, detached dashboard rendering, and dynamic colors remain inert. Explicit `disabled` may legitimately produce zero Bars and is not undone by the legacy selector fallback.
+The current implementation applies the normalized `disabled` visibility filter and the resolved physical position. `Bar.qml` remains one instance per enabled screen, renders left/center/right islands, and expands the center island in place into `CenterDashboard.qml`. Top remains the baseline; bottom is a physical horizontal placement whose visible masks and wraps mirror top around a centered vertical transform, whose native blur is edge-aware, and whose `CenterPanel` cutout follows the bottom centerY. Left/right positioning exists as the next visual refinement; 90-degree notch rotation and vertical icon stacking are the intended direction. `exclusiveZone` reserves the collapsed content dimension on the selected edge, and the input union follows that geometry. `edge-reveal` remains always-visible behavior. Continuous style, detached dashboard rendering, and dynamic colors remain inert. Explicit `disabled` may legitimately produce zero Bars and is not undone by the legacy selector fallback.
 
 ## Remaining implementation scope
 

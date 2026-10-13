@@ -139,13 +139,16 @@ The control-center panel-chrome family has three deliberately distinct seam/trac
 
 ### Requirement: Bar Screen Selection
 
-`barScreens` (`var`, default `"all"`, `config.json` key `bar.screens`) resolves which connected screens get a `Bar` instance. The selector lives in `shell.qml` (`screenSelector.enabledScreens`), which feeds the per-screen `Variants { model: ... }` that instantiates `Bar.qml`.
+`barScreens` (`var`, default `"all"`, `config.json` key `bar.screens`) participates in the first stage of Bar selection. The selector lives in `shell.qml` (`screenSelector.enabledScreens`), which feeds the per-screen `Variants { model: ... }` that instantiates `Bar.qml`.
 
 - Accepted values: the string `"all"`, or an array of `ShellScreen.name` strings (e.g. `["DP-1"]`).
-- Matching is by screen **name only** — never by index or ordering.
+- Matching is by screen **name only** — never by index or ordering; the model remains N-monitor generic.
 - Names that match no connected screen are ignored.
-- If the resolved set comes out empty (typo'd or unplugged name), the shell falls back to ALL screens so a session is never left without a bar.
+- If the legacy name selection resolves empty (typo'd or unplugged names), the shell first falls back to ALL screens.
+- The normalized per-monitor visibility policy is applied after that legacy fallback. `visibility: "disabled"` then removes that screen from the Bar model and may legitimately leave zero Bars; it is not undone by the earlier fallback.
+- `edge-reveal` currently has the same always-visible behavior as `always`; position/orientation/style/dashboard attachment remain inert.
 - The binding re-evaluates on `Quickshell.screens` changes, so hot-plug adds and removes bar instances without a reload.
+- If a Bar owner disappears, active and pending Bar-owned overlays are reconciled away by exact screen name. Launcher and wallpaper remain standalone surfaces.
 
 One-bar-per-screen architecture, per-screen surface ownership, and overlay coordination are specified in `specs/multi-monitor.md`; this spec covers only the token contract.
 
@@ -153,7 +156,7 @@ One-bar-per-screen architecture, per-screen surface ownership, and overlay coord
 
 The single `config.json` file retains compatible legacy keys `bar.screens` and `bar.style`. The approved future schema adds `bar.defaults.position` (`top`, `bottom`, `left`, `right`), `bar.defaults.visibility` (`always`, `edge-reveal`, `disabled`), `bar.defaults.style` (`islands`, `continuous`), `bar.defaults.revealPolicy` (`external-edges`), global `dashboard.attachment` (`embedded`, `detached`), and sparse exact-name `monitors.<ShellScreen.name>.bar` / `.dashboard` overrides.
 
-`Theme.qml` validates and normalizes this model into one snapshot, and `effectiveBarConfig(screenName)` applies sparse name-based overrides without using monitor indexes or ordering. Invalid values fall back safely to the documented defaults; unknown names are inert. A successful reload replaces the normalized snapshot, so removed overrides inherit again. Malformed JSON preserves the last good snapshot. This session only supplies configuration data: placement, orientation, edge reveal, continuous rendering, disabled surface creation, detached dashboard rendering, and dynamic colors are not implemented. The current top/always/islands/embedded defaults preserve behavior, and future style configuration is intentionally inert.
+`Theme.qml` validates and normalizes this model into one snapshot, and `effectiveBarConfig(screenName)` applies sparse name-based overrides without using monitor indexes or ordering. Invalid values fall back safely to the documented defaults; unknown names are inert. A successful reload replaces the normalized snapshot, so removed overrides inherit again. Malformed JSON preserves the last good snapshot. The current implementation applies the normalized `disabled` visibility filter and its Bar-owned surface lifecycle; `edge-reveal` remains always-visible. Placement, orientation, continuous rendering, detached dashboard rendering, and dynamic colors are not implemented, and future style configuration is intentionally inert. The approved transitional contract does not create detached or other independent surfaces.
 
 ### Requirement: Hot-Reload via config.json
 

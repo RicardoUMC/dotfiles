@@ -75,12 +75,12 @@ Status: implemented and verified by Qt 6 lint plus offscreen runtime probes; **l
 
 The current top-anchored island bar remains the implemented baseline. The configuration-only foundation is now implemented in `Theme.qml`: one normalized snapshot accepts compatible legacy `bar.screens` / `bar.style`, global `bar.defaults`, global `dashboard.attachment`, and sparse exact-name `monitors.<ShellScreen.name>.bar` / `.dashboard` overrides. Invalid values fall back safely, unknown names are inert, successful reloads replace the snapshot so removed overrides inherit again, and malformed JSON preserves the last good snapshot. Hot reload uses the existing `Theme` `FileView` watcher/debounce.
 
-The future rendering design is documented in [`specs/configurable-bar.md`](specs/configurable-bar.md), but placement, orientation, edge reveal, continuous rendering, disabled surface creation, detached dashboard rendering, and dynamic colors are not implemented. Current top/always/islands/embedded defaults preserve behavior, and future style configuration is intentionally inert.
+The future rendering design is documented in [`specs/configurable-bar.md`](specs/configurable-bar.md). The current slice applies `disabled` visibility by filtering Bar instances and removing their currently Bar-owned surfaces. `edge-reveal` remains current always-visible behavior; placement, orientation, continuous rendering, detached dashboard rendering, and dynamic colors remain inert. Current top/always/islands/embedded defaults preserve behavior, and future style configuration is intentionally inert. Detached dashboards and other independent surfaces are future work.
 
 The design separates four independent decisions:
 
 - **Position:** `top`, `bottom`, `left`, or `right`, selected per monitor through global defaults and name-based monitor overrides.
-- **Visibility:** `always`, `edge-reveal`, or `disabled`, with reveal and reservation state owned independently by each monitor's bar instance.
+- **Visibility:** `always`, `edge-reveal`, or `disabled`, with `disabled` able to produce zero Bar instances after legacy `bar.screens` selection and fallback. `edge-reveal` currently remains always-visible; future reveal and reservation state is owned independently by each monitor's bar instance.
 - **Style:** `islands` preserves the current curves, wraps, masks, gaps, and ornaments; `continuous` is a separate future visual grammar.
 - **Dashboard attachment:** `embedded` keeps the dashboard visually attached to the bar; `detached` gives it an independent screen-pinned surface.
 
@@ -203,7 +203,7 @@ Current `config.json` keeps the scale at its defaults (`12 / 13 / 15 / 17 / 22`)
 | `Theme.wallpaperTransition` | `"fade"` | `"fade"` | `awww` wallpaper application transition (`wallpaper.transition`). Supported values include `none`, `simple`, `fade`, directional, `wipe`, `wave`, `grow`, `center`, `any`, `outer`, and `random`. |
 | `Theme.wallpaperTransitionDuration` | `1.0` | `1.0` | Duration in seconds for supported `awww` transitions (`wallpaper.duration`). |
 | `Theme.barStyle` | `"silhouette"` | `"silhouette"` | Enables the masked wrapped silhouette; `"plain"` disables it. |
-| `Theme.barScreens` | `"all"` | `"all"` | Which screens get a bar: `"all"`, or an array of `ShellScreen.name` strings (`bar.screens`). Matching is by name only — never index or order; unmatched names are ignored; a resolved-empty set falls back to all screens so a session is never left without a bar. Architecture: `specs/multi-monitor.md`. |
+| `Theme.barScreens` | `"all"` | `"all"` | Legacy first-stage Bar selection: `"all"`, or an array of exact `ShellScreen.name` strings (`bar.screens`). Matching is by name only — never index or order; unmatched names are ignored; an empty legacy match falls back to all screens before normalized visibility filters. Explicit `disabled` is not revived by that fallback. Architecture: `specs/multi-monitor.md`. |
 | `Theme.barNotchGapWidth` | `30` | `30` | Horizontal gap at each section boundary of the silhouette (`bar.notchGapWidth`). |
 | `Theme.barNotchDepthRatio` | `0.2` | `0.2` | Shared notch depth for all segments: depth = bar height × ratio (`bar.notchDepthRatio`). |
 

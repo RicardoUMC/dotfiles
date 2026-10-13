@@ -1,6 +1,6 @@
 # Configurable Bar
 
-**Status:** Configuration-only foundation implemented; rendering remains planned.
+**Status:** Configuration foundation and `disabled` visibility filtering implemented; remaining rendering remains planned.
 **Related current spec:** [Bar](bar.md)
 
 This specification defines the future bar model and the implemented configuration foundation. The live shell still renders a top-anchored bar with left, center, and right islands, and the center dashboard remains embedded in that bar. The foundation normalizes and resolves declarative configuration but intentionally does not apply future placement or rendering choices.
@@ -41,7 +41,7 @@ Approved single-file schema:
 }
 ```
 
-Legacy `bar.screens` and `bar.style` remain compatible with the current shell. Future defaults live under `bar.defaults`; `dashboard.attachment` is global, while `monitors.<ShellScreen.name>.bar` and `.dashboard` are sparse exact-name overrides. Unknown monitor names are inert, and monitor indexes or ordering are never used.
+Legacy `bar.screens` and `bar.style` remain compatible with the current shell. Future defaults live under `bar.defaults`; `dashboard.attachment` is global, while `monitors.<ShellScreen.name>.bar` and `.dashboard` are sparse exact-name overrides. Unknown monitor names are inert, and monitor indexes or ordering are never used. Selection uses exact `ShellScreen.name` identity and is N-monitor generic.
 
 The normalized snapshot validates each enum and safely falls back to `top`, `always`, `islands`, `external-edges`, or `embedded` as appropriate. A successful reload replaces the normalized snapshot, so removed overrides inherit global defaults again. Malformed JSON preserves the last good snapshot. Hot reload uses the existing `Theme` `FileView` watcher and debounce.
 
@@ -62,7 +62,7 @@ Changing position changes layout orientation, anchors, reserved edge, hit region
 |---|---|
 | `always` | The bar remains visible and reserves its configured edge space. |
 | `edge-reveal` | The bar is hidden or reduced to a reveal strip and appears when the pointer reaches its eligible edge. |
-| `disabled` | No bar surface is created for that monitor. |
+| `disabled` | No `Bar` instance is created for that monitor; its currently Bar-owned surfaces are removed with the instance. |
 
 `edge-reveal` is evaluated independently for every monitor. A monitor becoming revealed must not reveal bars on other monitors.
 
@@ -112,13 +112,19 @@ The configuration foundation is implemented, but its future values are declarati
 - Legacy `Theme.barStyle` still selects the existing silhouette/plain bar treatment.
 - The future `style` value is normalized and resolved per screen, but is intentionally inert; `islands` preserves the current behavior by default.
 
-This session does **not** implement placement, orientation, edge reveal, continuous rendering, disabled surface creation, detached dashboard rendering, or dynamic colors. The current top/always/islands/embedded defaults preserve behavior.
+The current implementation applies only the normalized `disabled` visibility filter. `edge-reveal` remains the current always-visible behavior. Position/orientation, continuous style, detached dashboard rendering, and dynamic colors remain inert; the current top/always/islands/embedded defaults preserve behavior. Explicit `disabled` may legitimately produce zero Bars and is not undone by the legacy selector fallback.
 
 ## Remaining implementation scope
 
 - Applying resolved position and orientation to `Bar.qml`.
 - Implementing edge reveal using only external edges.
-- Rendering the `continuous` style and suppressing surface creation for `disabled`.
-- Supporting a detached dashboard surface.
+- Rendering the `continuous` style and expanding disabled handling beyond the current Bar-owned surface lifecycle contract.
+- Supporting a detached dashboard surface; independent surfaces remain future work.
 - Defining dynamic color behavior separately; this foundation does not implement it.
 - Defining a compositor-specific cursor API or requiring a particular external auto-hide helper.
+
+## Bar lifecycle and overlay reconciliation
+
+Legacy `bar.screens` name selection runs first. An empty legacy name match falls back to all connected screens so an unplugged or mistyped name does not remove every candidate. The normalized per-monitor visibility policy then filters those candidates. Therefore an explicit `visibility: "disabled"` can legitimately leave zero `Bar` instances; that result is not revived by the legacy fallback.
+
+When a monitor stops producing a `Bar`, its currently active or pending Bar-owned overlay is cleared by screen identity, including pending opens waiting on the shared anti-serial-conflict timer. Standalone launcher and wallpaper surfaces are not cleared by Bar reconciliation. This is the approved transitional contract: disabling a monitor removes its `Bar` and currently Bar-owned surfaces; detached dashboards and other independent surfaces are future work.

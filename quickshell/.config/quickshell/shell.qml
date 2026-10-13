@@ -91,10 +91,11 @@ ShellRoot {
     // Resolves which connected screens get a Bar. Selection matches by
     // ShellScreen.name only — never by index or ordering. "all" (default)
     // means every screen; an array of names means only the screens whose
-    // name matches, and unmatched names are ignored. If the resolved list
-    // comes out empty — a named monitor was unplugged, or a name was
-    // typo'd — it FALLS BACK TO ALL SCREENS so the session is never left
-    // without a bar. The screens binding re-evaluates on screensChanged,
+    // name matches, and unmatched names are ignored. If the legacy resolved
+    // list comes out empty — a named monitor was unplugged, or a name was
+    // typo'd — it FALLS BACK TO ALL SCREENS before the explicit per-monitor
+    // visibility policy is applied. That policy may legitimately leave zero
+    // bars. The screens binding re-evaluates on screensChanged,
     // so hot-plug adds and removes bar instances without a reload.
     QtObject {
         id: screenSelector
@@ -106,20 +107,38 @@ ShellRoot {
             const all = []
             const count = screens.length
             for (let i = 0; i < count; i++) all.push(screens[i])
-            if (typeof selection !== "object" || selection === null)
-                return all
-            const named = []
-            for (let i = 0; i < selection.length; i++) {
-                for (let j = 0; j < count; j++) {
-                    if (screens[j].name === selection[i]) {
-                        named.push(screens[j])
-                        break
+            let legacySelection = all
+            if (typeof selection === "object" && selection !== null) {
+                const named = []
+                for (let i = 0; i < selection.length; i++) {
+                    for (let j = 0; j < count; j++) {
+                        if (screens[j].name === selection[i]) {
+                            named.push(screens[j])
+                            break
+                        }
                     }
                 }
+                // Preserve the legacy fallback before applying the normalized
+                // per-monitor visibility policy. An explicit disabled result
+                // must not be revived by this fallback.
+                legacySelection = named.length > 0 ? named : all
             }
-            // Fallback: never leave the session without a bar.
-            return named.length > 0 ? named : all
+            const visible = []
+            for (let i = 0; i < legacySelection.length; i++) {
+                const screen = legacySelection[i]
+                const config = Theme.effectiveBarConfig(screen.name)
+                if (config.bar.visibility !== "disabled") visible.push(screen)
+            }
+            return visible
         }
+
+        function hasBarForScreen(name) {
+            for (let i = 0; i < enabledScreens.length; i++) {
+                if (enabledScreens[i].name === name) return true
+            }
+            return false
+        }
+
     }
 
     // Resolve the Bar instance for a screen identity. Every open/close
@@ -218,6 +237,29 @@ ShellRoot {
 
         function closeAll() { _closeActive() }
 
+        function _isBarOverlay(name) {
+            return name === "mpris"
+                || name === "metrics"
+                || name === "center-panel"
+                || name === "right-control-center"
+        }
+
+        // Filtering can destroy a Bar while an overlay request is active or
+        // waiting on the shared serial-conflict timer. Reconcile by screen
+        // name, and leave standalone launcher/wallpaper surfaces untouched.
+        function reconcileBarScreens() {
+            if (_isBarOverlay(activeOverlay) && !screenSelector.hasBarForScreen(activeScreenName))
+                _closeActive()
+            if (_isBarOverlay(_pendingOpen)
+                    && _pendingScreenName !== ""
+                    && !screenSelector.hasBarForScreen(_pendingScreenName)) {
+                _pendingOpen = ""
+                _pendingScreenName = ""
+                _pendingRightControlCenterSection = ""
+                overlayOpenTimer.stop()
+            }
+        }
+
         function _closeActive() {
             // Clear activeOverlay first to prevent re-entrant calls from closed() signals
             const current = activeOverlay
@@ -264,6 +306,14 @@ ShellRoot {
             activeOverlay = name
             activeScreenName = screenName
         }
+    }
+
+    // Reconcile after the filtered model changes, including a monitor being
+    // disabled by configuration. Keeping this connection after the manager
+    // avoids calling a forward-declared object during startup.
+    Connections {
+        target: screenSelector
+        function onEnabledScreensChanged() { overlayManager.reconcileBarScreens() }
     }
 
     // Single-instance engines and compositor orchestration. Bar instances

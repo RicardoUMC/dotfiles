@@ -106,8 +106,9 @@ PanelWindow {
     // uses it as the screen identity; signals from this bar are handled
     // per instance so the coordinator knows which screen emitted them.
     property string screenName: ""
-    // Normalized future configuration, resolved once by Theme for this screen.
-    // It is intentionally inert until the future positioning/visibility work.
+    // Normalized configuration, resolved once by Theme for this screen.
+    // Visibility is consumed by shell.qml before this instance is created;
+    // placement, style, and dashboard attachment remain future work.
     property var barConfig: ({})
     // Injected from shell.qml: the Hyprland monitor this bar's screen maps to,
     // or null during startup / hot-plug until the monitor appears. Resolved

@@ -54,8 +54,19 @@ The future model is stored separately:
 - `git diff --check`: pass.
 - Runtime compositor reload and live monitor behavior were not run; future configuration is intentionally inert.
 
+## Disabled visibility unit evidence
+
+- Legacy `bar.screens` resolution and empty-match fallback remain the first stage.
+- Normalized `visibility: "disabled"` filtering runs after that stage and allows zero Bar instances.
+- Active and pending Bar-owned overlays are reconciled by exact screen name; standalone launcher/wallpaper state is preserved.
+- Structural checks and Qt 6 lint passed; live compositor reload, hot-plug, and visual lifecycle checks remain pending.
+
 ## Decisions
 
 - Use `monitors` rather than `barMonitors` to model both bar and dashboard monitor overrides without colliding with legacy `bar.style` semantics.
 - Keep runtime state (visibility/reveal/overlay state) separate; this task only supplies declarative configuration data.
 - Do not change physical Bar geometry or layer-shell behavior.
+
+## Next unit: disabled visibility
+
+Approved follow-up: apply `visibility: "disabled"` by filtering the per-monitor Bar instance and its currently Bar-owned surfaces. Preserve the legacy `bar.screens` fallback before this filter; do not restore bars after an explicit disabled result, including when every monitor is disabled. Reconcile active/pending overlay ownership when a Bar disappears. Detached dashboard and independently owned surfaces remain future work.

@@ -84,12 +84,15 @@ Consequences the implementation honors:
 
 There are no context groups in this model. See `specs/overlay-manager.md`.
 
+When filtering removes a Bar owner, reconciliation clears an active Bar-owned overlay and cancels a pending Bar-owned open for that exact screen name, including a request waiting on the shared 50 ms timer. The Bar-owned surfaces disappear with the Bar instance. Launcher and wallpaper remain standalone and are not removed by this reconciliation.
+
 ## Bar instantiation
 
 `shell.qml` builds the enabled-screen list in a `QtObject { id: screenSelector }` and instantiates Bar through `Variants`:
 
-- `enabledScreens` reads `Quickshell.screens` and `Theme.barScreens` and resolves by `ShellScreen.name` only — never by index or ordering.
-- Unmatched names are ignored. If the resolved set is **empty** — a named monitor was unplugged, or a name was typo'd — it **falls back to all screens** rather than leaving the session without a bar.
+- `enabledScreens` first reads `Quickshell.screens` and `Theme.barScreens`, resolving legacy selection by exact `ShellScreen.name` only — never by index or ordering.
+- Unmatched names are ignored. If that legacy selection is **empty** — a named monitor was unplugged, or a name was typo'd — it first **falls back to all screens**.
+- The normalized per-monitor visibility policy then filters those candidates. `visibility: "disabled"` can legitimately produce zero Bar instances and is not undone by the earlier fallback. `edge-reveal` currently behaves as always-visible; position/orientation/style/dashboard attachment remain inert.
 - The binding re-evaluates on `screensChanged`, so hot-plug adds and removes bar instances without a reload.
 - The delegate is `Bar { required property ShellScreen modelData; screen: modelData; screenName: modelData.name }`.
 - Each instance also receives `hyprlandMonitor`, `notificationsState`, `systemStatsState`, and `workspaceMonitorTick` from the shell root. `hyprlandMonitor` is resolved by reading `Hyprland.monitors.values` as a dependency before calling `Hyprland.monitorFor(modelData)`, because `monitorFor()` is a plain invokable that emits nothing: Quickshell can publish a screen before Hyprland publishes its monitors (startup) or replace one during a hot-plug, and a bare call would stick at `null`.
@@ -140,9 +143,9 @@ Per-screen UI may duplicate **views** (islands, masks, cards, toast surfaces) bu
 
 The configuration-only foundation also normalizes the approved future model in the same file: legacy `bar.screens` and `bar.style`; `bar.defaults.position` (`top`/`bottom`/`left`/`right`), `bar.defaults.visibility` (`always`/`edge-reveal`/`disabled`), `bar.defaults.style` (`islands`/`continuous`), `bar.defaults.revealPolicy` (`external-edges`); global `dashboard.attachment` (`embedded`/`detached`); and sparse exact-name `monitors.<ShellScreen.name>.bar` / `.dashboard` overrides.
 
-Invalid values fall back safely, unknown names are inert, and resolution uses names only. A successful reload replaces the normalized snapshot, so removed overrides inherit again. Malformed JSON preserves the last good snapshot. Hot reload uses the existing `Theme` `FileView` watcher and debounce. This foundation does not apply placement, orientation, edge reveal, continuous rendering, disabled surface creation, detached dashboard rendering, or dynamic colors; top/always/islands/embedded defaults preserve current behavior, and future style configuration is intentionally inert.
+Invalid values fall back safely, unknown names are inert, and resolution uses exact names only. A successful reload replaces the normalized snapshot, so removed overrides inherit again. Malformed JSON preserves the last good snapshot. Hot reload uses the existing `Theme` `FileView` watcher and debounce. The current slice applies only `disabled` Bar filtering and Bar-owned surface removal; `edge-reveal` remains always-visible. Placement, orientation, continuous rendering, detached dashboard rendering, and dynamic colors remain inert; top/always/islands/embedded defaults preserve current behavior. Detached dashboards and other independent surfaces are future work.
 
-Semantics for the current selector are described under [Bar instantiation](#bar-instantiation): unmatched names are ignored, an empty result falls back to all screens, and the binding reacts to `screensChanged`. Currently, `config.json` selects `"all"`.
+Semantics for the current selector are described under [Bar instantiation](#bar-instantiation): unmatched legacy names are ignored, an empty legacy result falls back to all screens before normalized visibility filtering, and the binding reacts to `screensChanged`. Explicit `disabled` is not revived by that fallback. Currently, `config.json` selects `"all"`.
 
 ## Current implementation status
 
@@ -151,8 +154,8 @@ Statuses are per `SPECS.md` rules: `Implemented` requires both code and verifica
 | Piece | State |
 | --- | --- |
 | Per-screen `Bar` via `Variants` + `screen: modelData` | **Implemented** — code in `shell.qml`; two bar surfaces observed on the live compositor, one per output, each sized to its own monitor |
-| `bar.screens` config (`"all"` or name array) with empty-set fallback to all screens | **Implemented** — code in `Theme.qml` / `config.json` / `shell.qml` |
-| Configuration-only future bar foundation: normalized defaults, sparse exact-name overrides, safe fallback, snapshot replacement, and resolver | **Implemented in code; rendering intentionally pending** — code in `Theme.qml` / `Bar.qml`; see [Configurable Bar](configurable-bar.md) |
+| `bar.screens` legacy name selection, empty-set fallback, then normalized visibility filtering (including `disabled`) | **Implemented** — code in `Theme.qml` / `config.json` / `shell.qml` |
+| Configuration foundation plus `disabled` Bar filtering and Bar-owned lifecycle reconciliation | **Implemented in code; remaining rendering intentionally pending** — code in `Theme.qml` / `Bar.qml` / `shell.qml`; see [Configurable Bar](configurable-bar.md) |
 | Global overlay exclusivity keyed by `(activeOverlay, activeScreenName)`, all routing through `barForScreen()` | **Implemented** — code in `shell.qml` |
 | Per-instance signal routing carrying `barInstance.screenName` | **Implemented** — inline handlers in the `Variants` delegate |
 | Bar-owned overlays pin to their bar's screen (`screenTarget: root.screen` → inner `PanelWindow.screen`, all five surfaces) | **Implemented in code.** Observed: the power-menu overlay covered `DP-1` at exactly `1920 0 2560 1440` while `DP-2` held focus. Honest caveat — this rules out *"follows the focused monitor"*, and is consistent with pinning, but an unpinned surface is free to land anywhere the compositor chooses, so the observation is supporting rather than conclusive proof. Conclusive read: open the same overlay from a right-island click on `DP-2` and confirm it appears there. |

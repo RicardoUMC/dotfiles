@@ -9,13 +9,13 @@ Top-anchored floating bar composed of independent wrapped-silhouette islands. Ea
 
 ## Future evolution
 
-The configuration-only foundation for the future configurable bar is implemented and specified in [Configurable Bar](configurable-bar.md). It validates global defaults and sparse exact-name per-monitor overrides while preserving this current top/island behavior. It does not yet apply per-monitor position, orientation, visibility, edge reveal, continuous rendering, disabled surface creation, or detached dashboard attachment; future style configuration is intentionally inert. This spec remains the source of truth for the implemented bar.
+The configuration-only foundation for the future configurable bar is implemented and specified in [Configurable Bar](configurable-bar.md). It validates global defaults and sparse exact-name per-monitor overrides while preserving this current top/island behavior. It does not yet apply per-monitor position, orientation, edge reveal, continuous rendering, or detached dashboard attachment; `disabled` visibility filtering and removal of the Bar-owned surface set are implemented. Future style configuration is intentionally inert. This spec remains the source of truth for the implemented bar.
 
 ## Behavior
 
 ### Configuration foundation
 
-`Theme.qml` resolves one normalized future configuration per `ShellScreen.name`, including bar position/visibility/style/reveal policy and dashboard attachment. Legacy `bar.screens` and `bar.style` remain compatible. Invalid values safely use defaults, unknown monitor names are inert, and a successful reload replaces the snapshot so removed overrides inherit again; malformed JSON preserves the last good snapshot. These values are declarative only in the current implementation.
+`Theme.qml` resolves one normalized future configuration per exact `ShellScreen.name`, including bar position/visibility/style/reveal policy and dashboard attachment. Legacy `bar.screens` and `bar.style` remain compatible. Legacy `bar.screens` selection and its empty-match fallback run first; normalized per-monitor visibility then filters Bar instances. Thus explicit `visibility: "disabled"` may legitimately leave zero Bars and is not revived by fallback. `edge-reveal` remains current always-visible behavior, while position/orientation/style/dashboard attachment remain inert. Invalid values safely use defaults, unknown monitor names are inert, and a successful reload replaces the snapshot so removed overrides inherit again; malformed JSON preserves the last good snapshot.
 
 ### One instance per screen
 
@@ -23,6 +23,7 @@ The configuration-only foundation for the future configurable bar is implemented
 - Injected by the shell root: `screenName`, `hyprlandMonitor`, `notificationsState`, `systemStatsState`, `workspaceMonitorTick`. The instance never probes the compositor or creates its own pollers.
 - Signals are connected per delegate instance in `shell.qml`, so every request carries its own screen identity. Bar instances never talk to each other.
 - The overlays it owns — `PowerMenu`, `MprisPopup`, `CenterPanel`, `MetricsDropdown`, `RightControlCenter` — each receive `screenTarget: root.screen` and bind it to their inner `PanelWindow` as `screen: root.screenTarget`. Nesting alone is not enough: an unpinned layer-shell surface hands the compositor a null `wl_output` and lets it pick the output. See the "Screen targeting is explicit" section of `specs/multi-monitor.md`.
+- If filtering removes this Bar, its currently Bar-owned surfaces disappear with it. `shell.qml` also clears active or pending Bar-owned overlay state by exact screen name, including pending opens on the shared timer. Launcher and wallpaper remain standalone; detached dashboards and other independent surfaces are future work.
 
 ### Layout
 - Anchored to top of screen, full width

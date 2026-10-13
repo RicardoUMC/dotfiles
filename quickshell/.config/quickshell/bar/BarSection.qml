@@ -14,14 +14,18 @@ Item {
     property bool rightCornerEnabled: true
     property bool bottomLeftRounded: true
     property bool bottomRightRounded: true
+    property bool vertical: false
+    property string edge: "top"
 
-    readonly property real reservedHeight: collapsedHeight
+    readonly property real reservedHeight: vertical ? targetItem.width : collapsedHeight
+    readonly property real reservedWidth: vertical ? targetItem.width : 0
     readonly property Item hit: hitBox
     readonly property real centerX: targetItem.x
+    readonly property real centerY: targetItem.y
     readonly property real centerWidth: targetItem.width
     readonly property real centerHeight: targetItem.height
 
-    readonly property real _cornerSize: Math.min(Theme.barCurveRadius, targetItem.height)
+    readonly property real _cornerSize: Math.min(Theme.barCurveRadius, vertical ? targetItem.width : targetItem.height)
     readonly property real _leftExtent: leftCornerEnabled ? _cornerSize : 0
     readonly property real _rightExtent: rightCornerEnabled ? _cornerSize : 0
     readonly property real _wrapDepth: hasWrap ? Theme.barWrapDepth : 0
@@ -29,15 +33,19 @@ Item {
         ? Qt.rgba(1.0, 0.2, 0.2, 0.65)
         : Theme.surface(Colors.base01)
 
-    x: targetItem.x - _leftExtent
-    y: targetItem.y
-    width: targetItem.width + _leftExtent + _rightExtent
-    height: targetItem.height + _wrapDepth
+    x: vertical
+        ? (edge === "right" ? targetItem.x - _wrapDepth : targetItem.x)
+        : targetItem.x - _leftExtent
+    y: vertical ? targetItem.y - _leftExtent : targetItem.y - (edge === "bottom" ? _wrapDepth : 0)
+    width: vertical ? targetItem.width + _wrapDepth : targetItem.width + _leftExtent + _rightExtent
+    height: vertical ? targetItem.height + _leftExtent + _rightExtent : targetItem.height + _wrapDepth
 
     Item {
         id: targetProxy
-        x: root._leftExtent
-        y: 0
+        // Keep the target at the output edge on the left, but make room for
+        // the inward wrap before it on the right.
+        x: root.vertical ? (root.edge === "right" ? root._wrapDepth : 0) : root._leftExtent
+        y: root.vertical ? root._leftExtent : (root.edge === "bottom" ? root._wrapDepth : 0)
         width: root.targetItem.width
         height: root.targetItem.height
         visible: false
@@ -66,28 +74,42 @@ Item {
             rightCornerEnabled: root.rightCornerEnabled
             bottomLeftRounded: root.bottomLeftRounded
             bottomRightRounded: root.bottomRightRounded
+            vertical: root.vertical
+            edge: root.edge
+        }
+
+        // The wrap follows the owning output edge: below for top, above for
+        // bottom, and inward for either vertical edge.
+        NotchCornerMask {
+            x: root.vertical ? (root.edge === "left" ? targetProxy.x + targetProxy.width : targetProxy.x - root._wrapDepth) : targetProxy.x
+            y: root.vertical ? targetProxy.y : (root.edge === "bottom" ? targetProxy.y - root._wrapDepth : targetProxy.y + targetProxy.height)
+            width: root.vertical ? root._wrapDepth : root._cornerSize
+            height: root.vertical ? root._cornerSize : root._wrapDepth
+            radius: root._cornerSize
+            corner: root.vertical ? (root.edge === "left" ? "topLeft" : "topRight") : "topLeft"
+            transform: Scale {
+                origin.x: (root.vertical ? root._wrapDepth : root._cornerSize) / 2
+                origin.y: (root.vertical ? root._cornerSize : root._wrapDepth) / 2
+                yScale: !root.vertical && root.edge === "bottom" ? -1 : 1
+            }
+            color: "white"
+            visible: root.hasWrap && (root.vertical || !root.bottomLeftRounded) && width > 0 && height > 0
         }
 
         NotchCornerMask {
-            x: targetProxy.x
-            y: targetProxy.y + targetProxy.height
-            width: root._cornerSize
-            height: root._wrapDepth
+            x: root.vertical ? (root.edge === "left" ? targetProxy.x + targetProxy.width : targetProxy.x - root._wrapDepth) : targetProxy.x + targetProxy.width - width
+            y: root.vertical ? targetProxy.y + targetProxy.height - height : (root.edge === "bottom" ? targetProxy.y - root._wrapDepth : targetProxy.y + targetProxy.height)
+            width: root.vertical ? root._wrapDepth : root._cornerSize
+            height: root.vertical ? root._cornerSize : root._wrapDepth
             radius: root._cornerSize
-            corner: "topLeft"
+            corner: root.vertical ? (root.edge === "left" ? "bottomLeft" : "bottomRight") : "topRight"
+            transform: Scale {
+                origin.x: (root.vertical ? root._wrapDepth : root._cornerSize) / 2
+                origin.y: (root.vertical ? root._cornerSize : root._wrapDepth) / 2
+                yScale: !root.vertical && root.edge === "bottom" ? -1 : 1
+            }
             color: "white"
-            visible: root.hasWrap && !root.bottomLeftRounded && width > 0 && height > 0
-        }
-
-        NotchCornerMask {
-            x: targetProxy.x + targetProxy.width - width
-            y: targetProxy.y + targetProxy.height
-            width: root._cornerSize
-            height: root._wrapDepth
-            radius: root._cornerSize
-            corner: "topRight"
-            color: "white"
-            visible: root.hasWrap && !root.bottomRightRounded && width > 0 && height > 0
+            visible: root.hasWrap && (root.vertical || !root.bottomRightRounded) && width > 0 && height > 0
         }
     }
 

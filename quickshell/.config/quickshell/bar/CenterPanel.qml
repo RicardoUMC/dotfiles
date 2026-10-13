@@ -9,6 +9,8 @@ Item {
     property real centerX: 0
     property real centerWidth: 0
     property real centerHeight: 0
+    property real centerY: 0
+    property bool vertical: false
 
     // Wayland output this overlay pins itself to, passed down from the Bar
     // instance that owns it. An unpinned layer-shell surface sends a null
@@ -53,10 +55,10 @@ Item {
         // notch keep receiving their own clicks.
         Item {
             id: centerHole
-            x: root.centerX
-            y: 0
-            width: root.centerWidth
-            height: root.centerHeight
+            x: root.vertical ? 0 : root.centerX
+            y: root.vertical ? root.centerY : 0
+            width: root.vertical ? root.centerWidth : root.centerWidth
+            height: root.vertical ? root.centerHeight : root.centerHeight
         }
 
         // Click outside the expanded center element closes it.

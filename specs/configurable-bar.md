@@ -1,9 +1,9 @@
 # Configurable Bar
 
-**Status:** Configuration foundation and `disabled` visibility filtering implemented; remaining rendering remains planned.
+**Status:** Configuration foundation, `disabled` visibility filtering, and per-monitor physical positioning implemented; edge reveal, continuous style, and detached dashboard rendering remain inert.
 **Related current spec:** [Bar](bar.md)
 
-This specification defines the future bar model and the implemented configuration foundation. The live shell still renders a top-anchored bar with left, center, and right islands, and the center dashboard remains embedded in that bar. The foundation normalizes and resolves declarative configuration but intentionally does not apply future placement or rendering choices.
+This specification defines the configurable bar model and its current implementation boundary. Each `Bar` resolves its position through `Theme.effectiveBarConfig(screenName)`, so exact-name monitor overrides can place the existing island bar at the top, bottom, left, or right edge. The top position remains the baseline behavior.
 
 ## Design goals
 
@@ -54,7 +54,7 @@ The normalized snapshot validates each enum and safely falls back to `top`, `alw
 | `left` | Vertical bar anchored to the left edge. |
 | `right` | Vertical bar anchored to the right edge. |
 
-Changing position changes layout orientation, anchors, reserved edge, hit regions, and ornament placement together. It is not a visual rotation of the current top-bar surface.
+Changing position changes layout orientation, anchors, reserved edge, hit regions, and ornament placement together. Top/bottom use horizontal islands; left/right use a vertical `GridLayout` composition without rotating the finished surface. Masks, wraps, input regions, native-blur geometry, and `exclusiveZone` follow the selected edge. It is not a visual rotation of the current top-bar surface.
 
 ## Visibility
 
@@ -103,22 +103,12 @@ The dashboard must be separated as a component boundary before implementation, e
 
 ## Compatibility with the current shell
 
-The configuration foundation is implemented, but its future values are declarative only. Current behavior remains the baseline:
-
-- `Bar.qml` is top-anchored and full-width.
-- It is instantiated once per enabled screen.
-- It renders left, center, and right islands.
-- The center island expands in place into `CenterDashboard.qml`.
-- Legacy `Theme.barStyle` still selects the existing silhouette/plain bar treatment.
-- The future `style` value is normalized and resolved per screen, but is intentionally inert; `islands` preserves the current behavior by default.
-
-The current implementation applies only the normalized `disabled` visibility filter. `edge-reveal` remains the current always-visible behavior. Position/orientation, continuous style, detached dashboard rendering, and dynamic colors remain inert; the current top/always/islands/embedded defaults preserve behavior. Explicit `disabled` may legitimately produce zero Bars and is not undone by the legacy selector fallback.
+The current implementation applies the normalized `disabled` visibility filter and the resolved physical position. `Bar.qml` remains one instance per enabled screen, renders left/center/right islands, and expands the center island in place into `CenterDashboard.qml`. Top remains the baseline; bottom mirrors the horizontal placement, while left/right stack the same child controls vertically without rotating them. `exclusiveZone` reserves the collapsed content dimension on the selected edge, and the input union follows that geometry. `edge-reveal` remains always-visible behavior. Continuous style, detached dashboard rendering, and dynamic colors remain inert. Explicit `disabled` may legitimately produce zero Bars and is not undone by the legacy selector fallback.
 
 ## Remaining implementation scope
 
-- Applying resolved position and orientation to `Bar.qml`.
 - Implementing edge reveal using only external edges.
-- Rendering the `continuous` style and expanding disabled handling beyond the current Bar-owned surface lifecycle contract.
+- Rendering the `continuous` style.
 - Supporting a detached dashboard surface; independent surfaces remain future work.
 - Defining dynamic color behavior separately; this foundation does not implement it.
 - Defining a compositor-specific cursor API or requiring a particular external auto-hide helper.

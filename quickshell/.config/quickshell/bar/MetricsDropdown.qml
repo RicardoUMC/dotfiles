@@ -21,6 +21,8 @@ Item {
     // instance that owns it. An unpinned layer-shell surface sends a null
     // wl_output to get_layer_surface, so the compositor picks the screen.
     property var screenTarget: null
+    property string barPosition: "top"
+    property bool vertical: false
 
     signal opened()
     signal closed()
@@ -79,11 +81,16 @@ Item {
             }
         }
 
-        // Content panel anchored to top-right corner (same offset as PowerMenu)
+        // Content panel follows the owning bar edge; detached/continuous
+        // modes remain inert, but physical placement is per-screen.
         Rectangle {
             id: popupCard
-            anchors { top: parent.top; right: parent.right }
-            anchors { topMargin: Theme.barHeight + Theme.spacingMd - 1; rightMargin: Theme.spacingMd - 1 }
+            x: root.vertical
+                ? (root.barPosition === "right" ? parent.width - width - Theme.spacingMd : Theme.spacingMd)
+                : parent.width - width - Theme.spacingMd
+            y: root.vertical
+                ? (root.barPosition === "bottom" ? parent.height - height - Theme.spacingMd : Theme.spacingMd)
+                : (root.barPosition === "bottom" ? parent.height - height - Theme.spacingMd : Theme.barHeight + Theme.spacingMd - 1)
             width: 200
             height: col.implicitHeight + Theme.spacingLg
             radius: Theme.radiusMd

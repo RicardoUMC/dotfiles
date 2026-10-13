@@ -431,13 +431,15 @@ ShellRoot {
             // Theme.barHeight, and every click on the bar just closed the
             // launcher. reservedBarContentHeight is the same value the bar hands
             // the compositor as its exclusive zone.
-            const inBar = y < bar.reservedBarContentHeight
+            const inBar = bar.pointInInteractiveBar(x, y)
             if (!inBar) return
-            if (x >= bar.powerBtnGlobalX) {
+            if (bar.pointInPower(x, y)) {
                 overlayManager.openRightControlCenter(bar.screenName, "power")
             } else if (bar.mprisChipActive
-                       && x >= bar.mprisChipGlobalX - bar.mprisChipWidth / 2
-                       && x <= bar.mprisChipGlobalX + bar.mprisChipWidth / 2) {
+                       && (bar.vertical
+                           ? y >= bar.mprisChipGlobalY - bar.mprisChipWidth / 2 && y <= bar.mprisChipGlobalY + bar.mprisChipWidth / 2
+                           : x >= bar.mprisChipGlobalX - bar.mprisChipWidth / 2
+                             && x <= bar.mprisChipGlobalX + bar.mprisChipWidth / 2)) {
                 bar.setMprisAnchor()
                 overlayManager.open(bar.screenName, "mpris")
             }

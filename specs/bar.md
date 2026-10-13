@@ -5,17 +5,17 @@
 
 ## Description
 
-Top-anchored floating bar composed of independent wrapped-silhouette islands. Each `Bar` is one instance bound to one screen; it coordinates the overlay state of the surfaces it owns and expands the center island in place into a lightweight dashboard.
+Per-screen floating bar composed of independent wrapped-silhouette islands. Each `Bar` resolves its exact-name position through `Theme.effectiveBarConfig(screenName)` and supports top, bottom, left, and right edges; it coordinates the overlay state of the surfaces it owns and expands the center island in place into a lightweight dashboard.
 
 ## Future evolution
 
-The configuration-only foundation for the future configurable bar is implemented and specified in [Configurable Bar](configurable-bar.md). It validates global defaults and sparse exact-name per-monitor overrides while preserving this current top/island behavior. It does not yet apply per-monitor position, orientation, edge reveal, continuous rendering, or detached dashboard attachment; `disabled` visibility filtering and removal of the Bar-owned surface set are implemented. Future style configuration is intentionally inert. This spec remains the source of truth for the implemented bar.
+The configurable-bar foundation is implemented and specified in [Configurable Bar](configurable-bar.md). It validates global defaults and sparse exact-name per-monitor overrides, and `Bar.qml` applies the resolved position and orientation while preserving the top/island baseline. `disabled` visibility filtering and removal of the Bar-owned surface set are implemented. Edge reveal remains always-visible; continuous rendering and detached dashboard attachment remain inert. Future style configuration is intentionally inert. This spec remains the source of truth for the implemented bar.
 
 ## Behavior
 
 ### Configuration foundation
 
-`Theme.qml` resolves one normalized future configuration per exact `ShellScreen.name`, including bar position/visibility/style/reveal policy and dashboard attachment. Legacy `bar.screens` and `bar.style` remain compatible. Legacy `bar.screens` selection and its empty-match fallback run first; normalized per-monitor visibility then filters Bar instances. Thus explicit `visibility: "disabled"` may legitimately leave zero Bars and is not revived by fallback. `edge-reveal` remains current always-visible behavior, while position/orientation/style/dashboard attachment remain inert. Invalid values safely use defaults, unknown monitor names are inert, and a successful reload replaces the snapshot so removed overrides inherit again; malformed JSON preserves the last good snapshot.
+`Theme.qml` resolves one normalized configuration per exact `ShellScreen.name`, including bar position/visibility/style/reveal policy and dashboard attachment. Legacy `bar.screens` and `bar.style` remain compatible. Legacy `bar.screens` selection and its empty-match fallback run first; normalized per-monitor visibility then filters Bar instances. Thus explicit `visibility: "disabled"` may legitimately leave zero Bars and is not revived by fallback. `Bar.qml` consumes the resolved position for anchors, horizontal/vertical composition, masks, wraps, input regions, and `exclusiveZone`. `edge-reveal` remains current always-visible behavior; continuous style and detached dashboard attachment remain inert. Invalid values safely use defaults, unknown monitor names are inert, and a successful reload replaces the snapshot so removed overrides inherit again; malformed JSON preserves the last good snapshot.
 
 ### One instance per screen
 
@@ -26,12 +26,13 @@ The configuration-only foundation for the future configurable bar is implemented
 - If filtering removes this Bar, its currently Bar-owned surfaces disappear with it. `shell.qml` also clears active or pending Bar-owned overlay state by exact screen name, including pending opens on the shared timer. Launcher and wallpaper remain standalone; detached dashboards and other independent surfaces are future work.
 
 ### Layout
-- Anchored to top of screen, full width
+- Anchored to the configured edge: top/bottom span the output width; left/right span the output height.
+- Top/bottom compose islands horizontally; left/right compose them vertically with the child controls unrotated.
 - Contains three visible islands: left (workspaces), center (clock + optional MPRIS chip when collapsed, dashboard body when expanded), right (four control-center icons + power button)
-- Reserves only the interactive content height through `exclusiveZone`
-- Decorative wrapped silhouette depth may draw below the reserved height when `Theme.barStyle === "silhouette"`
+- Reserves only the interactive content height on a horizontal edge, or interactive content width on a vertical edge, through `exclusiveZone`.
+- Decorative wrapped silhouette depth follows the configured edge: below top, above bottom, and inward from either vertical edge when `Theme.barStyle === "silhouette"`.
 - Keeps `PanelWindow.implicitHeight` stable at the expanded-aware surface height so opening the center dashboard does not resize the layer-shell surface or shift tiled windows
-- `reservedBarContentHeight` is the max of the three sections' reserved heights and is the single value the bar hands the compositor as its exclusive zone (`Math.ceil` of it). Observed at `42` px on both monitors via `hyprctl monitors` (`reserved: 0 42 0 0`). Other components use it as the bar's hit band rather than guessing from `Theme.barHeight` or `Theme.barRailHeight`.
+- `reservedBarContentHeight` is the max of the three sections' reserved heights and is the single value the bar hands the compositor as its horizontal exclusive zone (`Math.ceil` of it); vertical bars use the corresponding `reservedBarContentWidth`. Other components use the reserved dimension as the bar's hit band rather than guessing from `Theme.barHeight` or `Theme.barRailHeight`.
 - Left and right islands share `sideTabHeight`; workspace chips and the four right-island service chips share `Theme.barChipHeight`; the power pill is the same height with a pill radius
 - The center island uses `Theme.centerCollapsedWidth` when collapsed and `Theme.centerExpandedWidth` / `Theme.centerExpandedHeight` when expanded
 - Expanded center content overlays app windows without increasing reserved Hyprland space
@@ -39,6 +40,7 @@ The configuration-only foundation for the future configurable bar is implemented
 
 ### Silhouette mask
 - `Bar.qml` coordinates three independent `BarSection` surfaces rather than one shared silhouette surface
+- `BarSection` and `NotchIslandMask` switch between horizontal and vertical geometry; the same masks, wraps, input union, and bounded native-blur regions follow the selected edge.
 - Each `BarSection` owns a hidden fill surface clipped through a `MultiEffect` mask
 - The `PanelWindow` input mask is the union of the left, center, and right section hit regions, so transparent gaps remain click-through
 - `NotchIslandMask` defines each island region with gap-facing top corner pieces
@@ -103,8 +105,6 @@ The configuration-only foundation for the future configurable bar is implemented
 - Telemetry lives in two live surfaces: the center dashboard `Metrics` pane and `MetricsControlCard.qml` in the control center. A third compact dropdown in the right island would be redundant.
 - `MetricsDropdown.qml` remains on disk, instantiated per bar, screen-pinned, and fed `systemStatsState`, as **dormant infrastructure, not an oversight**: its wiring is intact so a future explicit trigger is one signal, not a rebuild. It currently has no way to be opened. Details in `specs/overlay-manager.md`.
 
-## Verified at runtime
+## Verification boundary
 
-- Two bar surfaces on the live compositor, one per output, each sized to its own monitor: `1920 0 2560 272` (`DP-1`) and `0 320 1920 272` (`DP-2`), from a single `quickshell` process (`pid 400230`) — `hyprctl layers`.
-- Exclusive zone `0 42 0 0` on both monitors — `hyprctl monitors`.
-- The power-menu overlay opened as a full-`DP-1` surface (`1920 0 2560 1440`) while `DP-2` held focus — it did not follow focus, and it matched its owning bar's monitor. See `specs/multi-monitor.md` for why this supports, without by itself proving, the `screenTarget` pinning.
+The implementation boundary above is based on the current QML source. No live compositor verification of non-top positioning is claimed here.

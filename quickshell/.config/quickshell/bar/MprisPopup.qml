@@ -10,6 +10,9 @@ Item {
     id: root
 
     property real anchorX: 0
+    property real anchorY: 0
+    property bool vertical: false
+    property string barPosition: "top"
 
     // Wayland output this overlay pins itself to, passed down from the Bar
     // instance that owns it. An unpinned layer-shell surface sends a null
@@ -58,8 +61,12 @@ Item {
 
             width: popupW
             height: popupH
-            x: Math.min(Math.max(root.anchorX - popupW / 2, 8), popup.width - popupW - 8)
-            y: 44
+            x: root.vertical
+                ? (root.barPosition === "right" ? popup.width - popupW - 44 : 44)
+                : Math.min(Math.max(root.anchorX - popupW / 2, 8), popup.width - popupW - 8)
+            y: root.vertical
+                ? Math.min(Math.max(root.anchorY - popupH / 2, 8), popup.height - popupH - 8)
+                : (root.barPosition === "bottom" ? popup.height - popupH - 44 : 44)
 
             radius: Theme.radiusMd
             color: Theme.surfaceColor(Colors.base01, Theme.surfaceOverlayOpacity)

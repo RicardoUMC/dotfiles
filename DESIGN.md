@@ -71,11 +71,11 @@ Ambxst is a reference to study, not a target to clone. For features inspired by 
 
 Status: implemented and verified by Qt 6 lint plus offscreen runtime probes; **live compositor visual confirmation and a debug-off screenshot are still pending**. Feature document: `odd/tasks/caelestia-right-island.md`.
 
-### Future configurable bar direction
+### Configurable bar direction
 
-The current top-anchored island bar remains the implemented baseline. The configuration-only foundation is now implemented in `Theme.qml`: one normalized snapshot accepts compatible legacy `bar.screens` / `bar.style`, global `bar.defaults`, global `dashboard.attachment`, and sparse exact-name `monitors.<ShellScreen.name>.bar` / `.dashboard` overrides. Invalid values fall back safely, unknown names are inert, successful reloads replace the snapshot so removed overrides inherit again, and malformed JSON preserves the last good snapshot. Hot reload uses the existing `Theme` `FileView` watcher/debounce.
+The configurable bar is implemented through `Theme.effectiveBarConfig(screenName)`: one normalized snapshot accepts compatible legacy `bar.screens` / `bar.style`, global `bar.defaults`, global `dashboard.attachment`, and sparse exact-name `monitors.<ShellScreen.name>.bar` / `.dashboard` overrides. Invalid values fall back safely, unknown names are inert, successful reloads replace the snapshot so removed overrides inherit again, and malformed JSON preserves the last good snapshot. Hot reload uses the existing `Theme` `FileView` watcher/debounce.
 
-The future rendering design is documented in [`specs/configurable-bar.md`](specs/configurable-bar.md). The current slice applies `disabled` visibility by filtering Bar instances and removing their currently Bar-owned surfaces. `edge-reveal` remains current always-visible behavior; placement, orientation, continuous rendering, detached dashboard rendering, and dynamic colors remain inert. Current top/always/islands/embedded defaults preserve behavior, and future style configuration is intentionally inert. Detached dashboards and other independent surfaces are future work.
+The rendering boundary is documented in [`specs/configurable-bar.md`](specs/configurable-bar.md). `Bar.qml` applies `position` per exact `ShellScreen.name`: top and bottom use horizontal island composition, while left and right use vertical composition without rotating the children. Anchors, `exclusiveZone`, masks, wraps, input regions, and bounded native-blur geometry follow the selected edge; top behavior remains the baseline. The current slice also applies `disabled` visibility by filtering Bar instances and removing their currently Bar-owned surfaces. `edge-reveal` remains always-visible behavior; continuous rendering, detached dashboard rendering, and dynamic colors remain inert. Detached dashboards and other independent surfaces are future work. No live compositor verification of non-top positioning is claimed here.
 
 The design separates four independent decisions:
 
@@ -262,7 +262,7 @@ The right island expresses state through **fill, shape, and a passive state laye
 
 ### Bar Style
 
-**Wrapped floating silhouette** — not full-width. The bar is composed of independent left, center, and right islands with transparent gaps, anchored to the top of the screen. Inspired by macOS Sonoma / Ax-Shell and adapted from Ambxst's mask-composition idea.
+**Wrapped floating silhouette** — not full-width. The bar is composed of independent left, center, and right islands with transparent gaps, anchored to the configured screen edge. Top/bottom are horizontal; left/right are vertical without rotating the finished surface. Inspired by macOS Sonoma / Ax-Shell and adapted from Ambxst's mask-composition idea.
 
 The accepted silhouette design uses independent per-section surfaces coordinated by `Bar.qml`:
 

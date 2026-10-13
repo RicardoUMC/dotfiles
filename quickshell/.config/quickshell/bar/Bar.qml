@@ -15,14 +15,23 @@ PanelWindow {
     // above every panel; relying on the default here would let a future
     // Quickshell default change silently reorder the bar against the panels
     // that now declare Top by hand. See specs/overlay-manager.md.
+    readonly property string barPosition: barConfig && barConfig.bar ? barConfig.bar.position : "top"
+    readonly property bool vertical: barPosition === "left" || barPosition === "right"
     WlrLayershell.layer: WlrLayer.Top
     // The in-surface right control center uses non-modal focus: OnDemand lets
     // it receive keyboard input when requested, while Escape closes it without
     // taking exclusive focus from the rest of the session.
     WlrLayershell.keyboardFocus: rightControlCenter.isOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
-    anchors { top: true; left: true; right: true }
+    anchors {
+        top: barPosition === "top" || vertical
+        bottom: barPosition === "bottom" || vertical
+        left: barPosition === "left" || !vertical
+        right: barPosition === "right" || !vertical
+    }
     readonly property real sideTabHeight: Math.max(leftTab.implicitHeight, rightTab.implicitHeight)
+    readonly property real sideTabWidth: Math.max(leftTab.implicitWidth, rightTab.implicitWidth)
     readonly property real stableSurfaceContentHeight: Math.max(sideTabHeight, Theme.centerExpandedHeight)
+    readonly property real stableSurfaceContentWidth: Math.max(sideTabWidth, Theme.centerExpandedWidth)
     readonly property real centerCollapsedHeight: centerHeader.implicitHeight + centerTab.paddingV * 2
     readonly property real reservedBarContentHeight: Math.max(
         leftSection.reservedHeight,
@@ -31,7 +40,11 @@ PanelWindow {
     // Reserve only the collapsed interactive bar height. Keep the underlying
     // PanelWindow surface sized for the largest center state so opening the
     // dashboard does not resize the layer-shell surface or shift tiled windows.
-    exclusiveZone: Math.ceil(reservedBarContentHeight)
+    exclusiveZone: Math.ceil(vertical ? reservedBarContentWidth : reservedBarContentHeight)
+    readonly property real reservedBarContentWidth: Math.max(
+        leftSection.reservedWidth,
+        centerSection.reservedWidth,
+        rightSection.reservedWidth)
 
     // Full-output height: the right control center now renders inside this
     // surface, so the window must span the whole output for its below-bar
@@ -39,8 +52,13 @@ PanelWindow {
     // startup, fall back to the old content-height formula. Anchors stay
     // top/left/right ONLY (never bottom) so the exclusive zone remains
     // unambiguously top-edge.
-    implicitHeight: screen !== null ? screen.height : (stableSurfaceContentHeight + (Theme.barStyle === "silhouette" ? Theme.barWrapDepth : 0))
-    margins { top: 0; left: 0; right: 0 }
+    implicitWidth: vertical
+        ? stableSurfaceContentWidth + Theme.barWrapDepth
+        : (screen !== null ? screen.width : stableSurfaceContentWidth)
+    implicitHeight: vertical
+        ? (screen !== null ? screen.height : stableSurfaceContentHeight)
+        : (screen !== null ? screen.height : (stableSurfaceContentHeight + (Theme.barStyle === "silhouette" ? Theme.barWrapDepth : 0)))
+    margins { top: 0; bottom: 0; left: 0; right: 0 }
     color: "transparent"
     BackgroundEffect.blurRegion: Theme.nativeBlur && Theme.surfaceMode === "glass"
         ? barGlassRegion
@@ -151,10 +169,12 @@ PanelWindow {
     function closeMetrics()   { metricsDropdown.close() }
     function openMpris() {
         mprisPopup.anchorX = root.mprisChipGlobalX
+        mprisPopup.anchorY = root.mprisChipGlobalY
         mprisPopup.open()
     }
     function setMprisAnchor() {
         mprisPopup.anchorX = root.mprisChipGlobalX
+        mprisPopup.anchorY = root.mprisChipGlobalY
     }
     function openCenterPanel()  { centerPanel.open() }
     function closeCenterPanel() { centerPanel.close() }
@@ -167,6 +187,18 @@ PanelWindow {
     // so its visibility derives from the RCC's open state and active section.
     readonly property bool powerMenuVisible: rightControlCenter.isOpen && rightControlCenter.activeSection === "power"
     readonly property real powerBtnGlobalX:  rightTab.x + rightTab.width - powerMenu.implicitWidth - Theme.tabPaddingH
+    readonly property real powerBtnGlobalY:  rightTab.y + rightTab.height - powerMenu.implicitHeight - Theme.tabPaddingV
+    function pointInInteractiveBar(px, py) {
+        if (barPosition === "top") return py < reservedBarContentHeight
+        if (barPosition === "bottom") return py >= height - reservedBarContentHeight
+        if (barPosition === "left") return px < reservedBarContentWidth
+        return px >= width - reservedBarContentWidth
+    }
+    function pointInPower(px, py) {
+        const origin = powerMenu.mapToItem(null, 0, 0)
+        return px >= origin.x && px <= origin.x + powerMenu.width
+            && py >= origin.y && py <= origin.y + powerMenu.height
+    }
     // Horizontal center of the media chip, in this bar's window coordinates.
     // The collapsed header is [fill, ClockChip, MprisIndicator, fill] with two
     // equal Layout.fillWidth items, so clock and chip are centered as a PAIR:
@@ -202,6 +234,10 @@ PanelWindow {
             return centerTab.x + centerTab.width / 2
         return center
     }
+    readonly property real mprisChipGlobalY: {
+        const origin = mprisChip.mapToItem(null, 0, 0)
+        return Number.isFinite(origin.y) ? origin.y + mprisChip.height / 2 : centerTab.y + centerTab.height / 2
+    }
     readonly property real mprisChipWidth:   mprisChip.width
     readonly property bool mprisChipActive:  mprisChip.active
     readonly property bool mprisVisible:     mprisPopup.isOpen
@@ -221,6 +257,8 @@ PanelWindow {
         targetItem: leftTab
         sectionId: "left"
         collapsedHeight: root.sideTabHeight
+        vertical: root.vertical
+        edge: root.barPosition
         hasWrap: true
         leftCornerEnabled: false
         rightCornerEnabled: true
@@ -254,6 +292,8 @@ PanelWindow {
         targetItem: centerTab
         sectionId: "center"
         collapsedHeight: root.centerCollapsedHeight
+        vertical: root.vertical
+        edge: root.barPosition
         hasWrap: false
         leftCornerEnabled: true
         rightCornerEnabled: true
@@ -267,6 +307,8 @@ PanelWindow {
         targetItem: rightTab
         sectionId: "right"
         collapsedHeight: root.sideTabHeight
+        vertical: root.vertical
+        edge: root.barPosition
         hasWrap: true
         leftCornerEnabled: true
         rightCornerEnabled: false
@@ -279,12 +321,11 @@ PanelWindow {
         id: leftTab
         z: 1
         compact: true
-        height: root.sideTabHeight
-        anchors {
-            left: parent.left
-            top: parent.top
-            topMargin: 0
-        }
+        vertical: root.vertical
+        width: root.vertical ? root.sideTabWidth : implicitWidth
+        height: root.vertical ? implicitHeight : root.sideTabHeight
+        x: root.vertical && root.barPosition === "right" ? parent.width - width : 0
+        y: root.vertical ? 0 : (root.barPosition === "bottom" ? parent.height - height : 0)
 
         Workspaces {
             monitor: root.hyprlandMonitor
@@ -298,15 +339,13 @@ PanelWindow {
         z: 2
         readonly property bool expanded: centerPanel.isOpen
 
-        width: expanded ? Theme.centerExpandedWidth : Theme.centerCollapsedWidth
-        height: implicitHeight
+        vertical: root.vertical
+        width: root.vertical ? (expanded ? Theme.centerExpandedHeight : centerCollapsedHeight) : (expanded ? Theme.centerExpandedWidth : Theme.centerCollapsedWidth)
+        height: root.vertical ? (expanded ? Theme.centerExpandedWidth : Theme.centerCollapsedWidth) : implicitHeight
         paddingH: Theme.spacingXl
         paddingV: Theme.spacingSm
-        anchors {
-            horizontalCenter: parent.horizontalCenter
-            top: parent.top
-            topMargin: 0
-        }
+        x: root.vertical ? (root.barPosition === "right" ? parent.width - width : 0) : (parent.width - width) / 2
+        y: root.vertical ? (parent.height - height) / 2 : (root.barPosition === "bottom" ? parent.height - height : 0)
 
         Behavior on width {
             NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic }
@@ -387,12 +426,11 @@ PanelWindow {
         id: rightTab
         z: 1
         compact: true
-        height: root.sideTabHeight
-        anchors {
-            right: parent.right
-            top: parent.top
-            topMargin: 0
-        }
+        vertical: root.vertical
+        width: root.vertical ? root.sideTabWidth : implicitWidth
+        height: root.vertical ? implicitHeight : root.sideTabHeight
+        x: root.vertical && root.barPosition === "right" ? parent.width - width : (root.vertical ? 0 : parent.width - width)
+        y: root.vertical ? parent.height - height : (root.barPosition === "bottom" ? parent.height - height : 0)
 
         RightIslandIconButton {
             id: wifiButton
@@ -460,6 +498,8 @@ PanelWindow {
         // the compositor choose the output.
         screenTarget: root.screen
         systemStatsState: root.systemStatsState
+        barPosition: root.barPosition
+        vertical: root.vertical
         onOpened: root.metricsOpened()
         onClosed: root.metricsClosed()
     }
@@ -469,6 +509,9 @@ PanelWindow {
         // Pin to this bar's screen; an unpinned layer-shell surface lets
         // the compositor choose the output.
         screenTarget: root.screen
+        vertical: root.vertical
+        barPosition: root.barPosition
+        anchorY: root.mprisChipGlobalY
         onClosed: root.mprisClosed()
     }
 
@@ -478,8 +521,10 @@ PanelWindow {
         // the compositor choose the output.
         screenTarget: root.screen
         centerX: centerSection.centerX
+        centerY: centerSection.centerY
         centerWidth: centerSection.centerWidth
         centerHeight: centerSection.centerHeight
+        vertical: root.vertical
         onOpened: root.centerPanelOpened()
         onClosed: root.centerPanelClosed()
     }
@@ -490,5 +535,7 @@ PanelWindow {
         systemStatsState: root.systemStatsState
         onOpened: root.rightControlCenterOpened()
         onClosed: root.rightControlCenterClosed()
+        barPosition: root.barPosition
+        vertical: root.vertical
     }
 }

@@ -22,6 +22,8 @@ Item {
     property string activeSection: ""
     property var notificationsState: null
     property var systemStatsState: null
+    property string barPosition: "top"
+    property bool vertical: false
 
     signal opened()
     signal closed()
@@ -167,12 +169,12 @@ Item {
 
     Rectangle {
         id: panelBody
-        anchors {
-            top: parent.top
-            right: parent.right
-            topMargin: Theme.barHeight + Theme.rightPanelTopMargin
-            rightMargin: Theme.rightPanelRightMargin
-        }
+        x: root.vertical
+            ? (root.barPosition === "right" ? root.width - width - Theme.rightPanelRightMargin : Theme.rightPanelRightMargin)
+            : root.width - width - Theme.rightPanelRightMargin
+        y: root.vertical
+            ? (root.barPosition === "bottom" ? root.height - height - Theme.rightPanelTopMargin : Theme.rightPanelTopMargin)
+            : (root.barPosition === "bottom" ? root.height - height - Theme.rightPanelTopMargin : Theme.barHeight + Theme.rightPanelTopMargin)
         // Above the backdrop so the body consumes its own clicks instead of
         // the outside-click dismiss.
         z: 1

@@ -33,6 +33,7 @@ Use only the existing normalized configuration resolver in `Theme.effectiveBarCo
 - [x] Verify Qt lint, reload, geometry/input/overlay behavior, and mixed monitor positions; live pointer-level visual checks remain pending.
 
 ## Verification evidence
+- Work-unit commit: `0f8b7c6` (`feat(bar): add top and bottom positioning`).
 - Qt 6 `qmllint` passed on all modified QML with documented baseline warnings only.
 - `git diff --check` passed.
 - Soft reload reached `Configuration Loaded` without errors after the final mask-loop correction.

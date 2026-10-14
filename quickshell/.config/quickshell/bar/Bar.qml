@@ -269,7 +269,7 @@ PanelWindow {
         leftCornerEnabled: root.barPosition === "left"
         rightCornerEnabled: root.barPosition !== "left"
         bottomLeftRounded: root.barPosition === "left"
-        bottomRightRounded: root.barPosition !== "left"
+        bottomRightRounded: true
     }
 
     // Optional Stage-2 native feasibility surface. It is created only for
@@ -318,7 +318,7 @@ PanelWindow {
         hasWrap: true
         leftCornerEnabled: root.barPosition !== "left"
         rightCornerEnabled: root.barPosition === "left"
-        bottomLeftRounded: root.barPosition !== "left"
+        bottomLeftRounded: true
         bottomRightRounded: root.barPosition === "left"
     }
 

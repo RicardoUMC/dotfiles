@@ -4,6 +4,7 @@ Item {
     id: notchIslandMask
 
     required property Item targetItem
+    property string sectionId: "center"
     property real cornerSize: 0
     property bool leftCornerEnabled: true
     property bool rightCornerEnabled: true
@@ -54,7 +55,9 @@ Item {
             y: 0
             width: notchIslandMask.leftCornerEnabled ? notchIslandMask.resolvedCornerSize : 0
             height: width
-            corner: "topRight"
+            corner: notchIslandMask.vertical
+                && notchIslandMask.edge === "left"
+                && notchIslandMask.sectionId !== "center" ? "topLeft" : "topRight"
             color: notchIslandMask.maskColor
             visible: width > 0
         }
@@ -76,7 +79,9 @@ Item {
             y: 0
             width: notchIslandMask.rightCornerEnabled ? notchIslandMask.resolvedCornerSize : 0
             height: width
-            corner: "topLeft"
+            corner: notchIslandMask.vertical
+                && notchIslandMask.edge === "left"
+                && notchIslandMask.sectionId !== "center" ? "topRight" : "topLeft"
             color: notchIslandMask.maskColor
             visible: width > 0
         }

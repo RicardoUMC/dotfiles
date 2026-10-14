@@ -70,6 +70,7 @@ Item {
 
         NotchIslandMask {
             targetItem: targetProxy
+            sectionId: root.sectionId
             cornerSize: root._cornerSize
             leftCornerEnabled: root.leftCornerEnabled
             rightCornerEnabled: root.rightCornerEnabled

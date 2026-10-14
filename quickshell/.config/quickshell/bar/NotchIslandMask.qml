@@ -34,8 +34,13 @@ Item {
         visible: notchIslandMask.vertical && notchIslandMask.edge === "left"
         width: notchIslandMask.height
         height: notchIslandMask.width
+        anchors.centerIn: parent
         transform: Rotation { angle: -90; origin.x: leftHorizontalSource.width / 2; origin.y: leftHorizontalSource.height / 2 }
 
+        // This is the canonical horizontal top grammar. The source is
+        // rotated as one whole source (CCW): (u,v) -> (v,W-u), where W is
+        // this source's width. Debug and production therefore consume the
+        // identical body, cap, and wrap geometry.
         NotchCornerMask {
             id: leftSourceCap
             x: 0
@@ -51,7 +56,7 @@ Item {
             x: leftSourceCap.width
             y: 0
             width: notchIslandMask.targetItem.height
-            height: leftHorizontalSource.height
+            height: notchIslandMask.targetItem.width
             color: notchIslandMask.maskColor
             bottomLeftRadius: notchIslandMask.bottomLeftRounded ? notchIslandMask.resolvedCornerSize : 0
             bottomRightRadius: notchIslandMask.bottomRightRounded ? notchIslandMask.resolvedCornerSize : 0
@@ -59,14 +64,40 @@ Item {
 
         NotchCornerMask {
             id: leftSourceEndCap
-            x: notchIslandMask.leftCornerEnabled ? notchIslandMask.resolvedCornerSize : 0
-            + notchIslandMask.targetItem.height
+            x: (notchIslandMask.rightCornerEnabled ? notchIslandMask.resolvedCornerSize : 0)
+                + notchIslandMask.targetItem.height
             y: 0
             width: notchIslandMask.rightCornerEnabled ? notchIslandMask.resolvedCornerSize : 0
             height: width
             corner: "topLeft"
             color: notchIslandMask.maskColor
             visible: width > 0
+        }
+
+        NotchCornerMask {
+            x: leftSourceCap.width
+            y: notchIslandMask.targetItem.width
+            width: notchIslandMask.resolvedCornerSize
+            height: notchIslandMask.vertical && notchIslandMask.edge === "left"
+                ? Math.max(0, notchIslandMask.width - notchIslandMask.targetItem.width)
+                : 0
+            radius: notchIslandMask.resolvedCornerSize
+            corner: "topLeft"
+            color: notchIslandMask.maskColor
+            visible: notchIslandMask.bottomLeftRounded === false && width > 0 && height > 0
+        }
+
+        NotchCornerMask {
+            x: leftSourceCap.width + notchIslandMask.targetItem.height - width
+            y: notchIslandMask.targetItem.width
+            width: notchIslandMask.resolvedCornerSize
+            height: notchIslandMask.vertical && notchIslandMask.edge === "left"
+                ? Math.max(0, notchIslandMask.width - notchIslandMask.targetItem.width)
+                : 0
+            radius: notchIslandMask.resolvedCornerSize
+            corner: "topRight"
+            color: notchIslandMask.maskColor
+            visible: notchIslandMask.bottomRightRounded === false && width > 0 && height > 0
         }
     }
 

@@ -37,4 +37,5 @@ Refine the `left` physical bar position as a distinct visual unit. The bar remai
 ## Decisions
 - Existing top/bottom implementation is the baseline and must not regress.
 - The left unit is a vertical physical placement, not a generic monitor-order assumption.
+- Left geometry uses one canonical horizontal source, rotated as a whole counter-clockwise with `(u,v) -> (v,W-u)`; the same source drives debug and production masks.
 - Right refinement follows later and should mirror the left design only after its own geometry and interaction checks.

@@ -40,7 +40,7 @@ The configurable-bar foundation is implemented and specified in [Configurable Ba
 
 ### Silhouette mask
 - `Bar.qml` coordinates three independent `BarSection` surfaces rather than one shared silhouette surface
-- `BarSection` and `NotchIslandMask` provide the selected-edge geometry. Bottom reuses the top mask and wrap primitives through a centered vertical mirror, and the native-blur region is edge-aware. Left reuses the horizontal top island source with a 90-degree counter-clockwise rotation for visible notch masks, decorative wraps, and bounded native blur Regions; content remains upright and stacked vertically. Right refinement remains next.
+- `BarSection` and `NotchIslandMask` provide the selected-edge geometry. Bottom reuses the top mask and wrap primitives through a centered vertical mirror, and the native-blur region is edge-aware. Left reuses one canonical horizontal top-island source, centers it before the 90-degree counter-clockwise mapping `(u,v) -> (v,W-u)`, and uses the same body/cap/wrap geometry for debug and production masks; content remains upright and stacked vertically. Right refinement remains next.
 - Each `BarSection` owns a hidden fill surface clipped through a `MultiEffect` mask
 - The `PanelWindow` input mask is the union of the left, center, and right section hit regions, so transparent gaps remain click-through
 - `NotchIslandMask` defines each island region with gap-facing top corner pieces

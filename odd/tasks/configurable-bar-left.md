@@ -39,4 +39,5 @@ Refine the `left` physical bar position as a distinct visual unit. The bar remai
 - The left unit is a vertical physical placement, not a generic monitor-order assumption.
 - Left geometry uses one canonical horizontal source, rotated as a whole counter-clockwise with `(u,v) -> (v,W-u)`; the same source drives debug and production masks.
 - The current left section order is `workspaces -> center -> services`; user-selectable order inversion is deferred until top, bottom, left, and right are complete.
+- For `left`, the content order stays fixed while the lateral geometry roles are swapped: workspaces uses the services caps/wraps/radii, and services uses the workspace caps/wraps/radii.
 - Right refinement follows later and should mirror the left design only after its own geometry and interaction checks.

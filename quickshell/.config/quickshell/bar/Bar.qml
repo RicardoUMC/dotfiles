@@ -266,10 +266,10 @@ PanelWindow {
         vertical: root.vertical
         edge: root.barPosition
         hasWrap: true
-        leftCornerEnabled: false
-        rightCornerEnabled: true
-        bottomLeftRounded: false
-        bottomRightRounded: true
+        leftCornerEnabled: root.barPosition === "left"
+        rightCornerEnabled: root.barPosition !== "left"
+        bottomLeftRounded: root.barPosition === "left"
+        bottomRightRounded: root.barPosition !== "left"
     }
 
     // Optional Stage-2 native feasibility surface. It is created only for
@@ -316,10 +316,10 @@ PanelWindow {
         vertical: root.vertical
         edge: root.barPosition
         hasWrap: true
-        leftCornerEnabled: true
-        rightCornerEnabled: false
-        bottomLeftRounded: true
-        bottomRightRounded: false
+        leftCornerEnabled: root.barPosition !== "left"
+        rightCornerEnabled: root.barPosition === "left"
+        bottomLeftRounded: root.barPosition !== "left"
+        bottomRightRounded: root.barPosition === "left"
     }
 
     // Left tab — Workspaces

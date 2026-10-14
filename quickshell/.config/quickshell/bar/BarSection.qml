@@ -78,6 +78,8 @@ Item {
             maskColor: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 0.65) : "white"
             vertical: root.vertical
             edge: root.edge
+            hasWrap: root.hasWrap
+            wrapDepth: root._wrapDepth
         }
 
         // The wrap follows the owning output edge: below for top, above for

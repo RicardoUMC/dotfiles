@@ -11,6 +11,8 @@ Item {
     property bool bottomRightRounded: true
     property bool vertical: false
     property string edge: "top"
+    property bool hasWrap: false
+    property real wrapDepth: 0
 
     // BarSection already clamps this radius to the target cross-axis size;
     // keeping the mask independent from its own geometry avoids vertical
@@ -20,9 +22,13 @@ Item {
 
     x: vertical ? targetItem.x : targetItem.x - (leftCornerEnabled ? resolvedCornerSize : 0)
     y: vertical ? ((vertical && edge === "left") ? targetItem.y - (leftCornerEnabled ? resolvedCornerSize : 0) : targetItem.y - (leftCornerEnabled ? resolvedCornerSize : 0)) : targetItem.y
-    width: vertical ? ((vertical && edge === "left") ? targetItem.width : targetItem.width) : targetItem.width
-        + (leftCornerEnabled ? resolvedCornerSize : 0)
-        + (rightCornerEnabled ? resolvedCornerSize : 0)
+    width: vertical
+        ? ((vertical && edge === "left")
+            ? targetItem.width + (hasWrap ? wrapDepth : 0)
+            : targetItem.width)
+        : targetItem.width
+            + (leftCornerEnabled ? resolvedCornerSize : 0)
+            + (rightCornerEnabled ? resolvedCornerSize : 0)
     height: vertical ? targetItem.height
         + (leftCornerEnabled ? resolvedCornerSize : 0)
         + (rightCornerEnabled ? resolvedCornerSize : 0) : targetItem.height
@@ -33,7 +39,8 @@ Item {
         id: leftHorizontalSource
         visible: notchIslandMask.vertical && notchIslandMask.edge === "left"
         width: notchIslandMask.height
-        height: notchIslandMask.width
+        height: notchIslandMask.targetItem.width
+            + (notchIslandMask.hasWrap ? notchIslandMask.wrapDepth : 0)
         anchors.centerIn: parent
         transform: Rotation { angle: -90; origin.x: leftHorizontalSource.width / 2; origin.y: leftHorizontalSource.height / 2 }
 
@@ -64,7 +71,7 @@ Item {
 
         NotchCornerMask {
             id: leftSourceEndCap
-            x: (notchIslandMask.rightCornerEnabled ? notchIslandMask.resolvedCornerSize : 0)
+            x: (notchIslandMask.leftCornerEnabled ? notchIslandMask.resolvedCornerSize : 0)
                 + notchIslandMask.targetItem.height
             y: 0
             width: notchIslandMask.rightCornerEnabled ? notchIslandMask.resolvedCornerSize : 0
@@ -79,8 +86,7 @@ Item {
             y: notchIslandMask.targetItem.width
             width: notchIslandMask.resolvedCornerSize
             height: notchIslandMask.vertical && notchIslandMask.edge === "left"
-                ? Math.max(0, notchIslandMask.width - notchIslandMask.targetItem.width)
-                : 0
+                && notchIslandMask.hasWrap ? notchIslandMask.wrapDepth : 0
             radius: notchIslandMask.resolvedCornerSize
             corner: "topLeft"
             color: notchIslandMask.maskColor
@@ -92,8 +98,7 @@ Item {
             y: notchIslandMask.targetItem.width
             width: notchIslandMask.resolvedCornerSize
             height: notchIslandMask.vertical && notchIslandMask.edge === "left"
-                ? Math.max(0, notchIslandMask.width - notchIslandMask.targetItem.width)
-                : 0
+                && notchIslandMask.hasWrap ? notchIslandMask.wrapDepth : 0
             radius: notchIslandMask.resolvedCornerSize
             corner: "topRight"
             color: notchIslandMask.maskColor

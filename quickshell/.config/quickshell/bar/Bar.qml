@@ -331,7 +331,9 @@ PanelWindow {
         width: root.vertical ? root.sideTabWidth : implicitWidth
         height: root.vertical ? implicitHeight : root.sideTabHeight
         x: root.vertical && root.barPosition === "right" ? parent.width - width : 0
-        y: root.vertical ? 0 : (root.barPosition === "bottom" ? parent.height - height : 0)
+        y: root.vertical
+            ? 0
+            : (root.barPosition === "bottom" ? parent.height - height : 0)
 
         Workspaces {
             monitor: root.hyprlandMonitor
@@ -436,7 +438,9 @@ PanelWindow {
         width: root.vertical ? root.sideTabWidth : implicitWidth
         height: root.vertical ? implicitHeight : root.sideTabHeight
         x: root.vertical && root.barPosition === "right" ? parent.width - width : (root.vertical ? 0 : parent.width - width)
-        y: root.vertical ? parent.height - height : (root.barPosition === "bottom" ? parent.height - height : 0)
+        y: root.vertical
+            ? parent.height - height
+            : (root.barPosition === "bottom" ? parent.height - height : 0)
 
         RightIslandIconButton {
             id: wifiButton

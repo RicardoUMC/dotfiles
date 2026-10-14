@@ -267,7 +267,7 @@ PanelWindow {
         edge: root.barPosition
         hasWrap: true
         leftCornerEnabled: root.barPosition === "left"
-        rightCornerEnabled: root.barPosition !== "left"
+        rightCornerEnabled: true
         bottomLeftRounded: root.barPosition === "left"
         bottomRightRounded: true
     }
@@ -316,7 +316,7 @@ PanelWindow {
         vertical: root.vertical
         edge: root.barPosition
         hasWrap: true
-        leftCornerEnabled: root.barPosition !== "left"
+        leftCornerEnabled: true
         rightCornerEnabled: root.barPosition === "left"
         bottomLeftRounded: true
         bottomRightRounded: root.barPosition === "left"

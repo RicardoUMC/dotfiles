@@ -63,8 +63,9 @@ Item {
     Item {
         id: sectionMask
         anchors.fill: parent
-        visible: false
-        layer.enabled: true
+        visible: Theme.debugBarSilhouette
+        z: Theme.debugBarSilhouette ? 10 : 0
+        layer.enabled: !Theme.debugBarSilhouette
         layer.smooth: true
 
         NotchIslandMask {
@@ -74,8 +75,72 @@ Item {
             rightCornerEnabled: root.rightCornerEnabled
             bottomLeftRounded: root.bottomLeftRounded
             bottomRightRounded: root.bottomRightRounded
+            maskColor: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 0.65) : "white"
             vertical: root.vertical
             edge: root.edge
+        }
+
+        Item {
+            id: debugDirectSource
+            visible: Theme.debugBarSilhouette && root.vertical && root.edge === "left"
+            width: root.height
+            height: root.width
+            anchors.centerIn: parent
+            transform: Rotation { angle: -90; origin.x: debugDirectSource.width / 2; origin.y: debugDirectSource.height / 2 }
+
+            Rectangle {
+                x: root._leftExtent
+                y: 0
+                width: root.targetItem.height
+                height: root.targetItem.width
+                color: Qt.rgba(1.0, 0.2, 0.2, 0.65)
+                bottomLeftRadius: root.bottomLeftRounded ? root._cornerSize : 0
+                bottomRightRadius: root.bottomRightRounded ? root._cornerSize : 0
+            }
+
+            NotchCornerMask {
+                x: 0
+                y: 0
+                width: root._leftExtent
+                height: root._cornerSize
+                radius: root._cornerSize
+                corner: "topRight"
+                color: Qt.rgba(1.0, 0.2, 0.2, 0.65)
+                visible: width > 0 && height > 0
+            }
+
+            NotchCornerMask {
+                x: root._leftExtent + root.targetItem.height
+                y: 0
+                width: root._rightExtent
+                height: root._cornerSize
+                radius: root._cornerSize
+                corner: "topLeft"
+                color: Qt.rgba(1.0, 0.2, 0.2, 0.65)
+                visible: width > 0 && height > 0
+            }
+
+            NotchCornerMask {
+                x: root._leftExtent
+                y: root.targetItem.width
+                width: root._cornerSize
+                height: root._wrapDepth
+                radius: root._cornerSize
+                corner: "topLeft"
+                color: Qt.rgba(1.0, 0.2, 0.2, 0.65)
+                visible: root.hasWrap && !root.bottomLeftRounded && width > 0 && height > 0
+            }
+
+            NotchCornerMask {
+                x: root._leftExtent + root.targetItem.height - root._cornerSize
+                y: root.targetItem.width
+                width: root._cornerSize
+                height: root._wrapDepth
+                radius: root._cornerSize
+                corner: "topRight"
+                color: Qt.rgba(1.0, 0.2, 0.2, 0.65)
+                visible: root.hasWrap && !root.bottomRightRounded && width > 0 && height > 0
+            }
         }
 
         // Left reuses the top horizontal wrap source and rotates it with the
@@ -94,7 +159,7 @@ Item {
                 height: root._wrapDepth
                 radius: root._cornerSize
                 corner: "topLeft"
-                color: "white"
+                color: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 0.65) : "white"
                 visible: root.hasWrap && !root.bottomLeftRounded && width > 0 && height > 0
             }
 
@@ -105,7 +170,7 @@ Item {
                 height: root._wrapDepth
                 radius: root._cornerSize
                 corner: "topRight"
-                color: "white"
+                color: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 0.65) : "white"
                 visible: root.hasWrap && !root.bottomRightRounded && width > 0 && height > 0
             }
         }
@@ -124,7 +189,7 @@ Item {
                 origin.y: (root.vertical ? root._cornerSize : root._wrapDepth) / 2
                 yScale: !root.vertical && root.edge === "bottom" ? -1 : 1
             }
-            color: "white"
+            color: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 0.65) : "white"
             visible: root.hasWrap && ((root.vertical && root.edge !== "left") || (!root.vertical && !root.bottomLeftRounded)) && width > 0 && height > 0
         }
 
@@ -140,7 +205,7 @@ Item {
                 origin.y: (root.vertical ? root._cornerSize : root._wrapDepth) / 2
                 yScale: !root.vertical && root.edge === "bottom" ? -1 : 1
             }
-            color: "white"
+            color: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 0.65) : "white"
             visible: root.hasWrap && ((root.vertical && root.edge !== "left") || (!root.vertical && !root.bottomRightRounded)) && width > 0 && height > 0
         }
     }
@@ -155,7 +220,7 @@ Item {
         maskThresholdMin: 0.5
         maskSpreadAtMin: 1.0
         anchors.fill: parent
-        visible: Theme.barStyle === "silhouette" && !root.gpuPrototypeActive
+        visible: Theme.barStyle === "silhouette" && !Theme.debugBarSilhouette && !root.gpuPrototypeActive
     }
 
     IslandGpuPrototype {

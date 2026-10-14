@@ -16,11 +16,11 @@ Item {
     // keeping the mask independent from its own geometry avoids vertical
     // binding loops when GridLayout resolves tab widths.
     readonly property real resolvedCornerSize: Math.max(0, cornerSize)
-    readonly property bool isLeftEdge: vertical && edge === "left"
+    property color maskColor: "white"
 
     x: vertical ? targetItem.x : targetItem.x - (leftCornerEnabled ? resolvedCornerSize : 0)
-    y: vertical ? (isLeftEdge ? targetItem.y - (leftCornerEnabled ? resolvedCornerSize : 0) : targetItem.y - (leftCornerEnabled ? resolvedCornerSize : 0)) : targetItem.y
-    width: vertical ? (isLeftEdge ? targetItem.width : targetItem.width) : targetItem.width
+    y: vertical ? ((vertical && edge === "left") ? targetItem.y - (leftCornerEnabled ? resolvedCornerSize : 0) : targetItem.y - (leftCornerEnabled ? resolvedCornerSize : 0)) : targetItem.y
+    width: vertical ? ((vertical && edge === "left") ? targetItem.width : targetItem.width) : targetItem.width
         + (leftCornerEnabled ? resolvedCornerSize : 0)
         + (rightCornerEnabled ? resolvedCornerSize : 0)
     height: vertical ? targetItem.height
@@ -31,7 +31,7 @@ Item {
     // center. Source width/height are the swapped vertical target dimensions.
     Item {
         id: leftHorizontalSource
-        visible: notchIslandMask.isLeftEdge
+        visible: notchIslandMask.vertical && notchIslandMask.edge === "left"
         width: notchIslandMask.height
         height: notchIslandMask.width
         transform: Rotation { angle: -90; origin.x: leftHorizontalSource.width / 2; origin.y: leftHorizontalSource.height / 2 }
@@ -43,7 +43,7 @@ Item {
             width: notchIslandMask.leftCornerEnabled ? notchIslandMask.resolvedCornerSize : 0
             height: width
             corner: "topRight"
-            color: "white"
+            color: notchIslandMask.maskColor
             visible: width > 0
         }
 
@@ -52,7 +52,7 @@ Item {
             y: 0
             width: notchIslandMask.targetItem.height
             height: leftHorizontalSource.height
-            color: "white"
+            color: notchIslandMask.maskColor
             bottomLeftRadius: notchIslandMask.bottomLeftRounded ? notchIslandMask.resolvedCornerSize : 0
             bottomRightRadius: notchIslandMask.bottomRightRounded ? notchIslandMask.resolvedCornerSize : 0
         }
@@ -65,7 +65,7 @@ Item {
             width: notchIslandMask.rightCornerEnabled ? notchIslandMask.resolvedCornerSize : 0
             height: width
             corner: "topLeft"
-            color: "white"
+            color: notchIslandMask.maskColor
             visible: width > 0
         }
     }
@@ -80,15 +80,15 @@ Item {
         y: notchIslandMask.vertical
             ? notchIslandMask.targetItem.y - height
             : 0
-        width: notchIslandMask.vertical && !notchIslandMask.isLeftEdge
+        width: notchIslandMask.vertical && !(notchIslandMask.vertical && notchIslandMask.edge === "left")
             ? notchIslandMask.resolvedCornerSize
             : (notchIslandMask.leftCornerEnabled ? notchIslandMask.resolvedCornerSize : 0)
         height: width
         corner: notchIslandMask.vertical
             ? (notchIslandMask.edge === "left" ? "topRight" : "topLeft")
             : "topRight"
-        color: "white"
-        visible: !notchIslandMask.isLeftEdge && (notchIslandMask.vertical
+        color: notchIslandMask.maskColor
+        visible: !(notchIslandMask.vertical && notchIslandMask.edge === "left") && (notchIslandMask.vertical
             ? (notchIslandMask.edge === "left" ? notchIslandMask.rightCornerEnabled : notchIslandMask.leftCornerEnabled) && width > 0
             : notchIslandMask.leftCornerEnabled && width > 0)
     }
@@ -98,8 +98,8 @@ Item {
         y: notchIslandMask.vertical ? notchIslandMask.targetItem.y : 0
         width: notchIslandMask.vertical ? notchIslandMask.targetItem.width : parent.width - leftNotchCorner.width - rightNotchCorner.width
         height: notchIslandMask.vertical ? notchIslandMask.targetItem.height : parent.height
-        color: "white"
-        visible: !notchIslandMask.isLeftEdge
+        color: notchIslandMask.maskColor
+        visible: !(notchIslandMask.vertical && notchIslandMask.edge === "left")
         topLeftRadius: notchIslandMask.vertical
             ? (notchIslandMask.edge === "left" ? notchIslandMask.resolvedCornerSize : 0)
             : 0
@@ -122,15 +122,15 @@ Item {
         y: notchIslandMask.vertical
             ? notchIslandMask.targetItem.y + notchIslandMask.targetItem.height
             : 0
-        width: notchIslandMask.vertical && !notchIslandMask.isLeftEdge
+        width: notchIslandMask.vertical && !(notchIslandMask.vertical && notchIslandMask.edge === "left")
             ? notchIslandMask.resolvedCornerSize
             : (notchIslandMask.rightCornerEnabled ? notchIslandMask.resolvedCornerSize : 0)
         height: width
         corner: notchIslandMask.vertical
             ? (notchIslandMask.edge === "left" ? "bottomRight" : "bottomLeft")
             : "topLeft"
-        color: "white"
-        visible: !notchIslandMask.isLeftEdge && (notchIslandMask.vertical
+        color: notchIslandMask.maskColor
+        visible: !(notchIslandMask.vertical && notchIslandMask.edge === "left") && (notchIslandMask.vertical
             ? (notchIslandMask.edge === "left" ? notchIslandMask.rightCornerEnabled : notchIslandMask.leftCornerEnabled) && width > 0
             : notchIslandMask.rightCornerEnabled && width > 0)
     }
@@ -141,11 +141,11 @@ Item {
             ? (notchIslandMask.edge === "left" ? notchIslandMask.targetItem.x : notchIslandMask.targetItem.x + notchIslandMask.targetItem.width - width)
             : 0
         y: notchIslandMask.vertical ? notchIslandMask.targetItem.y - height : 0
-        width: notchIslandMask.vertical && !notchIslandMask.isLeftEdge ? notchIslandMask.resolvedCornerSize : 0
+        width: notchIslandMask.vertical && !(notchIslandMask.vertical && notchIslandMask.edge === "left") ? notchIslandMask.resolvedCornerSize : 0
         height: width
         corner: notchIslandMask.edge === "left" ? "topLeft" : "topRight"
-        color: "white"
-        visible: notchIslandMask.vertical && !notchIslandMask.isLeftEdge && width > 0
+        color: notchIslandMask.maskColor
+        visible: notchIslandMask.vertical && !(notchIslandMask.vertical && notchIslandMask.edge === "left") && width > 0
     }
 
     NotchCornerMask {
@@ -154,10 +154,10 @@ Item {
             ? (notchIslandMask.edge === "left" ? notchIslandMask.targetItem.x : notchIslandMask.targetItem.x + notchIslandMask.targetItem.width - width)
             : 0
         y: notchIslandMask.vertical ? notchIslandMask.targetItem.y + notchIslandMask.targetItem.height : 0
-        width: notchIslandMask.vertical && !notchIslandMask.isLeftEdge ? notchIslandMask.resolvedCornerSize : 0
+        width: notchIslandMask.vertical && !(notchIslandMask.vertical && notchIslandMask.edge === "left") ? notchIslandMask.resolvedCornerSize : 0
         height: width
         corner: notchIslandMask.edge === "left" ? "bottomLeft" : "bottomRight"
-        color: "white"
-        visible: notchIslandMask.vertical && !notchIslandMask.isLeftEdge && width > 0
+        color: notchIslandMask.maskColor
+        visible: notchIslandMask.vertical && !(notchIslandMask.vertical && notchIslandMask.edge === "left") && width > 0
     }
 }

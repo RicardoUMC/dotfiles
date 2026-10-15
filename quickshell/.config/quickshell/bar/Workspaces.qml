@@ -4,9 +4,47 @@ import Quickshell
 import Quickshell.Hyprland
 import "../theme"
 
-RowLayout {
+GridLayout {
     id: root
-    spacing: 4
+    property bool vertical: false
+    property string workspaceMode: "numbers"
+    property string appMode: "active-icon"
+
+    columns: root.vertical ? 1 : -1
+    rows: root.vertical ? -1 : 1
+    rowSpacing: Theme.spacingXs
+    columnSpacing: Theme.spacingXs
+
+    function desktopEntryForToplevel(toplevel) {
+        const raw = toplevel && toplevel.lastIpcObject
+            ? (toplevel.lastIpcObject["class"] ?? "") : ""
+        const apps = DesktopEntries.applications.values
+        if (apps) {
+            for (let i = 0; i < apps.length; i++) {
+                const entry = apps[i]
+                if (entry?.id?.toLowerCase() === raw.toLowerCase()) return entry
+            }
+        }
+        return null
+    }
+
+    function appLabelForToplevel(toplevel) {
+        const entry = root.desktopEntryForToplevel(toplevel)
+        if (entry && entry.name) return entry.name
+        const raw = toplevel && toplevel.lastIpcObject
+            ? (toplevel.lastIpcObject["class"] ?? "") : ""
+        const name = raw.includes(".")
+            ? raw.split(".").pop()
+            : raw.replace(/-browser$/, "").replace(/-desktop$/, "")
+        return name ? name.charAt(0).toUpperCase() + name.slice(1) : "Application"
+    }
+
+    function appIconForToplevel(toplevel) {
+        const entry = root.desktopEntryForToplevel(toplevel)
+        return entry && entry.icon
+            ? Quickshell.iconPath(entry.icon, "application-x-executable")
+            : ""
+    }
 
     // Hyprland monitor this island belongs to, injected by Bar. Null during
     // startup or a hot-plug until Quickshell registers the output, in which
@@ -102,10 +140,27 @@ RowLayout {
                 !wsItem.isSpecial && wsItem.activeSpecialHere !== "" &&
                 wsItem.wsName === wsItem.activeWorkspaceName
 
+            // `activated` is session-global. Restrict active-app selection to
+            // this monitor's active workspace, then fall back to the newest
+            // toplevel when compositor activation is unavailable.
+            readonly property var displayedToplevels: {
+                const values = wsItem.modelData.toplevels.values || []
+                if (root.appMode === "hidden") return []
+                if (root.appMode === "all-icons" || root.appMode === "vertical-labels")
+                    return values
+                if (!wsItem.isActive || values.length === 0) return []
+                const active = []
+                for (let i = 0; i < values.length; i++) {
+                    if (values[i].activated) active.push(values[i])
+                }
+                return active.length > 0 ? [active[0]] : [values[values.length - 1]]
+            }
+
+            visible: root.workspaceMode !== "active-only" || wsItem.isActive
+            Layout.alignment: Qt.AlignVCenter
             readonly property color activeColor:
                 wsItem.isSpecial ? Colors.cyan : Colors.accent
 
-            Layout.alignment: Qt.AlignVCenter
             implicitWidth: wsRow.implicitWidth + 16
             implicitHeight: Theme.barChipHeight
 
@@ -143,6 +198,7 @@ RowLayout {
 
                 Text {
                     text: {
+                        if (root.workspaceMode === "bullets") return "•"
                         const name = wsItem.wsName
                         if (name === "special:magic") return "󰓪"
                         if (name.startsWith("special:")) return "󰎔"
@@ -161,47 +217,39 @@ RowLayout {
                     color: Colors.muted
                     font.pixelSize: Theme.fontSizeCaption
                     opacity: 0.8
-                    visible: wsItem.modelData.toplevels.values.length > 0
+                    visible: root.appMode === "vertical-labels" && wsItem.displayedToplevels.length > 0
                 }
 
                 Repeater {
-                    model: wsItem.modelData.toplevels
+                    model: wsItem.displayedToplevels
 
-                    delegate: RowLayout {
+                    delegate: Item {
                         required property var modelData
                         required property int index
-                        spacing: Theme.spacingXs
+                        implicitWidth: root.appMode === "vertical-labels" && root.vertical
+                            ? Theme.fontSizeLabel : Theme.fontSizeIcon
+                        implicitHeight: root.appMode === "vertical-labels" && root.vertical
+                            ? Math.max(Theme.barChipHeight, Theme.fontSizeLabel * 4)
+                            : Theme.fontSizeIcon
 
-                        readonly property string appName: {
-                            const raw = modelData.lastIpcObject["class"] ?? ""
-                            // Prefer the desktop entry name (same source as the launcher)
-                            const apps = DesktopEntries.applications.values
-                            if (apps) {
-                                for (let i = 0; i < apps.length; i++) {
-                                    const e = apps[i]
-                                    if (e?.id?.toLowerCase() === raw.toLowerCase())
-                                        return e.name
-                                }
-                            }
-                            // Fallback: reverse-DNS → last segment; plain name → strip suffixes
-                            const name = raw.includes(".")
-                                ? raw.split(".").pop()
-                                : raw.replace(/-browser$/, "").replace(/-desktop$/, "")
-                            return name.charAt(0).toUpperCase() + name.slice(1)
+                        Image {
+                            anchors.centerIn: parent
+                            width: Theme.fontSizeIcon
+                            height: Theme.fontSizeIcon
+                            source: root.appIconForToplevel(parent.modelData)
+                            sourceSize: Qt.size(width, height)
+                            fillMode: Image.PreserveAspectFit
+                            visible: root.appMode === "active-icon" || root.appMode === "all-icons"
+                            asynchronous: true
                         }
 
                         Text {
-                            text: "|"
-                            color: Colors.muted
-                            font.pixelSize: Theme.fontSizeCaption
-                            opacity: 0.8
-                            visible: index > 0
-                        }
-
-                        Text {
-                            text: parent.appName
+                            anchors.centerIn: parent
+                            text: root.appLabelForToplevel(parent.modelData)
                             color: wsItem.isActive ? Colors.textDim : Colors.muted
                             font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
+                            rotation: root.vertical ? -90 : 0
+                            visible: root.appMode === "vertical-labels"
                         }
                     }
                 }

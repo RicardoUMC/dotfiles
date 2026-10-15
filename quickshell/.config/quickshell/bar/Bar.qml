@@ -17,6 +17,16 @@ PanelWindow {
     // that now declare Top by hand. See specs/overlay-manager.md.
     readonly property string barPosition: barConfig && barConfig.bar ? barConfig.bar.position : "top"
     readonly property bool vertical: barPosition === "left" || barPosition === "right"
+    readonly property var endpointOrder: barConfig && barConfig.bar && barConfig.bar.order
+        ? barConfig.bar.order : ["workspaces", "services"]
+    readonly property var contentPolicy: barConfig && barConfig.bar && barConfig.bar.content
+        ? barConfig.bar.content : ({ workspaceMode: "numbers", appMode: "active-icon", clockMode: "auto" })
+    readonly property string startEndpoint: endpointOrder[0] === "services" ? "services" : "workspaces"
+    readonly property string endEndpoint: startEndpoint === "services" ? "workspaces" : "services"
+    readonly property bool servicesAtStart: startEndpoint === "services"
+    readonly property string workspaceMode: contentPolicy.workspaceMode || "numbers"
+    readonly property string appMode: contentPolicy.appMode || "active-icon"
+    readonly property string clockMode: contentPolicy.clockMode || "auto"
     WlrLayershell.layer: WlrLayer.Top
     // The in-surface right control center uses non-modal focus: OnDemand lets
     // it receive keyboard input when requested, while Escape closes it without
@@ -192,8 +202,14 @@ PanelWindow {
     // Power is a section of the right control center, not a standalone overlay,
     // so its visibility derives from the RCC's open state and active section.
     readonly property bool powerMenuVisible: rightControlCenter.isOpen && rightControlCenter.activeSection === "power"
-    readonly property real powerBtnGlobalX:  rightTab.x + rightTab.width - powerMenu.implicitWidth - Theme.tabPaddingH
-    readonly property real powerBtnGlobalY:  rightTab.y + rightTab.height - powerMenu.implicitHeight - Theme.tabPaddingV
+    readonly property var activeServicesEndpoint: root.servicesAtStart
+        ? startEndpointLoader.item : endEndpointLoader.item
+    readonly property var activePowerButton: root.activeServicesEndpoint
+        ? root.activeServicesEndpoint.powerButton : null
+    readonly property real powerBtnGlobalX: root.activePowerButton
+        ? root.activePowerButton.mapToItem(null, 0, 0).x : 0
+    readonly property real powerBtnGlobalY: root.activePowerButton
+        ? root.activePowerButton.mapToItem(null, 0, 0).y : 0
     function pointInInteractiveBar(px, py) {
         if (barPosition === "top") return py < reservedBarContentHeight
         if (barPosition === "bottom") return py >= height - reservedBarContentHeight
@@ -201,9 +217,11 @@ PanelWindow {
         return px >= width - reservedBarContentWidth
     }
     function pointInPower(px, py) {
-        const origin = powerMenu.mapToItem(null, 0, 0)
-        return px >= origin.x && px <= origin.x + powerMenu.width
-            && py >= origin.y && py <= origin.y + powerMenu.height
+        const power = root.activePowerButton
+        if (!power) return false
+        const origin = power.mapToItem(null, 0, 0)
+        return px >= origin.x && px <= origin.x + power.width
+            && py >= origin.y && py <= origin.y + power.height
     }
     // Horizontal center of the media chip, in this bar's window coordinates.
     // The collapsed header is [fill, ClockChip, MprisIndicator, fill] with two
@@ -255,6 +273,28 @@ PanelWindow {
                 return players[i]
         }
         return players.length > 0 ? players[0] : null
+    }
+
+    Component {
+        id: workspaceEndpointComponent
+        Workspaces {
+            vertical: root.vertical
+            workspaceMode: root.workspaceMode
+            appMode: root.appMode
+            monitor: root.hyprlandMonitor
+            workspaceMonitorTick: root.workspaceMonitorTick
+        }
+    }
+
+    Component {
+        id: servicesEndpointComponent
+        ServiceEndpoint {
+            vertical: root.vertical
+            notificationsState: root.notificationsState
+            onSectionRequested: function(section) {
+                root.rightControlCenterSectionRequested(section)
+            }
+        }
     }
 
     BarSection {
@@ -335,9 +375,10 @@ PanelWindow {
             ? 0
             : (root.barPosition === "bottom" ? parent.height - height : 0)
 
-        Workspaces {
-            monitor: root.hyprlandMonitor
-            workspaceMonitorTick: root.workspaceMonitorTick
+        Loader {
+            id: startEndpointLoader
+            sourceComponent: root.startEndpoint === "workspaces"
+                ? workspaceEndpointComponent : servicesEndpointComponent
         }
     }
 
@@ -375,10 +416,15 @@ PanelWindow {
 
                 Item { Layout.fillWidth: true }
 
-                ClockChip { expanded: false }
+                ClockChip {
+                    expanded: false
+                    vertical: root.vertical
+                    orientationMode: root.clockMode
+                }
 
                 MprisIndicator {
                     id: mprisChip
+                    compact: root.vertical
                     visible: active
                     onClicked: {
                         if (!centerTab.expanded) {
@@ -442,63 +488,10 @@ PanelWindow {
             ? parent.height - height
             : (root.barPosition === "bottom" ? parent.height - height : 0)
 
-        RightIslandIconButton {
-            id: wifiButton
-            icon: WifiService.wifiEnabled ? root.wifiSignalGlyph(WifiService.activeSignal) : "󰤭"
-            label: "Wi-Fi"
-            disabled: !WifiService.wifiEnabled
-            active: WifiService.wifiEnabled && WifiService.activeSsid.length > 0
-            onClicked: root.rightControlCenterSectionRequested("wifi")
-        }
-
-        RightIslandIconButton {
-            id: bluetoothButton
-            icon: BluetoothService.bluetoothEnabled ? "󰂯" : "󰂲"
-            label: "Bluetooth"
-            disabled: !BluetoothService.bluetoothEnabled
-            active: BluetoothService.bluetoothEnabled && (BluetoothService.connectedDevices || []).length > 0
-            onClicked: root.rightControlCenterSectionRequested("bluetooth")
-        }
-
-        RightIslandIconButton {
-            id: audioButton
-            icon: AudioService.outputMuted ? "󰝟" : "󰕾"
-            label: "Audio"
-            active: !AudioService.outputMuted
-            warning: AudioService.outputMuted
-            onClicked: root.rightControlCenterSectionRequested("audio")
-        }
-
-        RightIslandIconButton {
-            id: notificationButton
-            icon: root.notificationsState && root.notificationsState.doNotDisturb ? "󰂛" : "󰂚"
-            label: "Notifications"
-            active: root.notificationsState && root.notificationsState.recentModel && root.notificationsState.recentModel.count > 0
-            warning: root.notificationsState && (root.notificationsState.doNotDisturb || root.notificationsState.soundMuted)
-            onClicked: root.rightControlCenterSectionRequested("notifications")
-        }
-
-        // Semantic divider between the service chips and the destructive
-        // session action. Purely decorative: it takes no input and changes no
-        // routing; islandSemanticGap widens the whitespace around it.
-        Rectangle {
-            Layout.preferredWidth: Theme.islandSeparatorWidth > 0
-                                      ? Theme.islandSeparatorWidth + Theme.islandSemanticGap * 2
-                                      : 0
-            Layout.preferredHeight: Theme.barChipHeight - Theme.spacingSm
-            Layout.alignment: Qt.AlignVCenter
-            radius: Math.min(1, Theme.islandSeparatorWidth / 2)
-            color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
-            visible: Theme.islandSeparatorWidth > 0
-        }
-
-        PowerMenu {
-            id: powerMenu
-            // The pill emits intent upward; the coordinator routes it to the
-            // power section of the right control center, which owns the menu
-            // content inside this surface. No surface opens from the pill
-            // itself, and no global timer is involved for sibling switches.
-            onToggleRequested: root.rightControlCenterSectionRequested("power")
+        Loader {
+            id: endEndpointLoader
+            sourceComponent: root.endEndpoint === "workspaces"
+                ? workspaceEndpointComponent : servicesEndpointComponent
         }
     }
 

@@ -1,0 +1,86 @@
+import QtQuick
+import QtQuick.Layouts
+import "../services"
+import "../theme"
+import "."
+
+// Reusable endpoint host for service chips plus the destructive power trigger.
+// Bar owns placement and routing; this component owns only service presentation
+// and exposes its power button so whichever endpoint is active remains routable.
+GridLayout {
+    id: root
+
+    property bool vertical: false
+    property var notificationsState: null
+
+    signal sectionRequested(string section)
+
+    readonly property Item powerButton: powerMenu
+
+    columns: root.vertical ? 1 : -1
+    rows: root.vertical ? -1 : 1
+    rowSpacing: Theme.spacingSm
+    columnSpacing: Theme.spacingSm
+
+    RightIslandIconButton {
+        icon: WifiService.wifiEnabled ? root.wifiSignalGlyph(WifiService.activeSignal) : "󰤭"
+        label: "Wi-Fi"
+        disabled: !WifiService.wifiEnabled
+        active: WifiService.wifiEnabled && WifiService.activeSsid.length > 0
+        onClicked: root.sectionRequested("wifi")
+    }
+
+    RightIslandIconButton {
+        icon: BluetoothService.bluetoothEnabled ? "󰂯" : "󰂲"
+        label: "Bluetooth"
+        disabled: !BluetoothService.bluetoothEnabled
+        active: BluetoothService.bluetoothEnabled && (BluetoothService.connectedDevices || []).length > 0
+        onClicked: root.sectionRequested("bluetooth")
+    }
+
+    RightIslandIconButton {
+        icon: AudioService.outputMuted ? "󰝟" : "󰕾"
+        label: "Audio"
+        active: !AudioService.outputMuted
+        warning: AudioService.outputMuted
+        onClicked: root.sectionRequested("audio")
+    }
+
+    RightIslandIconButton {
+        icon: root.notificationsState && root.notificationsState.doNotDisturb ? "󰂛" : "󰂚"
+        label: "Notifications"
+        active: root.notificationsState && root.notificationsState.recentModel
+            && root.notificationsState.recentModel.count > 0
+        warning: root.notificationsState && (root.notificationsState.doNotDisturb
+            || root.notificationsState.soundMuted)
+        onClicked: root.sectionRequested("notifications")
+    }
+
+    // T16 replaces this legacy rectangle with the selected integrated arc/notch
+    // treatment. Keeping it local preserves the existing service footprint while
+    // endpoint order is introduced independently.
+    Rectangle {
+        Layout.preferredWidth: Theme.islandSeparatorWidth > 0
+            ? Theme.islandSeparatorWidth + Theme.islandSemanticGap * 2
+            : 0
+        Layout.preferredHeight: Theme.barChipHeight - Theme.spacingSm
+        Layout.alignment: Qt.AlignVCenter
+        radius: Math.min(1, Theme.islandSeparatorWidth / 2)
+        color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
+        visible: Theme.islandSeparatorWidth > 0
+    }
+
+    PowerMenu {
+        id: powerMenu
+        onToggleRequested: root.sectionRequested("power")
+    }
+
+    function wifiSignalGlyph(signal) {
+        const value = Math.max(0, Number(signal || 0))
+        if (value < 20) return "󰤯"
+        if (value < 40) return "󰤟"
+        if (value < 60) return "󰤢"
+        if (value < 80) return "󰤥"
+        return "󰤨"
+    }
+}

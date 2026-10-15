@@ -9,6 +9,8 @@ Item {
 
     signal clicked()
 
+    property bool compact: false
+
     readonly property var player: {
         const players = Mpris.players.values
         for (let i = 0; i < players.length; i++) {
@@ -22,7 +24,7 @@ Item {
         && (root.player.trackTitle !== "" || root.player.trackArtist !== "")
 
     visible: root.active
-    implicitWidth: root.active ? chipRow.implicitWidth + 16 : 0
+    implicitWidth: root.active ? (root.compact ? 26 : chipRow.implicitWidth + 16) : 0
     implicitHeight: 26
 
     Behavior on implicitWidth {
@@ -71,6 +73,7 @@ Item {
             }
             color: Colors.textDim
             font { family: Colors.uiFont; pixelSize: Theme.fontSizeLabel }
+            visible: !root.compact
         }
     }
 

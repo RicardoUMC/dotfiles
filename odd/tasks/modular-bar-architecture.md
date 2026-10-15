@@ -45,3 +45,14 @@ Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos
 - Captured and visually reviewed `/tmp/quickshell-t13-top.png`, `/tmp/quickshell-t13-bottom.png`, `/tmp/quickshell-t13-left.png`, and `/tmp/quickshell-t13-right.png`.
 - The capture wrapper exited 1 only because its `cmp` assertion ran before the `EXIT` trap; the trap restored `config.json`, which is back at `position: bottom`.
 - Commit: `63cb2de refactor(bar): share scalar island geometry`.
+
+### L4 — T3 implementation and verification
+- Added normalized endpoint order and content policies through `Theme.effectiveBarConfig(screenName)`, preserving exact-name per-monitor overrides and safe enum fallbacks.
+- Extracted the services/power endpoint into `bar/ServiceEndpoint.qml`; both endpoint slots now use shared Loader components, while the center/dashboard remains fixed.
+- Added workspace presentation modes (`numbers`, `bullets`, `active-only`), app modes (`hidden`, `active-icon`, `all-icons`, `vertical-labels`), and clock modes (`auto`, `horizontal`, `vertical`, `hidden`). Side bars default to the active application icon and upright content.
+- Added `ClockChip` orientation policy and compact side media presentation; registered the new QML module in `bar/qmldir`.
+- Fixed power hit-testing after Loader extraction by mapping through scene coordinates instead of passing the non-`QQuickItem` `PanelWindow` to `mapToItem()`.
+- Qt6 `qmllint` completed with exit 0; the hard reload completed with `Configuration Loaded` and no runtime `ERROR` or `WARN` after the coordinate fix.
+- Captured and visually reviewed `/tmp/quickshell-t14-default-bottom.png`, `/tmp/quickshell-t14-inverted-bottom.png`, `/tmp/quickshell-t14-left-active-icon.png`, `/tmp/quickshell-t14-per-monitor.png`, and `/tmp/quickshell-t14-invalid-fallback.png`.
+- The corrected five-scenario capture matrix restored `quickshell/.config/quickshell/config.json` byte-for-byte; its local modification remains intentionally uncommitted.
+- Implementation is ready for its work-unit commit; the commit identity will be recorded in the next log update.

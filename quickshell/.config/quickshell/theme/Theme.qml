@@ -123,7 +123,16 @@ QtObject {
     property real barCurveDepthRatio: 0.2           // concave depth = height × ratio (legacy, use barNotchDepthRatio)
     // Future bar configuration is normalized independently from legacy bar.* keys.
     property var configurableBarSnapshot: ({
-        bar: { position: "top", visibility: "always", style: "islands", revealPolicy: "external-edges" },
+        bar: {
+            position: "top",
+            visibility: "always",
+            style: "islands",
+            revealPolicy: "external-edges",
+            order: ["workspaces", "services"],
+            content: { workspaceMode: "numbers", appMode: "active-icon", clockMode: "auto" },
+            divider: "arc",
+            motion: "calm"
+        },
         dashboard: { attachment: "embedded" },
         monitors: ({})
     })
@@ -138,13 +147,37 @@ QtObject {
         return allowed.indexOf(value) >= 0 ? value : fallback
     }
 
+    function _normalizedEndpointOrder(value) {
+        const fallback = ["workspaces", "services"]
+        if (!Array.isArray(value) || value.length !== 2) return fallback
+        if (value.indexOf("workspaces") < 0 || value.indexOf("services") < 0) return fallback
+        if (value[0] === value[1]) return fallback
+        return [value[0], value[1]]
+    }
+
+    function _normalizedBarContent(value) {
+        const source = _isConfigObject(value) ? value : ({})
+        return {
+            workspaceMode: _validConfigEnum(source.workspaceMode,
+                ["numbers", "bullets", "active-only"], "numbers"),
+            appMode: _validConfigEnum(source.appMode,
+                ["hidden", "active-icon", "all-icons", "vertical-labels"], "active-icon"),
+            clockMode: _validConfigEnum(source.clockMode,
+                ["auto", "horizontal", "vertical", "hidden"], "auto")
+        }
+    }
+
     function _normalizedBarDefaults(value) {
         const source = _isConfigObject(value) ? value : ({})
         return {
             position: _validConfigEnum(source.position, ["top", "bottom", "left", "right"], "top"),
             visibility: _validConfigEnum(source.visibility, ["always", "edge-reveal", "disabled"], "always"),
             style: _validConfigEnum(source.style, ["islands", "continuous"], "islands"),
-            revealPolicy: _validConfigEnum(source.revealPolicy, ["external-edges"], "external-edges")
+            revealPolicy: _validConfigEnum(source.revealPolicy, ["external-edges"], "external-edges"),
+            order: _normalizedEndpointOrder(source.order),
+            content: _normalizedBarContent(source.content),
+            divider: _validConfigEnum(source.divider, ["arc", "hairline", "none"], "arc"),
+            motion: _validConfigEnum(source.motion, ["reduced", "calm", "expressive"], "calm")
         }
     }
 
@@ -159,6 +192,14 @@ QtObject {
             normalized.style = value.style
         if (typeof value.revealPolicy === "string" && value.revealPolicy === "external-edges")
             normalized.revealPolicy = value.revealPolicy
+        if (value.order !== undefined)
+            normalized.order = _normalizedEndpointOrder(value.order)
+        if (value.content !== undefined)
+            normalized.content = _normalizedBarContent(value.content)
+        if (typeof value.divider === "string" && ["arc", "hairline", "none"].indexOf(value.divider) >= 0)
+            normalized.divider = value.divider
+        if (typeof value.motion === "string" && ["reduced", "calm", "expressive"].indexOf(value.motion) >= 0)
+            normalized.motion = value.motion
         return normalized
     }
 
@@ -199,7 +240,15 @@ QtObject {
                 position: snapshot.bar.position,
                 visibility: snapshot.bar.visibility,
                 style: snapshot.bar.style,
-                revealPolicy: snapshot.bar.revealPolicy
+                revealPolicy: snapshot.bar.revealPolicy,
+                order: snapshot.bar.order.slice(),
+                content: {
+                    workspaceMode: snapshot.bar.content.workspaceMode,
+                    appMode: snapshot.bar.content.appMode,
+                    clockMode: snapshot.bar.content.clockMode
+                },
+                divider: snapshot.bar.divider,
+                motion: snapshot.bar.motion
             },
             dashboard: { attachment: snapshot.dashboard.attachment }
         }
@@ -210,6 +259,14 @@ QtObject {
             if (monitor.bar.visibility !== undefined) result.bar.visibility = monitor.bar.visibility
             if (monitor.bar.style !== undefined) result.bar.style = monitor.bar.style
             if (monitor.bar.revealPolicy !== undefined) result.bar.revealPolicy = monitor.bar.revealPolicy
+            if (monitor.bar.order !== undefined) result.bar.order = monitor.bar.order.slice()
+            if (monitor.bar.content !== undefined) {
+                result.bar.content.workspaceMode = monitor.bar.content.workspaceMode
+                result.bar.content.appMode = monitor.bar.content.appMode
+                result.bar.content.clockMode = monitor.bar.content.clockMode
+            }
+            if (monitor.bar.divider !== undefined) result.bar.divider = monitor.bar.divider
+            if (monitor.bar.motion !== undefined) result.bar.motion = monitor.bar.motion
         }
         if (monitor && monitor.dashboard && monitor.dashboard.attachment !== undefined)
             result.dashboard.attachment = monitor.dashboard.attachment

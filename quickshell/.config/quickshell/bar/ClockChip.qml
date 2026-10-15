@@ -3,10 +3,20 @@ import QtQuick.Layouts
 import "../theme"
 
 Item {
-    property bool expanded: false
+    id: root
 
-    implicitWidth:  Math.max(timeText.implicitWidth, dateText.implicitWidth) + 18
-    implicitHeight: clockColumn.implicitHeight + 8
+    property bool expanded: false
+    property bool vertical: false
+    property string orientationMode: "auto"
+    readonly property bool sideVertical: root.orientationMode === "vertical"
+        || (root.orientationMode === "auto" && root.vertical)
+
+    implicitWidth: root.sideVertical
+        ? clockColumn.implicitHeight + 8
+        : Math.max(timeText.implicitWidth, dateText.implicitWidth) + 18
+    implicitHeight: root.sideVertical
+        ? Math.max(timeText.implicitWidth, dateText.implicitWidth) + 8
+        : clockColumn.implicitHeight + 8
 
     function updateClock() {
         const now = new Date()
@@ -24,6 +34,7 @@ Item {
         id: clockColumn
         anchors.centerIn: parent
         spacing: 2
+        rotation: root.sideVertical ? -90 : 0
 
         Text {
             id: timeText

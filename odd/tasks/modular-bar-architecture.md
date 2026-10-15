@@ -119,4 +119,4 @@ Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos
 ### L15 — T9/T25 documentation synchronization
 - Updated `specs/bar.md`, `specs/configurable-bar.md`, and `DESIGN.md` to distinguish the visually bounded lateral islands from the full-output vertical owner surface, preserve narrow collapsed `exclusiveZone`, and document shared cap/wrap parity between visible and native-blur paths.
 - `git diff --check` and targeted contract-text checks passed. Runtime status remains unchanged: rebuild Quickshell against Qt 6.12.0 before compositor validation.
-- Work-unit commit: pending.
+- Work-unit commit: 6c0e04d.

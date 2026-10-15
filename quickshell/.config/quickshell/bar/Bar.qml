@@ -69,14 +69,15 @@ PanelWindow {
         centerSection.reservedWidth,
         rightSection.reservedWidth)
 
-    // Full-output height: the right control center now renders inside this
-    // surface, so the window must span the whole output for its below-bar
-    // body and outside-click backdrop. While `screen` is still null at
-    // startup, fall back to the old content-height formula. Anchors stay
-    // top/left/right ONLY (never bottom) so the exclusive zone remains
-    // unambiguously top-edge.
+    // Full-output dimensions: the right control center renders inside this
+    // surface, so vertical bars must span the whole output width for its
+    // panel body and outside-click backdrop. The narrow bar geometry remains
+    // edge-pinned inside that surface and `exclusiveZone` stays collapsed.
+    // While `screen` is still null at startup, retain the narrow fallback.
+    // Anchors stay top/left/right ONLY (never bottom) so the exclusive zone
+    // remains unambiguously edge-bound.
     implicitWidth: vertical
-        ? stableSurfaceContentWidth + Theme.barWrapDepth
+        ? (screen !== null ? screen.width : stableSurfaceContentWidth + Theme.barWrapDepth)
         : (screen !== null ? screen.width : stableSurfaceContentWidth)
     implicitHeight: vertical
         ? (screen !== null ? screen.height : stableSurfaceContentHeight)

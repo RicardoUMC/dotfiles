@@ -103,3 +103,8 @@ Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos
 - Made `BarSection` reservation width explicit, stacked the lateral center header through `GridLayout`, made the expanded vertical body fill the physical center frame, and excluded hidden clock-date width from collapsed sizing.
 - Qt 6.12 `qmllint` passed on the touched QML set with only known unqualified/import/singleton warnings; `git diff --check` passed. Runtime reload remains intentionally deferred until Quickshell is rebuilt for the installed Qt 6.12.0.
 - Work-unit commit: pending.
+
+### L13 — T9/T23 vertical RCC surface correction
+- Expanded vertical `Bar` PanelWindow surfaces to the owning output width while retaining the narrow edge-pinned section geometry and collapsed `exclusiveZone`, so the in-surface RCC body/backdrop is not clipped by the bar's visual width.
+- Qt 6.12 `qmllint` passed on `Bar.qml`, `RightControlCenter.qml`, `BarSection.qml`, and `IslandGeometry.qml`; `git diff --check` passed. Runtime RCC validation remains deferred until Quickshell is rebuilt for the installed Qt 6.12.0.
+- Work-unit commit: pending.

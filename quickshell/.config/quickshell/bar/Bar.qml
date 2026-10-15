@@ -319,9 +319,9 @@ PanelWindow {
         vertical: root.vertical
         edge: root.barPosition
         hasWrap: true
-        leftCornerEnabled: root.barPosition === "left"
+        leftCornerEnabled: false
         rightCornerEnabled: true
-        bottomLeftRounded: root.barPosition === "left"
+        bottomLeftRounded: false
         bottomRightRounded: true
     }
 
@@ -372,9 +372,9 @@ PanelWindow {
         edge: root.barPosition
         hasWrap: true
         leftCornerEnabled: true
-        rightCornerEnabled: root.barPosition === "left"
+        rightCornerEnabled: false
         bottomLeftRounded: true
-        bottomRightRounded: root.barPosition === "left"
+        bottomRightRounded: false
     }
 
     // Left tab — Workspaces

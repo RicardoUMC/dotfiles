@@ -23,7 +23,7 @@ Implementation starts bottom-first; left/right remain unchanged until the shared
 - T6 (S1, S2, S9, S10): Correct the lateral visible/blur/input frames and rotated cap mapping without changing accepted top/bottom behavior; route: mask-local geometry and physical-edge transforms; commit: 7a20bfc
 - T7 (S1, S2, S9, S10): Keep vertical dashboard expansion overlay-shaped, align the right-side catcher, and verify layer behavior separately from reservation; route: collapsed reservation plus output-local catcher geometry; commit: 7a20bfc
 - T8 (S1, S2, S9, S10): Analyze the latest user recording and distinguish persistent lateral geometry from open-state animation/content defects; route: extracted frame evidence and source mapping; commit: pending
-- T9 (S1, S2, S9, S10): Correct the recording-confirmed geometry and open-state defects without regressing the accepted top/bottom contract; route: bounded QML correction and runtime verification; commit: pending
+- T9 (S1, S2, S9, S10): Correct the recording-confirmed geometry and open-state defects without regressing the accepted top/bottom contract; route: bounded QML correction and runtime verification; commit: 341c071, 8d1cecf, pending
 
 ## Log
 ### L1 — User request (verbatim)
@@ -102,9 +102,15 @@ Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos
 ### L12 — T8/T22 implementation and static verification
 - Made `BarSection` reservation width explicit, stacked the lateral center header through `GridLayout`, made the expanded vertical body fill the physical center frame, and excluded hidden clock-date width from collapsed sizing.
 - Qt 6.12 `qmllint` passed on the touched QML set with only known unqualified/import/singleton warnings; `git diff --check` passed. Runtime reload remains intentionally deferred until Quickshell is rebuilt for the installed Qt 6.12.0.
-- Work-unit commit: pending.
+- Work-unit commit: 341c071.
 
 ### L13 — T9/T23 vertical RCC surface correction
 - Expanded vertical `Bar` PanelWindow surfaces to the owning output width while retaining the narrow edge-pinned section geometry and collapsed `exclusiveZone`, so the in-surface RCC body/backdrop is not clipped by the bar's visual width.
 - Qt 6.12 `qmllint` passed on `Bar.qml`, `RightControlCenter.qml`, `BarSection.qml`, and `IslandGeometry.qml`; `git diff --check` passed. Runtime RCC validation remains deferred until Quickshell is rebuilt for the installed Qt 6.12.0.
+- Work-unit commit: 8d1cecf.
+
+### L14 — T9/T19 lateral endpoint parity correction
+- Restored the canonical complementary endpoint flags so left/right lateral sections retain one cap and one inward wrap each, while top/bottom/right behavior remains unchanged.
+- Made the rotated native-blur cap cutouts follow the visible mask's `sectionId`-specific `topLeft/topRight` handedness; static checks passed for both endpoint cases and center fallback.
+- Qt 6.12 `qmllint` passed on the touched mask/blur set and `git diff --check` passed. Runtime visual confirmation remains deferred until Quickshell is rebuilt for Qt 6.12.0.
 - Work-unit commit: pending.

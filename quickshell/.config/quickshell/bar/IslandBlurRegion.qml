@@ -36,6 +36,14 @@ Region {
     readonly property bool rightWrapEnabled: targetItem._rightWrapEnabled
     readonly property real leftSourceWidth: targetItem._horizontalSourceWidth
     readonly property real leftSourceHeight: targetItem._horizontalSourceHeight
+    // The rotated visible source uses topLeft/topRight caps for endpoint
+    // sections and the mirrored topRight/topLeft pair for the center. Keep
+    // native cutouts on the same physical quarter-circle handedness.
+    readonly property bool endpointCaps: targetItem.sectionId !== "center"
+    readonly property real leftCapCutoutY: root.sectionY + root.leftSourceWidth
+        - (root.endpointCaps ? root.corner * 2 : root.corner)
+    readonly property real rightCapCutoutY: root.sectionY
+        + (root.endpointCaps ? 0 : -root.corner)
 
     // Left uses the same horizontal source as the visible mask. For a source
     // rectangle (u,v,w,h), CCW screen rotation maps it to
@@ -59,7 +67,7 @@ Region {
         height: root.leftExtent
         Region {
             x: root.sectionX
-            y: root.sectionY + root.leftSourceWidth - root.corner
+            y: root.leftCapCutoutY
             width: root.corner * 2
             height: root.corner * 2
             shape: RegionShape.Ellipse
@@ -74,7 +82,7 @@ Region {
         height: root.rightExtent
         Region {
             x: root.sectionX
-            y: root.sectionY - root.corner
+            y: root.rightCapCutoutY
             width: root.corner * 2
             height: root.corner * 2
             shape: RegionShape.Ellipse

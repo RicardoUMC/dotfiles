@@ -89,4 +89,4 @@ Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos
 
 ### L9 — Documentation sync
 - Updated `specs/bar.md`, `specs/configurable-bar.md`, and `DESIGN.md` to describe the corrected right mirrored frame, collapsed vertical reservation, and the explicit boundary between static reservation/catcher checks and unverified live pointer/compositor behavior.
-- Work-unit commit: pending.
+- Work-unit commit: `7b77eb5 docs(bar): document corrected lateral contracts`.

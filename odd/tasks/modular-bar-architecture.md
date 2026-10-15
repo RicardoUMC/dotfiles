@@ -64,4 +64,4 @@ Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos
 - Qt6 `qmllint` completed with exit 0; hard reload completed with `Configuration Loaded` and no runtime `ERROR` or `WARN`.
 - Captured and visually reviewed `/tmp/quickshell-t16-arc-top.png`, `/tmp/quickshell-t16-arc-bottom.png`, `/tmp/quickshell-t16-arc-left.png`, `/tmp/quickshell-t16-arc-right.png`, `/tmp/quickshell-t16-hairline-bottom.png`, and `/tmp/quickshell-t16-none-bottom.png`, plus endpoint crops.
 - The six-scenario capture matrix restored `quickshell/.config/quickshell/config.json` byte-for-byte; its local debug modification remains intentionally uncommitted.
-- Implementation is ready for its work-unit commit; the commit identity will be recorded in the next log update.
+- Work-unit commit: `71ea05a feat(bar): add integrated service divider`.

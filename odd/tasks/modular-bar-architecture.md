@@ -72,4 +72,4 @@ Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos
 - Qt6 `qmllint` completed with exit 0; hard reload completed with `Configuration Loaded` and no runtime `ERROR` or `WARN`.
 - Captured and visually reviewed `/tmp/quickshell-t17-calm-bottom.png`, `/tmp/quickshell-t17-reduced-bottom.png`, `/tmp/quickshell-t17-calm-left.png`, and `/tmp/quickshell-t17-reduced-left.png`.
 - The four-scenario motion matrix restored `quickshell/.config/quickshell/config.json` byte-for-byte; its local debug modification remains intentionally uncommitted.
-- Implementation is ready for its work-unit commit; the commit identity will be recorded in the next log update.
+- Work-unit commit: `911810a feat(bar): wire configurable motion policy`.

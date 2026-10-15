@@ -15,8 +15,8 @@ Implementation starts bottom-first; left/right remain unchanged until the shared
 - S10: "que al mismo tiempo sean coherentes con la imagen engión en la geometría"
 
 ## Tasks
-- T1 (S1, S9, S10): Recover and freeze bottom against the last acceptable baseline; route: bottom mask/blur parity; commit: pending
-- T2 (S1, S2, S10): Define one canonical logical geometry contract consumed by visible mask, native blur, input, and reservation; route: shared geometry snapshot; commit: pending
+- T1 (S1, S9, S10): Recover and freeze bottom against the last acceptable baseline; route: bottom mask/blur parity; commit: 5b1d1a0
+- T2 (S1, S2, S10): Define one canonical logical geometry contract consumed by visible mask, native blur, input, and reservation; route: scalar IslandGeometry section contract; commit: pending
 - T3 (S2, S4, S5): Separate edge placement from slot order and content presentation; route: configurable content policy; commit: pending
 - T4 (S5, S6, S7): Add the configurable divider and Calm motion policy without coupling them to placement; route: theme/config policy; commit: pending
 - T5 (S1, S9, S10): Verify all four edges, per-monitor overrides, shared seams, content modes, and motion defaults; route: functional/runtime checks; commit: pending
@@ -32,3 +32,15 @@ Por ejemplo, cosa que estuve notando ahorita que estaba probando la parte de la 
 Luego, para la parte de servicios, aquí yo estoy hablando en general, no solo de la barra cuando está en el lado izquierdo, A lo mejor, no sé si simplificar, no no simplificar, sino que mejorar la división que ahorita tienes con un rectángulo. Entiendo que es una división entre el botón de apagado con los otros servicios de notificación, sonido, Bluetooth y WiFi. Pero no me termina de gustar. Quiero algo un poquito más acorde al la estética que estamos utilizando, no quiero algo tal cual cuadrado, no sé si incluso quiera un divisor, quiero algo que se sienta moderno, que no se sienta tosco, que no se sienta puesto ahí solo para dividir, porque ahorita se siente así. Si tienes tú alguna sugerencia, alguna propuesta, la acepto, la podemos ir probando para tratar de lograrlo.
 
 Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos para la barra inferior, eran cosas que ya teníamos resueltas. Entonces ahorita yo creo que preferiría regresar al punto en donde funcionaba, antes de aplicar las cosas para ¿La barra izquierda? Para que tomes en cuenta ya todo lo que te dije y ver si hay que modificar cosas."
+
+### L2 — T1 evidence
+- Restored the accepted bottom `Scale` transform in `NotchIslandMask.qml` from `bfd4662`.
+- Qt6 `qmllint`, hard reload, `Configuration Loaded`, RGB strip comparison, and visual review passed.
+- Commit: `5b1d1a0 fix(bar): restore bottom mask orientation`.
+
+### L3 — T2 evidence
+- Extended `IslandGeometry.qml` with pure scalar section helpers for corner extents, edge frame offsets, proxy placement, mask dimensions, wraps, source dimensions, and reservation.
+- `BarSection` is the scalar contract provider; `NotchIslandMask` and `IslandBlurRegion` consume the same derived values without a dynamic metrics object.
+- Qt6 `qmllint`, stale-reference check, hard reload, and latest log block passed with `Configuration Loaded` and no `ERROR` or `WARN`.
+- Captured and visually reviewed `/tmp/quickshell-t13-top.png`, `/tmp/quickshell-t13-bottom.png`, `/tmp/quickshell-t13-left.png`, and `/tmp/quickshell-t13-right.png`.
+- The capture wrapper exited 1 only because its `cmp` assertion ran before the `EXIT` trap; the trap restored `config.json`, which is back at `position: bottom`.

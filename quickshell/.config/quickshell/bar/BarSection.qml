@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Effects
+import "."
 import "../theme"
 
 Item {
@@ -17,35 +18,67 @@ Item {
     property bool vertical: false
     property string edge: "top"
 
-    readonly property real reservedHeight: vertical ? targetItem.width : collapsedHeight
-    readonly property real reservedWidth: vertical ? targetItem.width : 0
+    function sectionMetric(name) {
+        return IslandGeometry.sectionValue(
+            name,
+            root.vertical,
+            root.edge,
+            root.targetItem.width,
+            root.targetItem.height,
+            Theme.barCurveRadius,
+            Theme.barWrapDepth,
+            root.hasWrap,
+            root.leftCornerEnabled,
+            root.rightCornerEnabled,
+            root.bottomLeftRounded,
+            root.bottomRightRounded,
+            root.collapsedHeight)
+    }
+
+    // Keep reservation branches short-circuited: horizontal bars must not
+    // observe target width while resolving an exclusive zone of zero width.
+    readonly property real reservedHeight: root.vertical ? root.targetItem.width : root.collapsedHeight
+    readonly property real reservedWidth: root.vertical ? root.targetItem.width : 0
     readonly property Item hit: hitBox
     readonly property real centerX: targetItem.x
     readonly property real centerY: targetItem.y
     readonly property real centerWidth: targetItem.width
     readonly property real centerHeight: targetItem.height
 
-    readonly property real _cornerSize: Math.min(Theme.barCurveRadius, vertical ? targetItem.width : targetItem.height)
-    readonly property real _leftExtent: leftCornerEnabled ? _cornerSize : 0
-    readonly property real _rightExtent: rightCornerEnabled ? _cornerSize : 0
-    readonly property real _wrapDepth: hasWrap ? Theme.barWrapDepth : 0
+    readonly property real _cornerSize: sectionMetric("corner")
+    readonly property real _leftExtent: sectionMetric("leftExtent")
+    readonly property real _rightExtent: sectionMetric("rightExtent")
+    readonly property real _wrapDepth: sectionMetric("wrapDepth")
+    readonly property real _sectionOffsetX: sectionMetric("sectionOffsetX")
+    readonly property real _sectionOffsetY: sectionMetric("sectionOffsetY")
+    readonly property real _sectionWidth: sectionMetric("sectionWidth")
+    readonly property real _sectionHeight: sectionMetric("sectionHeight")
+    readonly property real _targetProxyX: sectionMetric("targetProxyX")
+    readonly property real _targetProxyY: sectionMetric("targetProxyY")
+    readonly property real _maskOffsetX: sectionMetric("maskOffsetX")
+    readonly property real _maskOffsetY: sectionMetric("maskOffsetY")
+    readonly property real _maskWidth: sectionMetric("maskWidth")
+    readonly property real _maskHeight: sectionMetric("maskHeight")
+    readonly property real _targetYFromSection: sectionMetric("targetYFromSection")
+    readonly property real _horizontalSourceWidth: sectionMetric("horizontalSourceWidth")
+    readonly property real _horizontalSourceHeight: sectionMetric("horizontalSourceHeight")
+    readonly property bool _leftWrapEnabled: sectionMetric("leftWrapEnabled")
+    readonly property bool _rightWrapEnabled: sectionMetric("rightWrapEnabled")
     readonly property color _segmentFill: Theme.debugBarSilhouette
         ? Qt.rgba(1.0, 0.2, 0.2, 0.65)
         : Theme.surface(Colors.base01)
 
-    x: vertical
-        ? (edge === "right" ? targetItem.x - _wrapDepth : targetItem.x)
-        : targetItem.x - _leftExtent
-    y: vertical ? targetItem.y - _leftExtent : targetItem.y - (edge === "bottom" ? _wrapDepth : 0)
-    width: vertical ? targetItem.width + _wrapDepth : targetItem.width + _leftExtent + _rightExtent
-    height: vertical ? targetItem.height + _leftExtent + _rightExtent : targetItem.height + _wrapDepth
+    x: targetItem.x + _sectionOffsetX
+    y: targetItem.y + _sectionOffsetY
+    width: _sectionWidth
+    height: _sectionHeight
 
     Item {
         id: targetProxy
         // Keep the target at the output edge on the left, but make room for
         // the inward wrap before it on the right.
-        x: root.vertical ? (root.edge === "right" ? root._wrapDepth : 0) : root._leftExtent
-        y: root.vertical ? root._leftExtent : (root.edge === "bottom" ? root._wrapDepth : 0)
+        x: root._targetProxyX
+        y: root._targetProxyY
         width: root.targetItem.width
         height: root.targetItem.height
         visible: false
@@ -76,11 +109,15 @@ Item {
             rightCornerEnabled: root.rightCornerEnabled
             bottomLeftRounded: root.bottomLeftRounded
             bottomRightRounded: root.bottomRightRounded
-            maskColor: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 0.65) : "white"
             vertical: root.vertical
             edge: root.edge
             hasWrap: root.hasWrap
             wrapDepth: root._wrapDepth
+            maskOffsetX: root._maskOffsetX
+            maskOffsetY: root._maskOffsetY
+            maskWidth: root._maskWidth
+            maskHeight: root._maskHeight
+            maskColor: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 0.65) : "white"
         }
 
         // The wrap follows the owning output edge: below for top, above for

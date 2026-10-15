@@ -14,25 +14,20 @@ Item {
     property string edge: "top"
     property bool hasWrap: false
     property real wrapDepth: 0
-
-    // BarSection already clamps this radius to the target cross-axis size;
-    // keeping the mask independent from its own geometry avoids vertical
-    // binding loops when GridLayout resolves tab widths.
-    readonly property real resolvedCornerSize: Math.max(0, cornerSize)
+    property real maskOffsetX: 0
+    property real maskOffsetY: 0
+    property real maskWidth: 0
+    property real maskHeight: 0
     property color maskColor: "white"
 
-    x: vertical ? targetItem.x : targetItem.x - (leftCornerEnabled ? resolvedCornerSize : 0)
-    y: vertical ? ((vertical && edge === "left") ? targetItem.y - (leftCornerEnabled ? resolvedCornerSize : 0) : targetItem.y - (leftCornerEnabled ? resolvedCornerSize : 0)) : targetItem.y
-    width: vertical
-        ? ((vertical && edge === "left")
-            ? targetItem.width + (hasWrap ? wrapDepth : 0)
-            : targetItem.width)
-        : targetItem.width
-            + (leftCornerEnabled ? resolvedCornerSize : 0)
-            + (rightCornerEnabled ? resolvedCornerSize : 0)
-    height: vertical ? targetItem.height
-        + (leftCornerEnabled ? resolvedCornerSize : 0)
-        + (rightCornerEnabled ? resolvedCornerSize : 0) : targetItem.height
+    // BarSection supplies all derived values from IslandGeometry's scalar
+    // contract; this mask only renders the canonical shape.
+    readonly property real resolvedCornerSize: Math.max(0, cornerSize)
+
+    x: targetItem.x + maskOffsetX
+    y: targetItem.y + maskOffsetY
+    width: maskWidth
+    height: maskHeight
 
     // Bottom mirrors the complete horizontal source, preserving the accepted
     // top/bottom notch grammar without changing the lateral source geometry.

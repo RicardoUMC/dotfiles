@@ -13,8 +13,7 @@ Region {
 
     readonly property real targetHeight: Math.max(0,
         Number(targetItem.targetItem.height || 0))
-    readonly property real corner: Math.max(0, Math.min(
-        Number(targetItem._cornerSize || 0), targetHeight))
+    readonly property real corner: Math.max(0, Number(targetItem._cornerSize || 0))
     readonly property bool leftCornerEnabled: targetItem.leftCornerEnabled
     readonly property bool rightCornerEnabled: targetItem.rightCornerEnabled
     readonly property real sectionX: Number(targetItem.x || 0)
@@ -25,17 +24,15 @@ Region {
     readonly property bool left: targetItem.vertical && targetItem.edge === "left"
     readonly property bool right: targetItem.vertical && targetItem.edge === "right"
     readonly property real wrapDepth: Math.max(0, Number(targetItem._wrapDepth || 0))
-    readonly property real targetY: root.sectionY + (root.bottom ? root.wrapDepth : 0)
-    readonly property real leftExtent: leftCornerEnabled ? corner : 0
-    readonly property real rightExtent: rightCornerEnabled ? corner : 0
+    readonly property real targetY: root.sectionY + targetItem._targetYFromSection
+    readonly property real leftExtent: targetItem._leftExtent
+    readonly property real rightExtent: targetItem._rightExtent
     readonly property real bodyWidth: Math.max(0,
         Number(targetItem.targetItem.width || 0))
-    readonly property bool leftWrapEnabled: targetItem.hasWrap
-        && !targetItem.bottomLeftRounded && root.corner > 0 && root.wrapDepth > 0
-    readonly property bool rightWrapEnabled: targetItem.hasWrap
-        && !targetItem.bottomRightRounded && root.corner > 0 && root.wrapDepth > 0
-    readonly property real leftSourceWidth: root.targetHeight + root.leftExtent + root.rightExtent
-    readonly property real leftSourceHeight: root.bodyWidth + root.wrapDepth
+    readonly property bool leftWrapEnabled: targetItem._leftWrapEnabled
+    readonly property bool rightWrapEnabled: targetItem._rightWrapEnabled
+    readonly property real leftSourceWidth: targetItem._horizontalSourceWidth
+    readonly property real leftSourceHeight: targetItem._horizontalSourceHeight
 
     // Left uses the same horizontal source as the visible mask. For a source
     // rectangle (u,v,w,h), CCW screen rotation maps it to

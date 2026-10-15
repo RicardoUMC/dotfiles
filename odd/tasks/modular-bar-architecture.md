@@ -55,4 +55,4 @@ Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos
 - Qt6 `qmllint` completed with exit 0; the hard reload completed with `Configuration Loaded` and no runtime `ERROR` or `WARN` after the coordinate fix.
 - Captured and visually reviewed `/tmp/quickshell-t14-default-bottom.png`, `/tmp/quickshell-t14-inverted-bottom.png`, `/tmp/quickshell-t14-left-active-icon.png`, `/tmp/quickshell-t14-per-monitor.png`, and `/tmp/quickshell-t14-invalid-fallback.png`.
 - The corrected five-scenario capture matrix restored `quickshell/.config/quickshell/config.json` byte-for-byte; its local modification remains intentionally uncommitted.
-- Implementation is ready for its work-unit commit; the commit identity will be recorded in the next log update.
+- Work-unit commit: `270ec20 feat(bar): add configurable endpoint content policies`.

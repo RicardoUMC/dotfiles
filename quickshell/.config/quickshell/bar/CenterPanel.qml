@@ -56,10 +56,15 @@ Item {
         // notch keep receiving their own clicks.
         Item {
             id: centerHole
-            x: root.vertical ? 0 : root.centerX
+            // The fullscreen catcher is output-local. A right-anchored Bar
+            // expands inward from the output edge, so its pass-through hole
+            // must start at popup.width - centerWidth rather than x=0.
+            x: root.vertical
+                ? (root.barPosition === "right" ? popup.width - root.centerWidth : 0)
+                : root.centerX
             y: root.vertical || root.barPosition === "bottom" ? root.centerY : 0
-            width: root.vertical ? root.centerWidth : root.centerWidth
-            height: root.vertical ? root.centerHeight : root.centerHeight
+            width: root.centerWidth
+            height: root.centerHeight
         }
 
         // Click outside the expanded center element closes it.

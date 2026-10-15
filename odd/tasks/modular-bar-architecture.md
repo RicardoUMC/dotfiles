@@ -20,6 +20,8 @@ Implementation starts bottom-first; left/right remain unchanged until the shared
 - T3 (S2, S4, S5): Separate edge placement from slot order and content presentation; route: configurable content policy; commit: pending
 - T4 (S5, S6, S7): Add the configurable divider and Calm motion policy without coupling them to placement; route: theme/config policy; commit: pending
 - T5 (S1, S9, S10): Verify all four edges, per-monitor overrides, shared seams, content modes, and motion defaults; route: functional/runtime checks; commit: pending
+- T6 (S1, S2, S9, S10): Correct the lateral visible/blur/input frames and rotated cap mapping without changing accepted top/bottom behavior; route: mask-local geometry and physical-edge transforms; commit: pending
+- T7 (S1, S2, S9, S10): Keep vertical dashboard expansion overlay-shaped, align the right-side catcher, and verify layer behavior separately from reservation; route: collapsed reservation plus output-local catcher geometry; commit: pending
 
 ## Log
 ### L1 — User request (verbatim)
@@ -73,3 +75,14 @@ Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos
 - Captured and visually reviewed `/tmp/quickshell-t17-calm-bottom.png`, `/tmp/quickshell-t17-reduced-bottom.png`, `/tmp/quickshell-t17-calm-left.png`, and `/tmp/quickshell-t17-reduced-left.png`.
 - The four-scenario motion matrix restored `quickshell/.config/quickshell/config.json` byte-for-byte; its local debug modification remains intentionally uncommitted.
 - Work-unit commit: `911810a feat(bar): wire configurable motion policy`.
+
+### L7 — User correction/evidence (verbatim)
+"Key evidence: right wrapped mask doubles targetProxy.x (IslandGeometry.qml:46-55, NotchIslandMask.qml:27+141), shifting fill +wrapDepth relative to content; left rotation maps canonical L cap to physical bottom but section frame still uses -L/proxyY=L (latent when L≠R). Definite dashboard issues: CenterPanel.qml:59 forces fullscreen catcher hole x=0 even for right; BarSection.qml:41 reserves current target width and Bar.qml:65-69 includes center, so expansion reserves 260px and reflows tiles rather than overlaying. Both surfaces explicitly Top; screenshots do not prove actual below-normal-window stacking."
+
+### L8 — T6/T7 implementation and verification
+- Corrected edge-specific physical extents for the rotated left source, localized the right vertical mask body/caps so `targetProxy.x` is applied once, and aligned the right native-blur regions with the same frame.
+- Made vertical exclusion use collapsed widths, including the expanded center (`260` visual width reserves `37`) and endpoint width (`46`, not `sideTabHeight=220`); aligned the right fullscreen catcher hole to `popup.width - centerWidth`.
+- Qt6 `qmllint` passed on the touched QML set with only the documented `PanelWindow` warning; `git diff --check` passed.
+- Independent static verification passed all seven invariants, including 2,688 top/bottom scalar comparisons, asymmetric extents, endpoint reservation, output-local catcher, and intentional `config.json` state.
+- Hard reloads reached `Configuration Loaded` without runtime `ERROR` or `WARN`; settled `DP-1` capture `/tmp/quickshell-t20-dp1-settled.png` was inspected. Pointer behavior and actual compositor stacking remain unverified because this Hyprland build rejected the available `hyprctl dispatch` syntax and no pointer injector is installed.
+- Work-unit commit: pending.

@@ -24,7 +24,10 @@ Region {
     readonly property bool left: targetItem.vertical && targetItem.edge === "left"
     readonly property bool right: targetItem.vertical && targetItem.edge === "right"
     readonly property real wrapDepth: Math.max(0, Number(targetItem._wrapDepth || 0))
-    readonly property real targetY: root.sectionY + targetItem._targetYFromSection
+    // Horizontal bottom still uses its wrap offset; vertical right uses the
+    // physical top extent supplied by the section proxy. Left's rotated source
+    // does not consume this value directly, but shares the same frame.
+    readonly property real targetY: root.sectionY + targetItem._targetProxyY
     readonly property real leftExtent: targetItem._leftExtent
     readonly property real rightExtent: targetItem._rightExtent
     readonly property real bodyWidth: Math.max(0,
@@ -112,7 +115,7 @@ Region {
     // The pre-existing manual vertical-right composition remains separate.
     Region {
         id: rightBody
-        x: root.sectionX
+        x: root.sectionX + root.wrapDepth
         y: root.targetY
         width: root.bodyWidth
         height: root.targetHeight
@@ -121,14 +124,14 @@ Region {
         bottomLeftRadius: root.targetItem.bottomLeftRounded ? root.corner : 0
         bottomRightRadius: root.targetItem.bottomRightRounded ? root.corner : 0
     }
-    Region { id: rightCapVertical; x: root.sectionX; y: root.targetY + root.targetHeight; width: root.bodyWidth; height: root.rightExtent
+    Region { id: rightCapVertical; x: root.sectionX + root.wrapDepth; y: root.targetY + root.targetHeight; width: root.bodyWidth; height: root.rightExtent
         Region { x: root.sectionX + root.sectionWidth - root.corner; y: root.targetY + root.targetHeight - root.corner * 2; width: root.corner * 2; height: root.corner * 2; shape: RegionShape.Ellipse; intersection: Intersection.Subtract } }
-    Region { id: rightLeftCapVertical; x: root.sectionX; y: root.sectionY; width: root.bodyWidth; height: root.leftExtent
-        Region { x: root.sectionX - root.corner; y: root.sectionY; width: root.corner * 2; height: root.corner * 2; shape: RegionShape.Ellipse; intersection: Intersection.Subtract } }
-    Region { id: rightWrapVertical; x: root.sectionX + root.bodyWidth; y: root.targetY; width: root.wrapDepth; height: root.leftExtent
-        Region { x: root.sectionX + root.leftExtent; y: root.sectionY + root.targetHeight; width: root.corner * 2; height: root.corner * 2; shape: RegionShape.Ellipse; intersection: Intersection.Subtract } }
-    Region { id: rightRightWrapVertical; x: root.sectionX + root.bodyWidth; y: root.targetY + root.targetHeight - root.rightExtent; width: root.wrapDepth; height: root.rightExtent
-        Region { x: root.sectionX + root.leftExtent + root.bodyWidth - root.corner * 2; y: root.sectionY + root.targetHeight; width: root.corner * 2; height: root.corner * 2; shape: RegionShape.Ellipse; intersection: Intersection.Subtract } }
+    Region { id: rightLeftCapVertical; x: root.sectionX + root.wrapDepth; y: root.sectionY; width: root.bodyWidth; height: root.leftExtent
+        Region { x: root.sectionX + root.wrapDepth - root.corner; y: root.sectionY; width: root.corner * 2; height: root.corner * 2; shape: RegionShape.Ellipse; intersection: Intersection.Subtract } }
+    Region { id: rightWrapVertical; x: root.sectionX; y: root.targetY; width: root.wrapDepth; height: root.leftExtent
+        Region { x: root.sectionX + root.wrapDepth - root.corner; y: root.sectionY + root.targetHeight; width: root.corner * 2; height: root.corner * 2; shape: RegionShape.Ellipse; intersection: Intersection.Subtract } }
+    Region { id: rightRightWrapVertical; x: root.sectionX; y: root.targetY + root.targetHeight - root.rightExtent; width: root.wrapDepth; height: root.rightExtent
+        Region { x: root.sectionX + root.wrapDepth - root.corner; y: root.sectionY + root.targetHeight; width: root.corner * 2; height: root.corner * 2; shape: RegionShape.Ellipse; intersection: Intersection.Subtract } }
 
     // Existing horizontal top/bottom composition is retained.
     Region {

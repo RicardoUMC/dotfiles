@@ -23,6 +23,13 @@ Item {
     // BarSection supplies all derived values from IslandGeometry's scalar
     // contract; this mask only renders the canonical shape.
     readonly property real resolvedCornerSize: Math.max(0, cornerSize)
+    // The mask item is already positioned at targetItem.x. The right-side
+    // proxy x is only a section-local placement value for that outer item; it
+    // must not be added again to the vertical body/caps below.
+    readonly property real verticalTargetX: edge === "right" ? 0 : targetItem.x
+    readonly property real verticalOuterX: edge === "right"
+        ? targetItem.width
+        : targetItem.x + targetItem.width
 
     x: targetItem.x + maskOffsetX
     y: targetItem.y + maskOffsetY
@@ -119,7 +126,7 @@ Item {
     NotchCornerMask {
         id: leftNotchCorner
         x: notchIslandMask.vertical
-            ? (notchIslandMask.edge === "left" ? notchIslandMask.targetItem.x + notchIslandMask.targetItem.width - width : notchIslandMask.targetItem.x)
+            ? (notchIslandMask.edge === "left" ? notchIslandMask.targetItem.x + notchIslandMask.targetItem.width - width : notchIslandMask.verticalTargetX)
             : 0
         y: notchIslandMask.vertical
             ? notchIslandMask.targetItem.y - height
@@ -138,7 +145,7 @@ Item {
     }
 
     Rectangle {
-        x: notchIslandMask.vertical ? notchIslandMask.targetItem.x : leftNotchCorner.width
+        x: notchIslandMask.vertical ? notchIslandMask.verticalTargetX : leftNotchCorner.width
         y: notchIslandMask.vertical ? notchIslandMask.targetItem.y : 0
         width: notchIslandMask.vertical ? notchIslandMask.targetItem.width : parent.width - leftNotchCorner.width - rightNotchCorner.width
         height: notchIslandMask.vertical ? notchIslandMask.targetItem.height : parent.height
@@ -161,7 +168,7 @@ Item {
     NotchCornerMask {
         id: rightNotchCorner
         x: notchIslandMask.vertical
-            ? (notchIslandMask.edge === "left" ? notchIslandMask.targetItem.x + notchIslandMask.targetItem.width - width : notchIslandMask.targetItem.x)
+            ? (notchIslandMask.edge === "left" ? notchIslandMask.targetItem.x + notchIslandMask.targetItem.width - width : notchIslandMask.verticalTargetX)
             : parent.width - width
         y: notchIslandMask.vertical
             ? notchIslandMask.targetItem.y + notchIslandMask.targetItem.height
@@ -182,7 +189,7 @@ Item {
     NotchCornerMask {
         id: outerTopCorner
         x: notchIslandMask.vertical
-            ? (notchIslandMask.edge === "left" ? notchIslandMask.targetItem.x : notchIslandMask.targetItem.x + notchIslandMask.targetItem.width - width)
+            ? (notchIslandMask.edge === "left" ? notchIslandMask.targetItem.x : notchIslandMask.verticalOuterX - width)
             : 0
         y: notchIslandMask.vertical ? notchIslandMask.targetItem.y - height : 0
         width: notchIslandMask.vertical && !(notchIslandMask.vertical && notchIslandMask.edge === "left") ? notchIslandMask.resolvedCornerSize : 0
@@ -195,7 +202,7 @@ Item {
     NotchCornerMask {
         id: outerBottomCorner
         x: notchIslandMask.vertical
-            ? (notchIslandMask.edge === "left" ? notchIslandMask.targetItem.x : notchIslandMask.targetItem.x + notchIslandMask.targetItem.width - width)
+            ? (notchIslandMask.edge === "left" ? notchIslandMask.targetItem.x : notchIslandMask.verticalOuterX - width)
             : 0
         y: notchIslandMask.vertical ? notchIslandMask.targetItem.y + notchIslandMask.targetItem.height : 0
         width: notchIslandMask.vertical && !(notchIslandMask.vertical && notchIslandMask.edge === "left") ? notchIslandMask.resolvedCornerSize : 0

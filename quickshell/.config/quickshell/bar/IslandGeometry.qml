@@ -31,8 +31,13 @@ QtObject {
         return vertical ? (edge === "right" ? -wrapDepth : 0) : -leftExtent
     }
 
-    function sectionOffsetY(vertical, edge, leftExtent, wrapDepth) {
-        return vertical ? -leftExtent : (edge === "bottom" ? -wrapDepth : 0)
+    // The rotated left source maps canonical source-right to the physical
+    // top edge. Right keeps the manual vertical source, whose top extent is
+    // canonical source-left.
+    function sectionOffsetY(vertical, edge, leftExtent, rightExtent, wrapDepth) {
+        return vertical
+            ? -(edge === "left" ? rightExtent : leftExtent)
+            : (edge === "bottom" ? -wrapDepth : 0)
     }
 
     function sectionWidth(vertical, targetWidth, wrapDepth, leftExtent, rightExtent) {
@@ -47,16 +52,18 @@ QtObject {
         return vertical ? (edge === "right" ? wrapDepth : 0) : leftExtent
     }
 
-    function targetProxyY(vertical, edge, leftExtent, wrapDepth) {
-        return vertical ? leftExtent : (edge === "bottom" ? wrapDepth : 0)
+    function targetProxyY(vertical, edge, leftExtent, rightExtent, wrapDepth) {
+        return vertical
+            ? (edge === "left" ? rightExtent : leftExtent)
+            : (edge === "bottom" ? wrapDepth : 0)
     }
 
     function maskOffsetX(vertical, leftExtent) {
         return vertical ? 0 : -leftExtent
     }
 
-    function maskOffsetY(vertical, leftExtent) {
-        return vertical ? -leftExtent : 0
+    function maskOffsetY(vertical, edge, leftExtent, rightExtent) {
+        return vertical ? -(edge === "left" ? rightExtent : leftExtent) : 0
     }
 
     function maskWidth(vertical, edge, targetWidth, wrapDepth, leftExtent, rightExtent) {
@@ -73,8 +80,8 @@ QtObject {
         return vertical ? targetWidth : Math.max(0, Number(collapsedHeight || 0))
     }
 
-    function reservedWidth(vertical, targetWidth) {
-        return vertical ? targetWidth : 0
+    function reservedWidth(vertical, targetWidth, collapsedWidth) {
+        return vertical ? Math.max(0, Number(collapsedWidth || targetWidth || 0)) : 0
     }
 
     function horizontalSourceWidth(targetHeight, leftExtent, rightExtent) {
@@ -95,7 +102,7 @@ QtObject {
                           curveRadius, configuredWrapDepth, hasWrap,
                           leftCornerEnabled, rightCornerEnabled,
                           bottomLeftRounded, bottomRightRounded,
-                          collapsedHeight) {
+                          collapsedHeight, collapsedWidth) {
         const width = Math.max(0, Number(targetWidth || 0))
         const height = Math.max(0, Number(targetHeight || 0))
         const corner = cornerSize(curveRadius, vertical, width, height)
@@ -109,17 +116,17 @@ QtObject {
         case "rightExtent": return rightExtent
         case "wrapDepth": return wrapDepth
         case "sectionOffsetX": return sectionOffsetX(vertical, edge, wrapDepth, leftExtent)
-        case "sectionOffsetY": return sectionOffsetY(vertical, edge, leftExtent, wrapDepth)
+        case "sectionOffsetY": return sectionOffsetY(vertical, edge, leftExtent, rightExtent, wrapDepth)
         case "sectionWidth": return sectionWidth(vertical, width, wrapDepth, leftExtent, rightExtent)
         case "sectionHeight": return sectionHeight(vertical, height, wrapDepth, leftExtent, rightExtent)
         case "targetProxyX": return targetProxyX(vertical, edge, wrapDepth, leftExtent)
-        case "targetProxyY": return targetProxyY(vertical, edge, leftExtent, wrapDepth)
+        case "targetProxyY": return targetProxyY(vertical, edge, leftExtent, rightExtent, wrapDepth)
         case "maskOffsetX": return maskOffsetX(vertical, leftExtent)
-        case "maskOffsetY": return maskOffsetY(vertical, leftExtent)
+        case "maskOffsetY": return maskOffsetY(vertical, edge, leftExtent, rightExtent)
         case "maskWidth": return maskWidth(vertical, edge, width, wrapDepth, leftExtent, rightExtent)
         case "maskHeight": return maskHeight(vertical, height, leftExtent, rightExtent)
         case "reservedHeight": return reservedHeight(vertical, width, collapsedHeight)
-        case "reservedWidth": return reservedWidth(vertical, width)
+        case "reservedWidth": return reservedWidth(vertical, width, collapsedWidth)
         case "horizontalSourceWidth": return horizontalSourceWidth(height, leftExtent, rightExtent)
         case "horizontalSourceHeight": return horizontalSourceHeight(width, wrapDepth)
         case "targetYFromSection": return !vertical && edge === "bottom" ? wrapDepth : 0

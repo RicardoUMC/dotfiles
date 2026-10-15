@@ -32,13 +32,14 @@ Item {
             root.rightCornerEnabled,
             root.bottomLeftRounded,
             root.bottomRightRounded,
-            root.collapsedHeight)
+            root.collapsedHeight,
+            root.sectionId === "center" ? root.collapsedHeight : root.targetItem.width)
     }
 
     // Keep reservation branches short-circuited: horizontal bars must not
     // observe target width while resolving an exclusive zone of zero width.
     readonly property real reservedHeight: root.vertical ? root.targetItem.width : root.collapsedHeight
-    readonly property real reservedWidth: root.vertical ? root.targetItem.width : 0
+    readonly property real reservedWidth: root.vertical ? sectionMetric("reservedWidth") : 0
     readonly property Item hit: hitBox
     readonly property real centerX: targetItem.x
     readonly property real centerY: targetItem.y

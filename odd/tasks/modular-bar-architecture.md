@@ -16,7 +16,7 @@ Implementation starts bottom-first; left/right remain unchanged until the shared
 
 ## Tasks
 - T1 (S1, S9, S10): Recover and freeze bottom against the last acceptable baseline; route: bottom mask/blur parity; commit: 5b1d1a0
-- T2 (S1, S2, S10): Define one canonical logical geometry contract consumed by visible mask, native blur, input, and reservation; route: scalar IslandGeometry section contract; commit: pending
+- T2 (S1, S2, S10): Define one canonical logical geometry contract consumed by visible mask, native blur, input, and reservation; route: scalar IslandGeometry section contract; commit: 63cb2de
 - T3 (S2, S4, S5): Separate edge placement from slot order and content presentation; route: configurable content policy; commit: pending
 - T4 (S5, S6, S7): Add the configurable divider and Calm motion policy without coupling them to placement; route: theme/config policy; commit: pending
 - T5 (S1, S9, S10): Verify all four edges, per-monitor overrides, shared seams, content modes, and motion defaults; route: functional/runtime checks; commit: pending
@@ -44,3 +44,4 @@ Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos
 - Qt6 `qmllint`, stale-reference check, hard reload, and latest log block passed with `Configuration Loaded` and no `ERROR` or `WARN`.
 - Captured and visually reviewed `/tmp/quickshell-t13-top.png`, `/tmp/quickshell-t13-bottom.png`, `/tmp/quickshell-t13-left.png`, and `/tmp/quickshell-t13-right.png`.
 - The capture wrapper exited 1 only because its `cmp` assertion ran before the `EXIT` trap; the trap restored `config.json`, which is back at `position: bottom`.
+- Commit: `63cb2de refactor(bar): share scalar island geometry`.

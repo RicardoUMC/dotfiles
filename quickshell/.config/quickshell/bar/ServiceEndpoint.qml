@@ -11,6 +11,8 @@ GridLayout {
     id: root
 
     property bool vertical: false
+    property string barPosition: "top"
+    property string dividerMode: "arc"
     property var notificationsState: null
 
     signal sectionRequested(string section)
@@ -56,18 +58,11 @@ GridLayout {
         onClicked: root.sectionRequested("notifications")
     }
 
-    // T16 replaces this legacy rectangle with the selected integrated arc/notch
-    // treatment. Keeping it local preserves the existing service footprint while
-    // endpoint order is introduced independently.
-    Rectangle {
-        Layout.preferredWidth: Theme.islandSeparatorWidth > 0
-            ? Theme.islandSeparatorWidth + Theme.islandSemanticGap * 2
-            : 0
-        Layout.preferredHeight: Theme.barChipHeight - Theme.spacingSm
+    ServiceDivider {
+        vertical: root.vertical
+        edge: root.barPosition
+        mode: root.dividerMode
         Layout.alignment: Qt.AlignVCenter
-        radius: Math.min(1, Theme.islandSeparatorWidth / 2)
-        color: Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
-        visible: Theme.islandSeparatorWidth > 0
     }
 
     PowerMenu {

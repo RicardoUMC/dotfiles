@@ -27,6 +27,8 @@ PanelWindow {
     readonly property string workspaceMode: contentPolicy.workspaceMode || "numbers"
     readonly property string appMode: contentPolicy.appMode || "active-icon"
     readonly property string clockMode: contentPolicy.clockMode || "auto"
+    readonly property string dividerMode: barConfig && barConfig.bar && barConfig.bar.divider
+        ? barConfig.bar.divider : "arc"
     WlrLayershell.layer: WlrLayer.Top
     // The in-surface right control center uses non-modal focus: OnDemand lets
     // it receive keyboard input when requested, while Escape closes it without
@@ -290,6 +292,8 @@ PanelWindow {
         id: servicesEndpointComponent
         ServiceEndpoint {
             vertical: root.vertical
+            barPosition: root.barPosition
+            dividerMode: root.dividerMode
             notificationsState: root.notificationsState
             onSectionRequested: function(section) {
                 root.rightControlCenterSectionRequested(section)

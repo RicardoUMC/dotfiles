@@ -56,3 +56,12 @@ Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos
 - Captured and visually reviewed `/tmp/quickshell-t14-default-bottom.png`, `/tmp/quickshell-t14-inverted-bottom.png`, `/tmp/quickshell-t14-left-active-icon.png`, `/tmp/quickshell-t14-per-monitor.png`, and `/tmp/quickshell-t14-invalid-fallback.png`.
 - The corrected five-scenario capture matrix restored `quickshell/.config/quickshell/config.json` byte-for-byte; its local modification remains intentionally uncommitted.
 - Work-unit commit: `270ec20 feat(bar): add configurable endpoint content policies`.
+
+### L5 — T4 integrated divider implementation and verification
+- Added `bar/ServiceDivider.qml` as a passive divider primitive with `arc`, `hairline`, and `none` modes. The default arc bends toward the monitor interior and follows top/bottom/left/right orientation without owning input or routing.
+- Routed normalized `bar.divider` and the resolved physical position from `Bar.qml` through `ServiceEndpoint.qml`; registered the component in `bar/qmldir`.
+- Updated `specs/configurable-bar.md`, `specs/bar.md`, and `DESIGN.md` so the endpoint contract and divider modes are discoverable and no longer describe order or the divider as future work.
+- Qt6 `qmllint` completed with exit 0; hard reload completed with `Configuration Loaded` and no runtime `ERROR` or `WARN`.
+- Captured and visually reviewed `/tmp/quickshell-t16-arc-top.png`, `/tmp/quickshell-t16-arc-bottom.png`, `/tmp/quickshell-t16-arc-left.png`, `/tmp/quickshell-t16-arc-right.png`, `/tmp/quickshell-t16-hairline-bottom.png`, and `/tmp/quickshell-t16-none-bottom.png`, plus endpoint crops.
+- The six-scenario capture matrix restored `quickshell/.config/quickshell/config.json` byte-for-byte; its local debug modification remains intentionally uncommitted.
+- Implementation is ready for its work-unit commit; the commit identity will be recorded in the next log update.

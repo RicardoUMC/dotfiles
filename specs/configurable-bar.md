@@ -1,6 +1,6 @@
 # Configurable Bar
 
-**Status:** Configuration foundation, `disabled` visibility filtering, top/bottom baseline positioning, and left physical placement implemented. Left reuses the horizontal top island source and applies a 90-degree counter-clockwise rotation to visible notch masks, decorative wraps, and bounded native blur Regions; content remains upright and stacked vertically, with left-side overlay offsets following the vertical bar geometry. Right refinement is next. Edge reveal, continuous style, and detached dashboard rendering remain inert. Manual pointer-level dashboard/input verification is still pending; this document does not claim native review approval.
+**Status:** Configuration foundation, `disabled` visibility filtering, top/bottom baseline positioning, left/right physical placement, endpoint order/content policies, and the integrated service divider are implemented. Left reuses the horizontal top island source and applies a 90-degree counter-clockwise rotation to visible notch masks, decorative wraps, and bounded native blur Regions; content remains upright and stacked vertically, with left-side overlay offsets following the vertical bar geometry. The service divider supports inward-facing `arc`, legacy `hairline`, and `none` modes. Edge reveal, continuous style, and detached dashboard rendering remain inert. Manual pointer-level dashboard/input verification is still pending; this document does not claim native review approval.
 **Related current spec:** [Bar](bar.md)
 
 This specification defines the configurable bar model and its current implementation boundary. Each `Bar` resolves its position through `Theme.effectiveBarConfig(screenName)`, so exact-name monitor overrides can place the existing island bar at the top, bottom, left, or right edge. The top position remains the baseline behavior.
@@ -28,7 +28,15 @@ Approved single-file schema:
       "position": "top",
       "visibility": "always",
       "style": "islands",
-      "revealPolicy": "external-edges"
+      "revealPolicy": "external-edges",
+      "order": ["workspaces", "services"],
+      "content": {
+        "workspaceMode": "numbers",
+        "appMode": "active-icon",
+        "clockMode": "auto"
+      },
+      "divider": "arc",
+      "motion": "calm"
     }
   },
   "dashboard": { "attachment": "embedded" },
@@ -43,7 +51,7 @@ Approved single-file schema:
 
 Legacy `bar.screens` and `bar.style` remain compatible with the current shell. Future defaults live under `bar.defaults`; `dashboard.attachment` is global, while `monitors.<ShellScreen.name>.bar` and `.dashboard` are sparse exact-name overrides. Unknown monitor names are inert, and monitor indexes or ordering are never used. Selection uses exact `ShellScreen.name` identity and is N-monitor generic.
 
-The normalized snapshot validates each enum and safely falls back to `top`, `always`, `islands`, `external-edges`, or `embedded` as appropriate. A successful reload replaces the normalized snapshot, so removed overrides inherit global defaults again. Malformed JSON preserves the last good snapshot. Hot reload uses the existing `Theme` `FileView` watcher and debounce.
+The normalized snapshot validates each enum and safely falls back to `top`, `always`, `islands`, `external-edges`, `embedded`, `workspaces -> services`, numeric workspace indicators, the active application icon, automatic clock orientation, `arc`, or `calm` as appropriate. A successful reload replaces the normalized snapshot, so removed overrides inherit global defaults again. Malformed JSON preserves the last good snapshot. Hot reload uses the existing `Theme` `FileView` watcher and debounce.
 
 ## Position
 
@@ -54,7 +62,23 @@ The normalized snapshot validates each enum and safely falls back to `top`, `alw
 | `left` | Vertical bar anchored to the left edge. |
 | `right` | Vertical bar anchored to the right edge. |
 
-Changing position changes layout orientation, anchors, reserved edge, hit regions, and ornament placement together. Top/bottom remain horizontal baseline placements; bottom mirrors the top visible masks and wraps around a centered vertical transform, including edge-aware native-blur geometry and the bottom-center `CenterPanel` cutout. Left is implemented by reusing one canonical horizontal top-island source, centering it before a 90-degree counter-clockwise rotation with `(u,v) -> (v,W-u)`, and consuming that same body/cap/wrap geometry for debug and production masks; content remains upright and stacked vertically, with the current section order `workspaces -> center -> services`; the left-only lateral geometry roles are swapped so each content island preserves the opposite top-bar endpoint silhouette, while physical-right caps use outward-facing handedness at the workspace upper endpoint and services lower endpoint. User-selectable order inversion is future work. Right refinement is next. Masks, wraps, input regions, native-blur geometry, and `exclusiveZone` follow the selected edge.
+Changing position changes layout orientation, anchors, reserved edge, hit regions, and ornament placement together. Top/bottom remain horizontal baseline placements; bottom mirrors the top visible masks and wraps around a centered vertical transform, including edge-aware native-blur geometry and the bottom-center `CenterPanel` cutout. Left is implemented by reusing one canonical horizontal top-island source, centering it before a 90-degree counter-clockwise rotation with `(u,v) -> (v,W-u)`, and consuming that same body/cap/wrap geometry for debug and production masks; content remains upright and stacked vertically, with the logical endpoint order resolved independently from the center/dashboard island. The left-only lateral geometry roles are swapped so each content island preserves the opposite top-bar endpoint silhouette, while physical-right caps use outward-facing handedness at the workspace upper endpoint and services lower endpoint. Masks, wraps, input regions, native-blur geometry, and `exclusiveZone` follow the selected edge.
+
+## Endpoint order and content policy
+
+`bar.defaults.order` and a sparse monitor override choose which reusable endpoint occupies the logical start and end slots. The center/dashboard island remains fixed between them. Valid orders are `[`"workspaces"`, `"services"`]` and `[`"services"`, `"workspaces"`]`; malformed or duplicate lists fall back to the former.
+
+`bar.defaults.content` controls the reusable endpoint presentation:
+
+- `workspaceMode`: `numbers`, `bullets`, or `active-only`.
+- `appMode`: `hidden`, `active-icon`, `all-icons`, or `vertical-labels`.
+- `clockMode`: `auto`, `horizontal`, `vertical`, or `hidden`.
+
+Side bars keep content upright. Their default app presentation is the active application's icon, avoiding unbounded labels; vertical labels remain an explicit opt-in. The clock's `auto` mode turns vertical on for left/right placement.
+
+## Service divider
+
+`bar.defaults.divider` is independent from placement and endpoint order. The default `arc` mode draws a passive, inward-facing curve whose axis follows the selected edge: top/bottom use a vertical curve and left/right use a horizontal curve. `hairline` keeps a straight separator, and `none` removes both the stroke and its semantic gap. `Theme.islandSeparatorWidth` controls stroke width and `Theme.islandSemanticGap` controls the surrounding space. The divider never owns input or routing.
 
 ## Visibility
 

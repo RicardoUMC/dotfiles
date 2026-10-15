@@ -2,6 +2,7 @@ Bar 1.0 Bar.qml
 BarTab 1.0 BarTab.qml
 BarSection 1.0 BarSection.qml
 ServiceEndpoint 1.0 ServiceEndpoint.qml
+ServiceDivider 1.0 ServiceDivider.qml
 GlassEffect 1.0 GlassEffect.qml
 IslandBlurRegion 1.0 IslandBlurRegion.qml
 IslandGpuPrototype 1.0 IslandGpuPrototype.qml

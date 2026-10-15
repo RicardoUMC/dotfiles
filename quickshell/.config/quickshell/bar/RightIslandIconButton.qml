@@ -25,6 +25,7 @@ Rectangle {
     property bool disabled: false
     property bool active: false
     property bool warning: false
+    property bool motionEnabled: true
     property color accentColor: warning ? Colors.orange : Colors.accent
 
     signal clicked()
@@ -47,6 +48,7 @@ Rectangle {
     // effects intent. The icon color below is deliberately NOT animated: it reacts
     // to hover, and delaying pointer feedback would make the chip feel laggy.
     Behavior on color {
+        enabled: root.motionEnabled
         Motion.EffectsColor { }
     }
 
@@ -55,6 +57,7 @@ Rectangle {
     StateLayer {
         hovered: buttonArea.containsMouse && !buttonArea.pressed
         pressed: buttonArea.pressed
+        motionEnabled: root.motionEnabled
         stateColor: root.disabled ? Colors.muted : root.accentColor
         radius: root.radius
     }

@@ -38,6 +38,11 @@ The configurable-bar foundation is implemented and specified in [Configurable Ba
 - Expanded center content overlays app windows without increasing reserved Hyprland space
 - The expanded dashboard body uses dashboard structural tokens for radius, background opacity, border width, and inner padding
 
+### Motion
+- `bar.motion` is resolved per monitor alongside position, order, content, and divider policy.
+- `calm` is the default: center expansion and media width use `Motion.Spatial`; active workspace fills, service-chip state fills, and `StateLayer` opacity use `Motion.Effects`/`Motion.EffectsColor`.
+- `reduced` disables only these bar-local behaviors; it does not alter geometry, input, routing, or unrelated shell animations. `expressive` currently aliases the shared Calm intents.
+
 ### Silhouette mask
 - `Bar.qml` coordinates three independent `BarSection` surfaces rather than one shared silhouette surface
 - `BarSection` and `NotchIslandMask` provide the selected-edge geometry. Bottom reuses the top mask and wrap primitives through a centered vertical mirror, and the native-blur region is edge-aware. Left reuses one canonical horizontal top-island source, centers it before the 90-degree counter-clockwise mapping `(u,v) -> (v,W-u)`, and uses the same body/cap/wrap geometry for debug and production masks; content remains upright and stacked vertically. Right refinement remains next.

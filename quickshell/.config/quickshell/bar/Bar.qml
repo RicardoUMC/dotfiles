@@ -29,6 +29,10 @@ PanelWindow {
     readonly property string clockMode: contentPolicy.clockMode || "auto"
     readonly property string dividerMode: barConfig && barConfig.bar && barConfig.bar.divider
         ? barConfig.bar.divider : "arc"
+    readonly property string motionMode: barConfig && barConfig.bar && barConfig.bar.motion
+        ? barConfig.bar.motion : "calm"
+    readonly property bool barMotionEnabled: root.motionMode !== "reduced"
+        && Theme.animationsEnabled
     WlrLayershell.layer: WlrLayer.Top
     // The in-surface right control center uses non-modal focus: OnDemand lets
     // it receive keyboard input when requested, while Escape closes it without
@@ -283,6 +287,7 @@ PanelWindow {
             vertical: root.vertical
             workspaceMode: root.workspaceMode
             appMode: root.appMode
+            motionEnabled: root.barMotionEnabled
             monitor: root.hyprlandMonitor
             workspaceMonitorTick: root.workspaceMonitorTick
         }
@@ -294,6 +299,7 @@ PanelWindow {
             vertical: root.vertical
             barPosition: root.barPosition
             dividerMode: root.dividerMode
+            motionEnabled: root.barMotionEnabled
             notificationsState: root.notificationsState
             onSectionRequested: function(section) {
                 root.rightControlCenterSectionRequested(section)
@@ -401,11 +407,13 @@ PanelWindow {
         y: root.vertical ? (parent.height - height) / 2 : (root.barPosition === "bottom" ? parent.height - height : 0)
 
         Behavior on width {
-            NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic }
+            enabled: root.barMotionEnabled
+            Motion.Spatial { }
         }
 
         Behavior on height {
-            NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic }
+            enabled: root.barMotionEnabled
+            Motion.Spatial { }
         }
 
         ColumnLayout {
@@ -429,6 +437,7 @@ PanelWindow {
                 MprisIndicator {
                     id: mprisChip
                     compact: root.vertical
+                    motionEnabled: root.barMotionEnabled
                     visible: active
                     onClicked: {
                         if (!centerTab.expanded) {

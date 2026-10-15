@@ -16,6 +16,7 @@ Item {
 
     property bool hovered: false
     property bool pressed: false
+    property bool motionEnabled: true
     property color stateColor: Colors.text
     property real radius: 0
     property real hoverOpacity: Theme.islandStateLayerHoverOpacity
@@ -40,6 +41,7 @@ Item {
         // Hover/press feedback is the shortest thing in the shell, so it takes
         // the effects intent: no duration or easing literal lives here anymore.
         Behavior on opacity {
+            enabled: root.motionEnabled
             Motion.Effects { }
         }
     }

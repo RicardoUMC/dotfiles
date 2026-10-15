@@ -65,3 +65,11 @@ Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos
 - Captured and visually reviewed `/tmp/quickshell-t16-arc-top.png`, `/tmp/quickshell-t16-arc-bottom.png`, `/tmp/quickshell-t16-arc-left.png`, `/tmp/quickshell-t16-arc-right.png`, `/tmp/quickshell-t16-hairline-bottom.png`, and `/tmp/quickshell-t16-none-bottom.png`, plus endpoint crops.
 - The six-scenario capture matrix restored `quickshell/.config/quickshell/config.json` byte-for-byte; its local debug modification remains intentionally uncommitted.
 - Work-unit commit: `71ea05a feat(bar): add integrated service divider`.
+
+### L6 — T4 Calm motion implementation and verification
+- Resolved `bar.motion` per monitor and wired `reduced` to disable only the new bar-local transitions; `calm` remains the default shared-intent policy and `expressive` currently aliases those intents.
+- Replaced literal center expansion and MPRIS width animations with `Motion.Spatial`; active workspace fills use `Motion.EffectsColor`; service-chip fills and `StateLayer` opacity honor the same motion switch.
+- Qt6 `qmllint` completed with exit 0; hard reload completed with `Configuration Loaded` and no runtime `ERROR` or `WARN`.
+- Captured and visually reviewed `/tmp/quickshell-t17-calm-bottom.png`, `/tmp/quickshell-t17-reduced-bottom.png`, `/tmp/quickshell-t17-calm-left.png`, and `/tmp/quickshell-t17-reduced-left.png`.
+- The four-scenario motion matrix restored `quickshell/.config/quickshell/config.json` byte-for-byte; its local debug modification remains intentionally uncommitted.
+- Implementation is ready for its work-unit commit; the commit identity will be recorded in the next log update.

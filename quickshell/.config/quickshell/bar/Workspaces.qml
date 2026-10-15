@@ -9,6 +9,7 @@ GridLayout {
     property bool vertical: false
     property string workspaceMode: "numbers"
     property string appMode: "active-icon"
+    property bool motionEnabled: true
 
     columns: root.vertical ? 1 : -1
     rows: root.vertical ? -1 : 1
@@ -175,6 +176,10 @@ GridLayout {
                     color: wsItem.isActive
                         ? Qt.rgba(wsItem.activeColor.r, wsItem.activeColor.g, wsItem.activeColor.b, 0.6)
                         : Qt.rgba(Colors.muted.r, Colors.muted.g, Colors.muted.b, Theme.opacityBorder)
+                }
+                Behavior on color {
+                    enabled: root.motionEnabled
+                    Motion.EffectsColor { }
                 }
             }
 

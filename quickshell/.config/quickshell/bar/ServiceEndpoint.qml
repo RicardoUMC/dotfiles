@@ -13,6 +13,7 @@ GridLayout {
     property bool vertical: false
     property string barPosition: "top"
     property string dividerMode: "arc"
+    property bool motionEnabled: true
     property var notificationsState: null
 
     signal sectionRequested(string section)
@@ -29,6 +30,7 @@ GridLayout {
         label: "Wi-Fi"
         disabled: !WifiService.wifiEnabled
         active: WifiService.wifiEnabled && WifiService.activeSsid.length > 0
+        motionEnabled: root.motionEnabled
         onClicked: root.sectionRequested("wifi")
     }
 
@@ -37,6 +39,7 @@ GridLayout {
         label: "Bluetooth"
         disabled: !BluetoothService.bluetoothEnabled
         active: BluetoothService.bluetoothEnabled && (BluetoothService.connectedDevices || []).length > 0
+        motionEnabled: root.motionEnabled
         onClicked: root.sectionRequested("bluetooth")
     }
 
@@ -45,6 +48,7 @@ GridLayout {
         label: "Audio"
         active: !AudioService.outputMuted
         warning: AudioService.outputMuted
+        motionEnabled: root.motionEnabled
         onClicked: root.sectionRequested("audio")
     }
 
@@ -53,6 +57,7 @@ GridLayout {
         label: "Notifications"
         active: root.notificationsState && root.notificationsState.recentModel
             && root.notificationsState.recentModel.count > 0
+        motionEnabled: root.motionEnabled
         warning: root.notificationsState && (root.notificationsState.doNotDisturb
             || root.notificationsState.soundMuted)
         onClicked: root.sectionRequested("notifications")

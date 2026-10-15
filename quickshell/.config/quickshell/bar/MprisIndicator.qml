@@ -10,6 +10,7 @@ Item {
     signal clicked()
 
     property bool compact: false
+    property bool motionEnabled: true
 
     readonly property var player: {
         const players = Mpris.players.values
@@ -28,7 +29,8 @@ Item {
     implicitHeight: 26
 
     Behavior on implicitWidth {
-        NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic }
+        enabled: root.motionEnabled
+        Motion.Spatial { }
     }
 
     Rectangle {

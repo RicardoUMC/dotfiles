@@ -80,6 +80,10 @@ Side bars keep content upright. Their default app presentation is the active app
 
 `bar.defaults.divider` is independent from placement and endpoint order. The default `arc` mode draws a passive, inward-facing curve whose axis follows the selected edge: top/bottom use a vertical curve and left/right use a horizontal curve. `hairline` keeps a straight separator, and `none` removes both the stroke and its semantic gap. `Theme.islandSeparatorWidth` controls stroke width and `Theme.islandSemanticGap` controls the surrounding space. The divider never owns input or routing.
 
+## Motion policy
+
+`bar.defaults.motion` controls the transitions introduced by the configurable bar contract. `calm` is the default and uses the shared `Motion.Effects` intent for state/color feedback and `Motion.Spatial` for endpoint geometry. `reduced` disables those bar-local behaviors without changing layout, routing, or the global wallpaper/panel animation policy. `expressive` currently uses the same shared intents as `calm` until a richer motion vocabulary is introduced.
+
 ## Visibility
 
 | Value | Meaning |

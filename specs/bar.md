@@ -27,7 +27,7 @@ The configurable-bar foundation is implemented and specified in [Configurable Ba
 
 ### Layout
 - Anchored to the configured edge: top/bottom span the output width; left/right span the output height.
-- Top/bottom compose islands horizontally; bottom mirrors the top visible silhouette around a centered vertical transform. Left reuses the horizontal top island source with a 90-degree counter-clockwise rotation for visible notch masks, decorative wraps, and bounded native blur Regions; content remains upright and stacked vertically, with the logical endpoint order resolved independently from the fixed center/dashboard island. Left swaps only the lateral geometry roles so each endpoint preserves the opposite top-bar silhouette, retaining outward-facing physical-right cap handedness. Right uses the same endpoint contract and mirrors the divider toward the monitor interior.
+- Top/bottom compose islands horizontally; bottom mirrors the top visible silhouette around a centered vertical transform. Left reuses the horizontal top island source with a 90-degree counter-clockwise rotation for visible notch masks, decorative wraps, and bounded native blur Regions; content remains upright and stacked vertically, with the logical endpoint order resolved independently from the fixed center/dashboard island. Left swaps only the lateral geometry roles so each endpoint preserves the opposite top-bar silhouette, retaining outward-facing physical-right cap handedness. Right uses an explicit mirrored vertical frame for the body, caps, wraps, input region, and bounded native blur, and mirrors the divider toward the monitor interior.
 - Contains three visible islands: logical start endpoint, center (clock + optional MPRIS chip when collapsed, dashboard body when expanded), and logical end endpoint; the endpoint order is resolved per monitor while the center remains fixed
 - Reserves only the interactive content height on a horizontal edge, or interactive content width on a vertical edge, through `exclusiveZone`.
 - Decorative wrapped silhouette depth follows the configured edge: below top, above bottom, and inward from either vertical edge when `Theme.barStyle === "silhouette"`.
@@ -35,7 +35,7 @@ The configurable-bar foundation is implemented and specified in [Configurable Ba
 - `reservedBarContentHeight` is the max of the three sections' reserved heights and is the single value the bar hands the compositor as its horizontal exclusive zone (`Math.ceil` of it); vertical bars use the corresponding `reservedBarContentWidth`. Other components use the reserved dimension as the bar's hit band rather than guessing from `Theme.barHeight` or `Theme.barRailHeight`.
 - Left and right islands share `sideTabHeight`; workspace chips and the four right-island service chips share `Theme.barChipHeight`; the power pill is the same height with a pill radius
 - The center island uses `Theme.centerCollapsedWidth` when collapsed and `Theme.centerExpandedWidth` / `Theme.centerExpandedHeight` when expanded
-- Expanded center content overlays app windows without increasing reserved Hyprland space
+- Expanded center content remains mounted in place without increasing reserved Hyprland space; the bar and `CenterPanel` explicitly request `WlrLayer.Top`. Static geometry and reload checks cover the reservation/catcher contract, while live pointer behavior and compositor stacking remain a manual verification boundary.
 - The expanded dashboard body uses dashboard structural tokens for radius, background opacity, border width, and inner padding
 
 ### Motion
@@ -45,7 +45,7 @@ The configurable-bar foundation is implemented and specified in [Configurable Ba
 
 ### Silhouette mask
 - `Bar.qml` coordinates three independent `BarSection` surfaces rather than one shared silhouette surface
-- `BarSection` and `NotchIslandMask` provide the selected-edge geometry. Bottom reuses the top mask and wrap primitives through a centered vertical mirror, and the native-blur region is edge-aware. Left reuses one canonical horizontal top-island source, centers it before the 90-degree counter-clockwise mapping `(u,v) -> (v,W-u)`, and uses the same body/cap/wrap geometry for debug and production masks; content remains upright and stacked vertically. Right refinement remains next.
+- `BarSection` and `NotchIslandMask` provide the selected-edge geometry. Bottom reuses the top mask and wrap primitives through a centered vertical mirror, and the native-blur region is edge-aware. Left reuses one canonical horizontal top-island source, centers it before the 90-degree counter-clockwise mapping `(u,v) -> (v,W-u)`, and uses the same body/cap/wrap geometry for debug and production masks; content remains upright and stacked vertically. Right uses the corrected mirrored vertical frame so visible mask, wraps, input union, and bounded native blur share one edge-specific contract.
 - Each `BarSection` owns a hidden fill surface clipped through a `MultiEffect` mask
 - The `PanelWindow` input mask is the union of the left, center, and right section hit regions, so transparent gaps remain click-through
 - `NotchIslandMask` defines each island region with gap-facing top corner pieces
@@ -112,4 +112,4 @@ The configurable-bar foundation is implemented and specified in [Configurable Ba
 
 ## Verification boundary
 
-The implementation boundary above describes the current QML source. It distinguishes implemented top/bottom physical placement from the remaining left/right visual refinement; it makes no native-review or compositor-approval claim.
+The implementation boundary above describes the current QML source. Top, bottom, left, and right geometry contracts are implemented; static and reload checks cover the corrected lateral frames and collapsed reservation. Pointer-level dashboard interaction and live compositor stacking remain unverified, and this document makes no native-review or compositor-approval claim.

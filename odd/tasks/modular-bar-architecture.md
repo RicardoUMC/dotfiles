@@ -20,8 +20,8 @@ Implementation starts bottom-first; left/right remain unchanged until the shared
 - T3 (S2, S4, S5): Separate edge placement from slot order and content presentation; route: configurable content policy; commit: pending
 - T4 (S5, S6, S7): Add the configurable divider and Calm motion policy without coupling them to placement; route: theme/config policy; commit: pending
 - T5 (S1, S9, S10): Verify all four edges, per-monitor overrides, shared seams, content modes, and motion defaults; route: functional/runtime checks; commit: pending
-- T6 (S1, S2, S9, S10): Correct the lateral visible/blur/input frames and rotated cap mapping without changing accepted top/bottom behavior; route: mask-local geometry and physical-edge transforms; commit: pending
-- T7 (S1, S2, S9, S10): Keep vertical dashboard expansion overlay-shaped, align the right-side catcher, and verify layer behavior separately from reservation; route: collapsed reservation plus output-local catcher geometry; commit: pending
+- T6 (S1, S2, S9, S10): Correct the lateral visible/blur/input frames and rotated cap mapping without changing accepted top/bottom behavior; route: mask-local geometry and physical-edge transforms; commit: 7a20bfc
+- T7 (S1, S2, S9, S10): Keep vertical dashboard expansion overlay-shaped, align the right-side catcher, and verify layer behavior separately from reservation; route: collapsed reservation plus output-local catcher geometry; commit: 7a20bfc
 
 ## Log
 ### L1 — User request (verbatim)
@@ -85,4 +85,8 @@ Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos
 - Qt6 `qmllint` passed on the touched QML set with only the documented `PanelWindow` warning; `git diff --check` passed.
 - Independent static verification passed all seven invariants, including 2,688 top/bottom scalar comparisons, asymmetric extents, endpoint reservation, output-local catcher, and intentional `config.json` state.
 - Hard reloads reached `Configuration Loaded` without runtime `ERROR` or `WARN`; settled `DP-1` capture `/tmp/quickshell-t20-dp1-settled.png` was inspected. Pointer behavior and actual compositor stacking remain unverified because this Hyprland build rejected the available `hyprctl dispatch` syntax and no pointer injector is installed.
+- Work-unit commit: `7a20bfc fix(bar): align lateral masks and dashboard geometry`.
+
+### L9 — Documentation sync
+- Updated `specs/bar.md`, `specs/configurable-bar.md`, and `DESIGN.md` to describe the corrected right mirrored frame, collapsed vertical reservation, and the explicit boundary between static reservation/catcher checks and unverified live pointer/compositor behavior.
 - Work-unit commit: pending.

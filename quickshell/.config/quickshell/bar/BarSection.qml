@@ -10,6 +10,7 @@ Item {
     property string sectionId: "center"
     property string cornerStyle: "notch"
     property real collapsedHeight: 0
+    property real collapsedWidth: collapsedHeight
     property bool hasWrap: false
     property bool leftCornerEnabled: true
     property bool rightCornerEnabled: true
@@ -33,7 +34,7 @@ Item {
             root.bottomLeftRounded,
             root.bottomRightRounded,
             root.collapsedHeight,
-            root.sectionId === "center" ? root.collapsedHeight : root.targetItem.width)
+            root.collapsedWidth)
     }
 
     // Keep reservation branches short-circuited: horizontal bars must not

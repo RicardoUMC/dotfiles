@@ -55,6 +55,7 @@ PanelWindow {
         sideTabWidth,
         vertical ? Theme.centerExpandedHeight : Theme.centerExpandedWidth)
     readonly property real centerCollapsedHeight: centerHeader.implicitHeight + centerTab.paddingV * 2
+    readonly property real centerCollapsedWidth: centerHeader.implicitWidth + centerTab.paddingH * 2
     readonly property real reservedBarContentHeight: Math.max(
         leftSection.reservedHeight,
         centerSection.reservedHeight,
@@ -313,6 +314,7 @@ PanelWindow {
         targetItem: leftTab
         sectionId: "left"
         collapsedHeight: root.sideTabHeight
+        collapsedWidth: root.sideTabWidth
         vertical: root.vertical
         edge: root.barPosition
         hasWrap: true
@@ -348,6 +350,7 @@ PanelWindow {
         targetItem: centerTab
         sectionId: "center"
         collapsedHeight: root.centerCollapsedHeight
+        collapsedWidth: root.centerCollapsedWidth
         vertical: root.vertical
         edge: root.barPosition
         hasWrap: false
@@ -363,6 +366,7 @@ PanelWindow {
         targetItem: rightTab
         sectionId: "right"
         collapsedHeight: root.sideTabHeight
+        collapsedWidth: root.sideTabWidth
         vertical: root.vertical
         edge: root.barPosition
         hasWrap: true
@@ -399,7 +403,7 @@ PanelWindow {
         readonly property bool expanded: centerPanel.isOpen
 
         vertical: root.vertical
-        width: root.vertical ? (expanded ? Theme.centerExpandedHeight : centerCollapsedHeight) : (expanded ? Theme.centerExpandedWidth : Theme.centerCollapsedWidth)
+        width: root.vertical ? (expanded ? Theme.centerExpandedHeight : root.centerCollapsedWidth) : (expanded ? Theme.centerExpandedWidth : Theme.centerCollapsedWidth)
         height: root.vertical ? (expanded ? Theme.centerExpandedWidth : Theme.centerCollapsedWidth) : implicitHeight
         paddingH: Theme.spacingXl
         paddingV: Theme.spacingSm
@@ -418,20 +422,29 @@ PanelWindow {
 
         ColumnLayout {
             Layout.fillWidth: true
+            Layout.fillHeight: root.vertical && centerTab.expanded
             spacing: Theme.spacingMd
 
-            RowLayout {
+            GridLayout {
                 id: centerHeader
                 Layout.fillWidth: true
                 visible: !centerTab.expanded
-                spacing: Theme.spacingSm
+                columns: root.vertical ? 1 : -1
+                rows: root.vertical ? -1 : 1
+                rowSpacing: Theme.spacingSm
+                columnSpacing: Theme.spacingSm
 
-                Item { Layout.fillWidth: true }
+                Item {
+                    id: centerHeaderLeadingFiller
+                    Layout.fillWidth: true
+                    visible: !root.vertical
+                }
 
                 ClockChip {
                     expanded: false
                     vertical: root.vertical
                     orientationMode: root.clockMode
+                    Layout.alignment: root.vertical ? Qt.AlignHCenter : Qt.AlignVCenter
                 }
 
                 MprisIndicator {
@@ -439,6 +452,7 @@ PanelWindow {
                     compact: root.vertical
                     motionEnabled: root.barMotionEnabled
                     visible: active
+                    Layout.alignment: root.vertical ? Qt.AlignHCenter : Qt.AlignVCenter
                     onClicked: {
                         if (!centerTab.expanded) {
                             dashboard.selectMediaTab()
@@ -449,15 +463,22 @@ PanelWindow {
                     }
                 }
 
-                Item { Layout.fillWidth: true }
+                Item {
+                    id: centerHeaderTrailingFiller
+                    Layout.fillWidth: true
+                    visible: !root.vertical
+                }
             }
 
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.max(0,
-                    Theme.centerExpandedHeight
-                    - (centerTab.expanded ? 0 : (Theme.barChipHeight + Theme.spacingMd))
-                    - centerTab.paddingV * 2)
+                Layout.fillHeight: root.vertical && centerTab.expanded
+                Layout.preferredHeight: root.vertical
+                    ? 0
+                    : Math.max(0,
+                        Theme.centerExpandedHeight
+                        - (centerTab.expanded ? 0 : (Theme.barChipHeight + Theme.spacingMd))
+                        - centerTab.paddingV * 2)
                 visible: centerTab.expanded
                 radius: Theme.dashboardBodyRadius
                 color: Theme.surface(Colors.base00)

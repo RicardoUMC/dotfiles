@@ -22,6 +22,8 @@ Implementation starts bottom-first; left/right remain unchanged until the shared
 - T5 (S1, S9, S10): Verify all four edges, per-monitor overrides, shared seams, content modes, and motion defaults; route: functional/runtime checks; commit: pending
 - T6 (S1, S2, S9, S10): Correct the lateral visible/blur/input frames and rotated cap mapping without changing accepted top/bottom behavior; route: mask-local geometry and physical-edge transforms; commit: 7a20bfc
 - T7 (S1, S2, S9, S10): Keep vertical dashboard expansion overlay-shaped, align the right-side catcher, and verify layer behavior separately from reservation; route: collapsed reservation plus output-local catcher geometry; commit: 7a20bfc
+- T8 (S1, S2, S9, S10): Analyze the latest user recording and distinguish persistent lateral geometry from open-state animation/content defects; route: extracted frame evidence and source mapping; commit: pending
+- T9 (S1, S2, S9, S10): Correct the recording-confirmed geometry and open-state defects without regressing the accepted top/bottom contract; route: bounded QML correction and runtime verification; commit: pending
 
 ## Log
 ### L1 — User request (verbatim)
@@ -90,3 +92,14 @@ Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos
 ### L9 — Documentation sync
 - Updated `specs/bar.md`, `specs/configurable-bar.md`, and `DESIGN.md` to describe the corrected right mirrored frame, collapsed vertical reservation, and the explicit boundary between static reservation/catcher checks and unverified live pointer/compositor behavior.
 - Work-unit commit: `7b77eb5 docs(bar): document corrected lateral contracts`.
+
+### L10 — User correction (verbatim)
+"Vale, ahora sí se encima, pero ahora hay más problemas (además del de la geometría que no se han resuelto). Te dejé un video en recordings de quickshell"
+
+### L11 — Recording evidence (verbatim)
+"Inspected all requested frames/files. Key confirmed persistent issue: vertical centerTab is 260×520 but inner body retains horizontal preferredHeight=260−16=244 and only fillWidth, leaving large empty top/bottom and a ~132px media column. Key8 is intermediate closing size, not settled width; keys9/11/12 settled. Left x=0 and center y remain correct. Also left endpoint flags all true suppress both wraps; sectionId-specific cap handedness diverges from IslandBlurRegion's fixed cap cutouts. Found extra structural RCC clipping risk/thumbnail support: Bar vertical surface width272 while RCC x≈102,width360, so service panels/backdrop get clipped to narrow bar surface."
+
+### L12 — T8/T22 implementation and static verification
+- Made `BarSection` reservation width explicit, stacked the lateral center header through `GridLayout`, made the expanded vertical body fill the physical center frame, and excluded hidden clock-date width from collapsed sizing.
+- Qt 6.12 `qmllint` passed on the touched QML set with only known unqualified/import/singleton warnings; `git diff --check` passed. Runtime reload remains intentionally deferred until Quickshell is rebuilt for the installed Qt 6.12.0.
+- Work-unit commit: pending.

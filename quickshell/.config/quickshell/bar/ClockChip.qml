@@ -15,7 +15,7 @@ Item {
         ? clockColumn.implicitHeight + 8
         : Math.max(timeText.implicitWidth, dateText.implicitWidth) + 18
     implicitHeight: root.sideVertical
-        ? Math.max(timeText.implicitWidth, dateText.implicitWidth) + 8
+        ? Math.max(timeText.implicitWidth, root.expanded ? dateText.implicitWidth : 0) + 8
         : clockColumn.implicitHeight + 8
 
     function updateClock() {

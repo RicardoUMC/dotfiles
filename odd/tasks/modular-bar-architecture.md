@@ -115,3 +115,8 @@ Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos
 - Verified that the visible rotated source and native blur consume the same scalar wrap gates for both endpoint sections, with no changes to the shared top/bottom scalar contract.
 - Qt 6.12 `qmllint` passed on the touched mask/blur set and `git diff --check` passed. Runtime visual confirmation remains deferred until Quickshell is rebuilt for Qt 6.12.0.
 - Work-unit commit: a5c5156 (shared by T19/T24).
+
+### L15 — T9/T25 documentation synchronization
+- Updated `specs/bar.md`, `specs/configurable-bar.md`, and `DESIGN.md` to distinguish the visually bounded lateral islands from the full-output vertical owner surface, preserve narrow collapsed `exclusiveZone`, and document shared cap/wrap parity between visible and native-blur paths.
+- `git diff --check` and targeted contract-text checks passed. Runtime status remains unchanged: rebuild Quickshell against Qt 6.12.0 before compositor validation.
+- Work-unit commit: pending.

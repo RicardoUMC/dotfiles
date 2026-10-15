@@ -34,6 +34,14 @@ Item {
         + (leftCornerEnabled ? resolvedCornerSize : 0)
         + (rightCornerEnabled ? resolvedCornerSize : 0) : targetItem.height
 
+    // Bottom mirrors the complete horizontal source, preserving the accepted
+    // top/bottom notch grammar without changing the lateral source geometry.
+    transform: Scale {
+        origin.x: notchIslandMask.width / 2
+        origin.y: notchIslandMask.height / 2
+        yScale: !notchIslandMask.vertical && notchIslandMask.edge === "bottom" ? -1 : 1
+    }
+
     // Left is the top horizontal source rotated counter-clockwise around its
     // center. Source width/height are the swapped vertical target dimensions.
     Item {

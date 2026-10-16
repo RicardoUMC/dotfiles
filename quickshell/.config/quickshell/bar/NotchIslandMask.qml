@@ -77,7 +77,9 @@ Item {
             y: 0
             width: notchIslandMask.leftCornerEnabled ? notchIslandMask.resolvedCornerSize : 0
             height: width
-            corner: notchIslandMask.sectionId !== "center" ? "topLeft" : "topRight"
+            // Match the canonical horizontal source: the source-left cap's
+            // rounded side faces the body attachment, not the remote tip.
+            corner: "topRight"
             color: notchIslandMask.maskColor
             visible: width > 0
         }
@@ -99,7 +101,9 @@ Item {
             y: 0
             width: notchIslandMask.rightCornerEnabled ? notchIslandMask.resolvedCornerSize : 0
             height: width
-            corner: notchIslandMask.sectionId !== "center" ? "topRight" : "topLeft"
+            // Match the canonical source-right cap; this also fixes the
+            // physical lower endpoint after the -90-degree rotation.
+            corner: "topLeft"
             color: notchIslandMask.maskColor
             visible: width > 0
         }

@@ -208,3 +208,12 @@ Tuvimos una buena mejora, puedes hacer commit para luego mejorar sobre lo que va
 ### L29 — T4/#56 checkpoint scope
 - Create a checkpoint from the current lateral-geometry improvement: physical top/bottom flags, corrected source mapping, 42px lateral body width, and the corrected source-right `topRight` upper wrap. Preserve the known lower-endpoint mismatch for the next geometry iteration.
 - Commit is explicitly authorized by L28; push remains unauthorized.
+
+### L30 — User correction (verbatim)
+Vale, pues ahora parece que se echó a perder un poco lo que te dije que se había logrado, utiliza la descripción que te di y las referencias por favor
+
+### L31 — T4/#55 bounded cap-handedness correction and cleanup
+- Corrected the rotated canonical endpoint caps in `NotchIslandMask.qml` to the horizontal source handedness: source-left `topRight`, source-right `topLeft`. The center fallback, physical source mapping, 42px body, 12px inward wrap, center geometry, reservation, input mask, and native-blur contract were left unchanged.
+- Fresh hard-reload captures for top/bottom/left/right on DP-1 and DP-2 passed with the expected physical reservations, `Configuration Loaded` logs, `quickshell` layer ownership, empty `hyprctl configerrors`, and byte-for-byte restoration of `config.json` to hash `f5ce1203345cfcd4466a0df6a434b12d032d7675a825d0ee3b2db2dbeeecb7c1`.
+- Endpoint profiles confirmed 12px inward extensions on both lateral edges. The analytic rotated-source invariant maps source-left to physical `y=[H-16,H]` and source-right to `y=[0,16]` for `H=42`, with wrap `x=[42,54]`; no new structural lower-wrap mismatch was demonstrated.
+- Removed the untracked generated `.quickshell-rebuild-v032/` and `.quickshell-rebuild/` trees after explicit authorization; no commit or push was created. Pointer hit-testing, outside-click/Escape, RCC interaction, and pixel-accurate native blur remain unverified.

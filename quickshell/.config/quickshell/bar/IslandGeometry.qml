@@ -17,11 +17,13 @@ QtObject {
     // a dynamic JS object binding loop while preserving one source of truth.
     function cornerSize(curveRadius, vertical, targetWidth, targetHeight,
                          collapsedHeight, collapsedWidth) {
+        // Horizontal bars use the target height as their radius axis. Lateral
+        // bars already swap the physical width/height, so scaling the radius
+        // by collapsedWidth/collapsedHeight would shrink the shared 16px curve
+        // to roughly 3px on the tall endpoint stacks. Keep the configured
+        // radius visible on both orientations and clamp it to the active axis.
         const axis = vertical ? targetWidth : targetHeight
-        const reference = Math.max(1, Number(collapsedHeight || targetHeight || 0))
-        const thickness = Math.max(0, Number(collapsedWidth || targetWidth || 0))
-        const scale = vertical ? thickness / reference : 1
-        return clampRadius(Number(curveRadius || 0) * scale, axis)
+        return clampRadius(Number(curveRadius || 0), axis)
     }
 
     function extent(enabled, corner) {

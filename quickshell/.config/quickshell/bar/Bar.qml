@@ -134,9 +134,13 @@ PanelWindow {
     }
     mask: Region {
         regions: [
-            Region { item: leftSection.hit },
-            Region { item: centerSection.hit },
-            Region { item: rightSection.hit },
+            // Reference the moving section items themselves. Region only
+            // subscribes to the referenced item's geometry; using the old
+            // local hitBox left its scene position stale when a hot position
+            // change moved the BarSection ancestor.
+            Region { item: leftSection },
+            Region { item: centerSection },
+            Region { item: rightSection },
             // Fourth region: the right-control-center backdrop. Region{item}
             // reacts to the item's geometry only, so the backdrop reports 0x0
             // while closed and contributes an empty rect; while open it fills

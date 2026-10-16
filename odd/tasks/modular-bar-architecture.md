@@ -217,3 +217,24 @@ Vale, pues ahora parece que se echó a perder un poco lo que te dije que se hab�
 - Fresh hard-reload captures for top/bottom/left/right on DP-1 and DP-2 passed with the expected physical reservations, `Configuration Loaded` logs, `quickshell` layer ownership, empty `hyprctl configerrors`, and byte-for-byte restoration of `config.json` to hash `f5ce1203345cfcd4466a0df6a434b12d032d7675a825d0ee3b2db2dbeeecb7c1`.
 - Endpoint profiles confirmed 12px inward extensions on both lateral edges. The analytic rotated-source invariant maps source-left to physical `y=[H-16,H]` and source-right to `y=[0,16]` for `H=42`, with wrap `x=[42,54]`; no new structural lower-wrap mismatch was demonstrated.
 - Removed the untracked generated `.quickshell-rebuild-v032/` and `.quickshell-rebuild/` trees after explicit authorization; no commit or push was created. Pointer hit-testing, outside-click/Escape, RCC interaction, and pixel-accurate native blur remain unverified.
+
+### L32 — User correction (verbatim)
+Genial!, ya casi lo logramos, todavía falta un poquitito. Noto que parecen que están medio separadas las formas, por trozos por decirte de alguna manera. No me refiero a que en los contornos, sino que no se ven uniformes las formas, no se ven homogéneas. Ahorita también puedes hacer commit antes de corregir
+
+### L33 — T4/#59 homogeneous silhouette correction evidence
+- The first hidden-mask/MultiEffect-only attempt was rejected: structural reloads passed, but fresh debug-silhouette coverage dropped to 0% on DP-1 lateral bars and 3.9% on DP-2 lateral bars while top/bottom remained visible. This made the lateral fill disappear rather than fixing its internal seams.
+- The replacement keeps `sectionMask` as an always-layered source and restores direct debug rendering, but uses opaque white mask geometry plus one section-layer opacity of `0.65`; the individual pieces are therefore composited once before translucency is applied. Production still uses the existing MultiEffect path and shared mask.
+- The v2 DP-1/DP-2 four-position runtime matrix passed expected reservations, `Configuration Loaded`, `quickshell` layer ownership, empty `configerrors`, and byte-for-byte config restoration. Red-fill coverage recovered to 36.5%/36.5% on DP-1 left/right and 42.9%/42.9% on DP-2 left/right, versus 39.5%/46.2% horizontal reference coverage; v2 screenshots were visually inspected with no internal alpha segmentation observed.
+
+### L34 — User interaction and curve correction (verbatim)
+Encontré un bug, al parecer, hay momentos en los que voy cambiando la posición de la barra y de pronto la interactividad desaparece, no puedo abrir nada de los servicios, ni desplegar el dashboard.
+
+Ahora, lo único que quiero hacer con respecto a las geometrías es que en las barras laterales, las curvas se vean un poco más, sobre todo las de los notch, casi ni se ven que están ahí, no se distinguen como sí lo hacen en las barras horizontales.
+
+- The bounded reproduction completed three top/bottom/left/right cycles on both monitors with stable layer alpha and reservations, but cannot exercise physical clicks because no pointer injector is installed. The input fix therefore targets the confirmed invalidation gap: the bar input Regions will reference the moving BarSection items directly rather than their stationary local hitBox children.
+
+### L35 — T4/#2/#3/#4 post-fix evidence
+- `Bar.qml` now composes the input union from `leftSection`, `centerSection`, and `rightSection` directly. This preserves the same section bounds while making Quickshell `Region` observe the moving items' own geometry during a position change.
+- `IslandGeometry.cornerSize()` now keeps the shared configured `Theme.barCurveRadius` on vertical sections instead of scaling it by the tall endpoint stack. The visible and native-blur paths consume the same `_cornerSize`; wraps, body width, reservations, and the outer frame contract were not changed.
+- Two post-fix top/bottom/left/right cycles on DP-1 and DP-2 kept every quickshell layer at `a:1`, preserved reservations `[0,42,0,0]`, `[0,0,0,42]`, `[42,0,0,0]`, and `[0,0,42,0]`, reached `Configuration Loaded`, left `configerrors` empty, and restored `config.json` to hash `f5ce1203345cfcd4466a0df6a434b12d032d7675a825d0ee3b2db2dbeeecb7c1`.
+- Qt 6.12 `qmllint` and `git diff --check` passed. The only runtime warnings observed were repeated QtWayland text-input focus warnings during reload; no QML `ERROR` or load failure appeared. The edge contact sheet and profiles show the lateral notch/cap curvature visibly present and symmetric on both monitors. Physical click, service activation, dashboard opening, outside-click, and Escape behavior remain unverified because this host has no pointer injector.

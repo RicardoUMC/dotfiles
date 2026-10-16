@@ -118,10 +118,14 @@ Item {
     Item {
         id: sectionMask
         anchors.fill: parent
+        // Composite the complete mask once before applying debug translucency.
+        // Rendering each Canvas/Rectangle directly would alpha-composite pieces
+        // separately and create internal seams.
         visible: Theme.debugBarSilhouette
         z: Theme.debugBarSilhouette ? 10 : 0
-        layer.enabled: !Theme.debugBarSilhouette
+        layer.enabled: true
         layer.smooth: true
+        opacity: Theme.debugBarSilhouette ? 0.65 : 1.0
 
         NotchIslandMask {
             targetItem: targetProxy
@@ -140,7 +144,7 @@ Item {
             maskOffsetY: root._maskOffsetY
             maskWidth: root._maskWidth
             maskHeight: root._maskHeight
-            maskColor: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 0.65) : "white"
+            maskColor: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 1.0) : "white"
         }
 
         // The wrap follows the owning output edge: below for top, above for
@@ -159,7 +163,7 @@ Item {
                 origin.y: (root.vertical ? root._cornerSize : root._wrapDepth) / 2
                 yScale: !root.vertical && root.edge === "bottom" ? -1 : 1
             }
-            color: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 0.65) : "white"
+            color: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 1.0) : "white"
             visible: root.hasWrap && !root.vertical && !root.bottomLeftRounded
                 && width > 0 && height > 0
         }
@@ -178,7 +182,7 @@ Item {
                 origin.y: (root.vertical ? root._cornerSize : root._wrapDepth) / 2
                 yScale: !root.vertical && root.edge === "bottom" ? -1 : 1
             }
-            color: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 0.65) : "white"
+            color: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 1.0) : "white"
             visible: root.hasWrap && !root.vertical && !root.bottomRightRounded
                 && width > 0 && height > 0
         }

@@ -15,8 +15,13 @@ QtObject {
     // Scalar section contract consumed by the layout frame, visible mask,
     // native blur, and input reservation. Keeping each operation pure avoids
     // a dynamic JS object binding loop while preserving one source of truth.
-    function cornerSize(curveRadius, vertical, targetWidth, targetHeight) {
-        return clampRadius(curveRadius, vertical ? targetWidth : targetHeight)
+    function cornerSize(curveRadius, vertical, targetWidth, targetHeight,
+                         collapsedHeight, collapsedWidth) {
+        const axis = vertical ? targetWidth : targetHeight
+        const reference = Math.max(1, Number(collapsedHeight || targetHeight || 0))
+        const thickness = Math.max(0, Number(collapsedWidth || targetWidth || 0))
+        const scale = vertical ? thickness / reference : 1
+        return clampRadius(Number(curveRadius || 0) * scale, axis)
     }
 
     function extent(enabled, corner) {
@@ -31,12 +36,12 @@ QtObject {
         return vertical ? (edge === "right" ? -wrapDepth : 0) : -leftExtent
     }
 
-    // The rotated left source maps canonical source-right to the physical
-    // top edge. Right keeps the manual vertical source, whose top extent is
-    // canonical source-left.
+    // Both lateral edges use the same CCW-rotated source; right mirrors only
+    // its physical X axis. Therefore both sections consume source-right as
+    // their physical top extent.
     function sectionOffsetY(vertical, edge, leftExtent, rightExtent, wrapDepth) {
         return vertical
-            ? -(edge === "left" ? rightExtent : leftExtent)
+            ? -rightExtent
             : (edge === "bottom" ? -wrapDepth : 0)
     }
 
@@ -54,21 +59,21 @@ QtObject {
 
     function targetProxyY(vertical, edge, leftExtent, rightExtent, wrapDepth) {
         return vertical
-            ? (edge === "left" ? rightExtent : leftExtent)
+            ? rightExtent
             : (edge === "bottom" ? wrapDepth : 0)
     }
 
-    function maskOffsetX(vertical, leftExtent) {
-        return vertical ? 0 : -leftExtent
+    function maskOffsetX(vertical, edge, wrapDepth, leftExtent) {
+        return vertical ? (edge === "right" ? -wrapDepth : 0) : -leftExtent
     }
 
     function maskOffsetY(vertical, edge, leftExtent, rightExtent) {
-        return vertical ? -(edge === "left" ? rightExtent : leftExtent) : 0
+        return vertical ? -rightExtent : 0
     }
 
     function maskWidth(vertical, edge, targetWidth, wrapDepth, leftExtent, rightExtent) {
         return vertical
-            ? (edge === "left" ? targetWidth + wrapDepth : targetWidth)
+            ? targetWidth + wrapDepth
             : targetWidth + leftExtent + rightExtent
     }
 
@@ -105,7 +110,8 @@ QtObject {
                           collapsedHeight, collapsedWidth) {
         const width = Math.max(0, Number(targetWidth || 0))
         const height = Math.max(0, Number(targetHeight || 0))
-        const corner = cornerSize(curveRadius, vertical, width, height)
+        const corner = cornerSize(curveRadius, vertical, width, height,
+                                   collapsedHeight, collapsedWidth)
         const leftExtent = extent(leftCornerEnabled, corner)
         const rightExtent = extent(rightCornerEnabled, corner)
         const wrapDepth = resolvedWrapDepth(hasWrap, configuredWrapDepth)
@@ -121,7 +127,7 @@ QtObject {
         case "sectionHeight": return sectionHeight(vertical, height, wrapDepth, leftExtent, rightExtent)
         case "targetProxyX": return targetProxyX(vertical, edge, wrapDepth, leftExtent)
         case "targetProxyY": return targetProxyY(vertical, edge, leftExtent, rightExtent, wrapDepth)
-        case "maskOffsetX": return maskOffsetX(vertical, leftExtent)
+        case "maskOffsetX": return maskOffsetX(vertical, edge, wrapDepth, leftExtent)
         case "maskOffsetY": return maskOffsetY(vertical, edge, leftExtent, rightExtent)
         case "maskWidth": return maskWidth(vertical, edge, width, wrapDepth, leftExtent, rightExtent)
         case "maskHeight": return maskHeight(vertical, height, leftExtent, rightExtent)

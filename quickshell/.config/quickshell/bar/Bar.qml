@@ -45,7 +45,12 @@ PanelWindow {
         right: barPosition === "right" || !vertical
     }
     readonly property real sideTabHeight: Math.max(leftTab.implicitHeight, rightTab.implicitHeight)
-    readonly property real sideTabWidth: Math.max(leftTab.implicitWidth, rightTab.implicitWidth)
+    // Lateral endpoints swap the horizontal body height into their physical
+    // cross-axis width. Follow the collapsed center's same 42px frame rather
+    // than the chip padding, while longitudinal content grows independently.
+    readonly property real sideTabWidth: root.vertical
+        ? root.centerCollapsedWidth
+        : Math.max(leftTab.implicitWidth, rightTab.implicitWidth)
     readonly property real stableSurfaceContentHeight: Math.max(sideTabHeight, Theme.centerExpandedHeight)
     // A left bar's cross-axis width follows the rotated dashboard: the top
     // dashboard height becomes the left bar's expanded width. Keep the
@@ -323,6 +328,10 @@ PanelWindow {
         rightCornerEnabled: true
         bottomLeftRounded: false
         bottomRightRounded: true
+        topCornerEnabled: false
+        bottomCornerEnabled: true
+        outerTopRounded: false
+        outerBottomRounded: true
     }
 
     // Optional Stage-2 native feasibility surface. It is created only for
@@ -375,6 +384,10 @@ PanelWindow {
         rightCornerEnabled: false
         bottomLeftRounded: true
         bottomRightRounded: false
+        topCornerEnabled: true
+        bottomCornerEnabled: false
+        outerTopRounded: true
+        outerBottomRounded: false
     }
 
     // Left tab — Workspaces
@@ -406,7 +419,9 @@ PanelWindow {
         vertical: root.vertical
         width: root.vertical ? (expanded ? Theme.centerExpandedHeight : root.centerCollapsedWidth) : (expanded ? Theme.centerExpandedWidth : Theme.centerCollapsedWidth)
         height: root.vertical ? (expanded ? Theme.centerExpandedWidth : Theme.centerCollapsedWidth) : implicitHeight
-        paddingH: Theme.spacingXl
+        // Vertical bars use the short cross-axis inset so the collapsed
+        // center island keeps the same physical thickness as top/bottom.
+        paddingH: root.vertical ? Theme.spacingSm : Theme.spacingXl
         paddingV: Theme.spacingSm
         x: root.vertical ? (root.barPosition === "right" ? parent.width - width : 0) : (parent.width - width) / 2
         y: root.vertical ? (parent.height - height) / 2 : (root.barPosition === "bottom" ? parent.height - height : 0)

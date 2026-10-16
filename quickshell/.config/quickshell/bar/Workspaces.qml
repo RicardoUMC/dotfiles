@@ -162,8 +162,12 @@ GridLayout {
             readonly property color activeColor:
                 wsItem.isSpecial ? Colors.cyan : Colors.accent
 
-            implicitWidth: wsRow.implicitWidth + 16
-            implicitHeight: Theme.barChipHeight
+            implicitWidth: root.vertical
+                ? Theme.barChipHeight
+                : wsRow.implicitWidth + 16
+            implicitHeight: root.vertical
+                ? Math.max(Theme.barChipHeight, wsRow.implicitHeight)
+                : Theme.barChipHeight
 
             Rectangle {
                 anchors.fill: parent
@@ -196,10 +200,13 @@ GridLayout {
                 z: 999
             }
 
-            RowLayout {
+            GridLayout {
                 id: wsRow
                 anchors.centerIn: parent
-                spacing: Theme.spacingXs
+                columns: root.vertical ? 1 : -1
+                rows: root.vertical ? -1 : 1
+                rowSpacing: root.vertical ? 0 : Theme.spacingXs
+                columnSpacing: root.vertical ? 0 : Theme.spacingXs
 
                 Text {
                     text: {

@@ -120,3 +120,91 @@ Ahorita lo que no quiero es seguir con estos errores, porque eran cosas al menos
 - Updated `specs/bar.md`, `specs/configurable-bar.md`, and `DESIGN.md` to distinguish the visually bounded lateral islands from the full-output vertical owner surface, preserve narrow collapsed `exclusiveZone`, and document shared cap/wrap parity between visible and native-blur paths.
 - `git diff --check` and targeted contract-text checks passed. Runtime status remains unchanged: rebuild Quickshell against Qt 6.12.0 before compositor validation.
 - Work-unit commit: 6c0e04d.
+
+### L16 — T4/T15 Qt 6.12 runtime and rotated geometry comparison
+- Rebuilt and installed Quickshell 0.3.2 (revision 4f508be) against system Qt 6.12.0; clean startup and hard reloads reached `Configuration Loaded` without `ERROR` or `WARN`.
+- Settled top/bottom/left/right captures on DP-1 and DP-2 passed with `hyprctl layers`, reservations of 42px for top/bottom and 74px for left/right, empty `hyprctl configerrors`, and byte-for-byte restoration of the intentional `config.json` state.
+- Rotated left/right strips by the inverse physical-axis transform and compared connected debug-silhouette masks against top/bottom. Top/bottom profiles matched exactly; left/right profiles matched each other after rotation. The 74px versus 42px thickness is explained by `sideTabWidth` versus `sideTabHeight`, while the shared 16px absolute radius remains consistent; no geometry correction was justified.
+- Manual pointer hit-testing, outside-click/Escape, and open RCC interaction remain explicitly unclaimed because the host has keyboard-only `wtype` and no pointer-click dispatcher.
+
+### L17 — User correction (verbatim)
+"Sigue sin quedar bien la geometría de left y right"
+
+### L18 — User decision (verbatim)
+"Primera y segunda opción"
+- Scope: correct both lateral proportion/thickness perception and notch/cap/wrap handedness while preserving upright content, collapsed reservation, monitor ownership, native-blur/input parity, and the accepted top/bottom baseline.
+
+### L19 — T4/T30 lateral endpoint-Y correction and bounded verification
+- Corrected the shared lateral Y frame so both left and right consume the canonical source-right `rightExtent` in `IslandGeometry.sectionOffsetY`, `targetProxyY`, and `maskOffsetY`; right mirrors only the physical X axis. This aligns asymmetric endpoint masks and native blur with the upright target without changing horizontal top/bottom branches.
+- Qt 6.12 `qmllint`, JSON validation, `git diff --check`, and static scalar invariants passed. Fresh DP-1 runtime captures for top/bottom/left/right reached `Configuration Loaded` without `ERROR`/`WARN`, preserved reservations of 42/42/74/74, and restored the intentional `config.json` byte-for-byte.
+- Rotated DP-1 visual/profile evidence shows preserved top/bottom parity and mirrored left/right geometry; the post-fix center XOR is 74 pixels (0.143%). An independent verifier passed the endpoint-Y correction and found no blocking geometry issue.
+- Full N-monitor/seam verification is blocked because the compositor currently reports only DP-1; DP-2 disappeared during the matrix and needs external reconnection. Pointer, outside-click, Escape, RCC interaction, and native-blur pixel accuracy remain explicitly unclaimed.
+
+### L20 — User correction and new visual-evidence criterion (verbatim)
+"No ha quedado correctamente todavía. Mira, te cambié de fondo de pantalla que no tenga tantos matices rojos y evitar confusiones. Sigue con la misma técnica que te dije de las capturas por favor. Puedes seguir iterando hasta que notes que ya no haya tanta diferencia entre los de referencia."
+
+### L21 — T4 neutral-wallpaper convergence iteration
+- Neutral-wallpaper DP-1 captures isolated a structural lateral thickness mismatch: top/bottom measured 42px while left/right measured 74px. The mismatch came from the vertical center tab using horizontal `Theme.spacingXl` as cross-axis padding.
+- Changed `Bar.qml` so `centerTab.paddingH` uses `Theme.spacingSm` when vertical and retains `Theme.spacingXl` for top/bottom. Qt 6.12 `qmllint`, JSON validation, and `git diff --check` passed with only documented warnings.
+- Fresh neutral DP-1 top/bottom/left/right reload captures passed with clean `Configuration Loaded`, no `ERROR`/`WARN`, reservations 42/42/60/60, and byte-for-byte config restoration. Rotated profiles then measured 42px for all four orientations; the lateral mirror XOR was 149 pixels (0.503%) and visually sparse around raster/content edges.
+- The final geometry decision is bounded to this evidence: no additional QML iteration is justified without a new structural mismatch. DP-2 remains absent from the compositor; pointer/outside-click/Escape/RCC interaction and native-blur pixel accuracy remain unclaimed.
+
+### L22 — T4/#30 final neutral-wallpaper lateral geometry evidence
+- Reworked vertical wrap ownership so the rotated canonical source remains authoritative, disabled duplicate external vertical wraps, preserved the accepted 42px lateral frame/reservation, restored the canonical first-wrap handedness, and used the existing configurable `Theme.barCurveRadius` through `BarSection.wrapRadius` for vertical wraps. The second service-endpoint wrap uses the matching `topLeft` Canvas corner after rotation.
+- The final clean DP-1 matrix covered top, bottom, left, and right. Every hard reload reached `Configuration Loaded` without `ERROR`/`WARN`; reservations were 42px on all four edges; `config.json` was restored byte-for-byte with hash `f5ce1203345cfcd4466a0df6a434b12d032d7675a825d0ee3b2db2dbeeecb7c1`; `configerrors` was empty.
+- Final rotated profiles preserved the 42px center contour and measured endpoint spans of 52/52 top/bottom, 50/51 left, and 50/52 right at the strict silhouette threshold. The final contact sheet shows no gross visual mismatch; the bounded 1–2px services-endpoint residual is Canvas/rasterization-level evidence, not a new structural mismatch.
+- Qt 6.12 lint, JSON validation, and `git diff --check` passed. DP-2 remains absent from the compositor; pointer/outside-click/Escape/RCC interaction and native-blur pixel accuracy remain explicitly unclaimed.
+
+### L23 — User correction (verbatim)
+"No, todavía no queda. Aunque te acercaste bastante, sigue iterando por favor"
+
+### L24 — T4/#53 wrapRadius correction and runtime evidence
+- Corrected the remaining lateral endpoint mismatch by making vertical canonical wrap width use the existing `wrapRadius` token instead of the scaled `cornerSize`; kept horizontal source dimensions unchanged. Updated all four vertical native-blur wrap regions to use the same radius/ellipse dimensions so visible mask and blur remain aligned.
+- Recovered the single Quickshell process after the prior IPC no-op incident. The fresh `runtime-neutral-reopened2` four-edge matrix passed reservation probes: top/bottom/left/right all reserved 42px, reloads succeeded, `config.json` restored byte-for-byte, and `configerrors` remained empty.
+- Final rotated profiles measured 52/52 endpoint spans top/bottom, 52/51 left, and 52/52 right, with a 42px center contour. The contact sheet was reviewed and the prior gross service-endpoint mismatch is no longer visible; the remaining left 1px is bounded Canvas rasterization.
+- Qt 6.12 lint, JSON validation, and `git diff --check` passed after the correction. DP-2 remains absent; pointer/outside-click/Escape/RCC interaction and native-blur pixel accuracy remain explicitly unclaimed.
+
+### L25 — User geometry correction (verbatim)
+Vale, para el izquierdo quiero: los wraps sobresalen hacia la derecha, otros 12px
+
+### Isla superior (izquierda con bottom como referencia)
+
+- Pegada al borde superior y = 0
+- Workspaces por defecto
+- Cuerpo con ancho común de 42 px.
+- Tiene única wrap exterior en su extremo superior
+- Agrega 16 px de extensión geométrica hacia el lado interno (inferior) para el cap/notch.
+- Flags: creo que se deberían de pensar nuevas flags para cuando sean laterales (top/bottomCornerEnabled, leftTop/leftBottomRounded) con false, true, false, true
+
+### Isla central
+
+Creo que la estuviste tocando muchas veces y en realidad dentro de las primeras iteraciones ya había quedado prácticamente jaja. Solo era ajustar mejor las geometrías de los extremos.
+
+### Isla inferior (derecha con bottom como referencia).
+
+- Pegada al borde inferior
+- Contiene servicios, divisor y power por defecto
+- Flags: similar a la isla superior, pero con true, false, true, false.
+
+### Punto importante
+
+Los anchos se convierten en alturas y alturas en anchos, viniendo de la referencia bottom, debido a que es un cambio de horizontal a vertical.
+
+Veamos si esto te ayuda un poco
+
+### L26 — T4/#54 physical lateral endpoint flags and final verification
+- Added physical lateral flags to `BarSection`: `topCornerEnabled`, `bottomCornerEnabled`, `outerTopRounded`, and `outerBottomRounded`. `Bar.qml` assigns `false,true,false,true` to the upper workspace island and `true,false,true,false` to the lower services/power island; horizontal top/bottom flags and the center island remain unchanged.
+- Corrected the rotated-source mapping so source-left feeds physical bottom and source-right feeds physical top. This places each lateral wrap at its physical upper/lower endpoint and extends it inward: rightward from the left edge and leftward from the right edge. `IslandBlurRegion` consumes the same mapped flags.
+- Final Qt 6.12 lint and `git diff --check` passed with only known warnings. Fresh hard-reload matrices on DP-1 and DP-2 passed top/bottom/left/right reservations of 42px, empty `configerrors`, clean layer ownership, and exact restoration of `config.json` hash `f5ce1203345cfcd4466a0df6a434b12d032d7675a825d0ee3b2db2dbeeecb7c1`.
+- Corrected endpoint profiles confirmed left wraps extend inward to `x=42` from the `x=0..39` body at both physical upper/lower endpoints, while right wraps extend inward to `x=47` from the `x=50..89` body. No center redesign was made. Pointer/outside-click/Escape/RCC interaction and native-blur pixel accuracy remain explicitly unclaimed.
+- No commit or push was created, per the user's explicit instruction.
+
+### L27 — User correction (verbatim)
+Pues las geometrías siguen sin coincidir
+
+### L28 — User authorization (verbatim)
+Tuvimos una buena mejora, puedes hacer commit para luego mejorar sobre lo que vamos logrando hasta ahorita
+
+### L29 — T4/#56 checkpoint scope
+- Create a checkpoint from the current lateral-geometry improvement: physical top/bottom flags, corrected source mapping, 42px lateral body width, and the corrected source-right `topRight` upper wrap. Preserve the known lower-endpoint mismatch for the next geometry iteration.
+- Commit is explicitly authorized by L28; push remains unauthorized.

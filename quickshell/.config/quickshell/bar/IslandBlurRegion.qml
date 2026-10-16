@@ -14,8 +14,10 @@ Region {
     readonly property real targetHeight: Math.max(0,
         Number(targetItem.targetItem.height || 0))
     readonly property real corner: Math.max(0, Number(targetItem._cornerSize || 0))
-    readonly property bool leftCornerEnabled: targetItem.leftCornerEnabled
-    readonly property bool rightCornerEnabled: targetItem.rightCornerEnabled
+    readonly property bool leftCornerEnabled: targetItem._sourceLeftCornerEnabled
+    readonly property bool rightCornerEnabled: targetItem._sourceRightCornerEnabled
+    readonly property bool bottomLeftRounded: targetItem._sourceBottomLeftRounded
+    readonly property bool bottomRightRounded: targetItem._sourceBottomRightRounded
     readonly property real sectionX: Number(targetItem.x || 0)
     readonly property real sectionY: Number(targetItem.y || 0)
     readonly property real sectionWidth: Math.max(0, Number(targetItem.width || 0))
@@ -24,6 +26,8 @@ Region {
     readonly property bool left: targetItem.vertical && targetItem.edge === "left"
     readonly property bool right: targetItem.vertical && targetItem.edge === "right"
     readonly property real wrapDepth: Math.max(0, Number(targetItem._wrapDepth || 0))
+    readonly property real wrapRadius: Math.max(0,
+        Number(targetItem._wrapRadius || targetItem._cornerSize || 0))
     // Horizontal bottom still uses its wrap offset; vertical right uses the
     // physical top extent supplied by the section proxy. Left's rotated source
     // does not consume this value directly, but shares the same frame.
@@ -55,9 +59,9 @@ Region {
         width: root.bodyWidth
         height: root.targetHeight
         topLeftRadius: 0
-        topRightRadius: root.targetItem.bottomRightRounded ? root.corner : 0
+        topRightRadius: root.bottomRightRounded ? root.corner : 0
         bottomLeftRadius: 0
-        bottomRightRadius: root.targetItem.bottomLeftRounded ? root.corner : 0
+        bottomRightRadius: root.bottomLeftRounded ? root.corner : 0
     }
     Region {
         id: leftCap
@@ -92,14 +96,14 @@ Region {
     Region {
         id: leftWrap
         x: root.sectionX + root.bodyWidth
-        y: root.sectionY + root.leftSourceWidth - root.leftExtent - root.corner
+        y: root.sectionY + root.leftSourceWidth - root.leftExtent - root.wrapRadius
         width: root.wrapDepth
-        height: root.leftWrapEnabled ? root.corner : 0
+        height: root.leftWrapEnabled ? root.wrapRadius : 0
         Region {
             x: root.sectionX + root.bodyWidth
-            y: root.sectionY + root.leftSourceWidth - root.leftExtent - root.corner * 2
-            width: root.corner * 2
-            height: root.corner * 2
+            y: root.sectionY + root.leftSourceWidth - root.leftExtent - root.wrapRadius * 2
+            width: root.wrapRadius * 2
+            height: root.wrapRadius * 2
             shape: RegionShape.Ellipse
             intersection: Intersection.Subtract
         }
@@ -109,37 +113,90 @@ Region {
         x: root.sectionX + root.bodyWidth
         y: root.sectionY + root.leftSourceWidth - root.leftExtent - root.targetHeight
         width: root.wrapDepth
-        height: root.rightWrapEnabled ? root.corner : 0
+        height: root.rightWrapEnabled ? root.wrapRadius : 0
         Region {
             x: root.sectionX + root.bodyWidth
             y: root.sectionY + root.rightExtent
+            width: root.wrapRadius * 2
+            height: root.wrapRadius * 2
+            shape: RegionShape.Ellipse
+            intersection: Intersection.Subtract
+        }
+    }
+
+    // Right mirrors the canonical left composition across the vertical
+    // section axis. Keep blur and visible masks on the same scalar frame.
+    Region {
+        id: rightBody
+        x: root.sectionX + root.sectionWidth - root.bodyWidth
+        y: root.sectionY + root.leftSourceWidth - root.leftExtent - root.targetHeight
+        width: root.bodyWidth
+        height: root.targetHeight
+        topLeftRadius: root.bottomRightRounded ? root.corner : 0
+        topRightRadius: 0
+        bottomLeftRadius: root.bottomLeftRounded ? root.corner : 0
+        bottomRightRadius: 0
+    }
+    Region {
+        id: rightCapVertical
+        x: root.sectionX + root.sectionWidth - root.corner
+        y: root.sectionY + root.leftSourceWidth - root.leftExtent
+        width: root.corner
+        height: root.leftExtent
+        Region {
+            x: root.sectionX + root.sectionWidth - root.corner * 2
+            y: root.leftCapCutoutY
             width: root.corner * 2
             height: root.corner * 2
             shape: RegionShape.Ellipse
             intersection: Intersection.Subtract
         }
     }
-
-    // The pre-existing manual vertical-right composition remains separate.
     Region {
-        id: rightBody
-        x: root.sectionX + root.wrapDepth
-        y: root.targetY
-        width: root.bodyWidth
-        height: root.targetHeight
-        topLeftRadius: 0
-        topRightRadius: 0
-        bottomLeftRadius: root.targetItem.bottomLeftRounded ? root.corner : 0
-        bottomRightRadius: root.targetItem.bottomRightRounded ? root.corner : 0
+        id: rightLeftCapVertical
+        x: root.sectionX + root.sectionWidth - root.corner
+        y: root.sectionY
+        width: root.corner
+        height: root.rightExtent
+        Region {
+            x: root.sectionX + root.sectionWidth - root.corner * 2
+            y: root.rightCapCutoutY
+            width: root.corner * 2
+            height: root.corner * 2
+            shape: RegionShape.Ellipse
+            intersection: Intersection.Subtract
+        }
     }
-    Region { id: rightCapVertical; x: root.sectionX + root.wrapDepth; y: root.targetY + root.targetHeight; width: root.bodyWidth; height: root.rightExtent
-        Region { x: root.sectionX + root.sectionWidth - root.corner; y: root.targetY + root.targetHeight - root.corner * 2; width: root.corner * 2; height: root.corner * 2; shape: RegionShape.Ellipse; intersection: Intersection.Subtract } }
-    Region { id: rightLeftCapVertical; x: root.sectionX + root.wrapDepth; y: root.sectionY; width: root.bodyWidth; height: root.leftExtent
-        Region { x: root.sectionX + root.wrapDepth - root.corner; y: root.sectionY; width: root.corner * 2; height: root.corner * 2; shape: RegionShape.Ellipse; intersection: Intersection.Subtract } }
-    Region { id: rightWrapVertical; x: root.sectionX; y: root.targetY; width: root.wrapDepth; height: root.leftExtent
-        Region { x: root.sectionX + root.wrapDepth - root.corner; y: root.sectionY + root.targetHeight; width: root.corner * 2; height: root.corner * 2; shape: RegionShape.Ellipse; intersection: Intersection.Subtract } }
-    Region { id: rightRightWrapVertical; x: root.sectionX; y: root.targetY + root.targetHeight - root.rightExtent; width: root.wrapDepth; height: root.rightExtent
-        Region { x: root.sectionX + root.wrapDepth - root.corner; y: root.sectionY + root.targetHeight; width: root.corner * 2; height: root.corner * 2; shape: RegionShape.Ellipse; intersection: Intersection.Subtract } }
+    Region {
+        id: rightWrapVertical
+        x: root.sectionX + root.sectionWidth - root.bodyWidth - root.wrapDepth
+        y: root.sectionY + root.leftSourceWidth - root.leftExtent - root.wrapRadius
+        width: root.wrapDepth
+        height: root.leftWrapEnabled ? root.wrapRadius : 0
+        Region {
+            x: root.sectionX + root.sectionWidth - root.bodyWidth - root.wrapRadius * 2
+            y: root.sectionY + root.leftSourceWidth - root.leftExtent - root.wrapRadius * 2
+            width: root.wrapRadius * 2
+            height: root.wrapRadius * 2
+            shape: RegionShape.Ellipse
+            intersection: Intersection.Subtract
+        }
+    }
+    Region {
+        id: rightRightWrapVertical
+        x: root.sectionX + root.sectionWidth - root.bodyWidth - root.wrapDepth
+        y: root.sectionY + root.leftSourceWidth - root.leftExtent - root.targetHeight
+        width: root.wrapDepth
+        height: root.rightWrapEnabled ? root.wrapRadius : 0
+        Region {
+            x: root.sectionX + root.sectionWidth - root.bodyWidth - root.wrapRadius * 2
+            y: root.sectionY + root.rightExtent
+            width: root.wrapRadius * 2
+            height: root.wrapRadius * 2
+            shape: RegionShape.Ellipse
+            intersection: Intersection.Subtract
+        }
+    }
 
     // Existing horizontal top/bottom composition is retained.
     Region {
@@ -148,10 +205,10 @@ Region {
         y: root.targetY
         width: root.bodyWidth
         height: root.targetHeight
-        topLeftRadius: root.left ? 0 : (root.bottom && root.targetItem.bottomLeftRounded ? root.corner : 0)
-        topRightRadius: root.left ? 0 : (root.bottom && root.targetItem.bottomRightRounded ? root.corner : 0)
-        bottomLeftRadius: root.left ? 0 : (root.bottom ? 0 : (root.targetItem.bottomLeftRounded ? root.corner : 0))
-        bottomRightRadius: root.left ? 0 : (root.bottom ? 0 : (root.targetItem.bottomRightRounded ? root.corner : 0))
+        topLeftRadius: root.left ? 0 : (root.bottom && root.bottomLeftRounded ? root.corner : 0)
+        topRightRadius: root.left ? 0 : (root.bottom && root.bottomRightRounded ? root.corner : 0)
+        bottomLeftRadius: root.left ? 0 : (root.bottom ? 0 : (root.bottomLeftRounded ? root.corner : 0))
+        bottomRightRadius: root.left ? 0 : (root.bottom ? 0 : (root.bottomRightRounded ? root.corner : 0))
     }
     Region {
         id: rightCap

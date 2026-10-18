@@ -400,6 +400,7 @@ PanelWindow {
         z: 1
         compact: true
         vertical: root.vertical
+        edge: root.barPosition
         width: root.vertical ? root.sideTabWidth : implicitWidth
         height: root.vertical ? implicitHeight : root.sideTabHeight
         x: root.vertical && root.barPosition === "right" ? parent.width - width : 0
@@ -421,6 +422,7 @@ PanelWindow {
         readonly property bool expanded: centerPanel.isOpen
 
         vertical: root.vertical
+        edge: root.barPosition
         width: root.vertical ? (expanded ? Theme.centerExpandedHeight : root.centerCollapsedWidth) : (expanded ? Theme.centerExpandedWidth : Theme.centerCollapsedWidth)
         height: root.vertical ? (expanded ? Theme.centerExpandedWidth : Theme.centerCollapsedWidth) : implicitHeight
         // Vertical bars use the short cross-axis inset so the collapsed
@@ -535,6 +537,7 @@ PanelWindow {
         z: 1
         compact: true
         vertical: root.vertical
+        edge: root.barPosition
         width: root.vertical ? root.sideTabWidth : implicitWidth
         height: root.vertical ? implicitHeight : root.sideTabHeight
         x: root.vertical && root.barPosition === "right" ? parent.width - width : (root.vertical ? 0 : parent.width - width)

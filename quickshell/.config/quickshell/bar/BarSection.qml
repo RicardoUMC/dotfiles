@@ -121,7 +121,9 @@ Item {
         // Composite the complete mask once before applying debug translucency.
         // Rendering each Canvas/Rectangle directly would alpha-composite pieces
         // separately and create internal seams.
-        visible: Theme.debugBarSilhouette
+        // The same canonical composite is the production surface, avoiding a
+        // secondary white mask texture leaking through translucent effects.
+        visible: Theme.debugBarSilhouette || Theme.barStyle === "silhouette"
         z: Theme.debugBarSilhouette ? 10 : 0
         layer.enabled: true
         layer.smooth: true
@@ -144,7 +146,7 @@ Item {
             maskOffsetY: root._maskOffsetY
             maskWidth: root._maskWidth
             maskHeight: root._maskHeight
-            maskColor: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 1.0) : "white"
+            maskColor: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 1.0) : root._segmentFill
         }
 
         // The wrap follows the owning output edge: below for top, above for
@@ -163,7 +165,7 @@ Item {
                 origin.y: (root.vertical ? root._cornerSize : root._wrapDepth) / 2
                 yScale: !root.vertical && root.edge === "bottom" ? -1 : 1
             }
-            color: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 1.0) : "white"
+            color: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 1.0) : root._segmentFill
             visible: root.hasWrap && !root.vertical && !root.bottomLeftRounded
                 && width > 0 && height > 0
         }
@@ -182,7 +184,7 @@ Item {
                 origin.y: (root.vertical ? root._cornerSize : root._wrapDepth) / 2
                 yScale: !root.vertical && root.edge === "bottom" ? -1 : 1
             }
-            color: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 1.0) : "white"
+            color: Theme.debugBarSilhouette ? Qt.rgba(1.0, 0.2, 0.2, 1.0) : root._segmentFill
             visible: root.hasWrap && !root.vertical && !root.bottomRightRounded
                 && width > 0 && height > 0
         }
@@ -198,7 +200,9 @@ Item {
         maskThresholdMin: 0.5
         maskSpreadAtMin: 1.0
         anchors.fill: parent
-        visible: Theme.barStyle === "silhouette" && !Theme.debugBarSilhouette && !root.gpuPrototypeActive
+        // The canonical mask is now the visible production surface; keep this
+        // legacy effect disabled to avoid a second translucent composite.
+        visible: false
     }
 
     IslandGpuPrototype {

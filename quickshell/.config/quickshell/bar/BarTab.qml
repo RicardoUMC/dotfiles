@@ -9,6 +9,7 @@ Item {
     // Vertical bars use the same children and spacing, but stack them along
     // the output edge instead of rotating the finished bar.
     property bool vertical: false
+    property string edge: "top"
 
     property int paddingH: vertical ? (compact ? Theme.tabPaddingV : Theme.tabPaddingV * 2) : Theme.tabPaddingH
     property int paddingV: vertical ? Theme.tabPaddingH : (compact ? Theme.tabPaddingV : Theme.tabPaddingV * 2)
@@ -18,10 +19,17 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: "transparent"
-        topLeftRadius:     0
-        topRightRadius:    0
-        bottomLeftRadius:  Theme.tabRadius
-        bottomRightRadius: Theme.tabRadius
+        // Horizontal tabs keep the accepted top-square/bottom-rounded bounds.
+        // Lateral tabs expose square corners at the monitor edge and rounded
+        // corners on the inward-facing edge.
+        topLeftRadius: root.vertical
+            ? (root.edge === "left" ? 0 : Theme.tabRadius) : 0
+        topRightRadius: root.vertical
+            ? (root.edge === "right" ? 0 : Theme.tabRadius) : 0
+        bottomLeftRadius: root.vertical
+            ? (root.edge === "left" ? 0 : Theme.tabRadius) : Theme.tabRadius
+        bottomRightRadius: root.vertical
+            ? (root.edge === "right" ? 0 : Theme.tabRadius) : Theme.tabRadius
         border {
             width: Theme.debugBorderWidth
             color: Theme.debugBorderColor

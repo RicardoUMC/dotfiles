@@ -44,10 +44,22 @@ Region {
     // sections and the mirrored topRight/topLeft pair for the center. Keep
     // native cutouts on the same physical quarter-circle handedness.
     readonly property bool endpointCaps: targetItem.sectionId !== "center"
-    readonly property real leftCapCutoutY: root.sectionY + root.leftSourceWidth
-        - (root.endpointCaps ? root.corner * 2 : root.corner)
+    readonly property bool lateral: root.left || root.right
+    // After CCW rotation, the source-left cap's circle is centered on the
+    // physical lower edge. Its ellipse box therefore starts at the cap's
+    // parent y, not one radius above it. Keep the horizontal approximation
+    // unchanged while correcting only the lateral endpoint.
+    readonly property real leftCapCutoutY: root.lateral
+        ? root.sectionY + root.leftSourceWidth - root.leftExtent
+        : root.sectionY + root.leftSourceWidth
+            - (root.endpointCaps ? root.corner * 2 : root.corner)
+    // The source-right ellipse remains centered at sectionY after rotation;
+    // only its lateral parent rectangle needs to enter the visible frame.
     readonly property real rightCapCutoutY: root.sectionY
         + (root.endpointCaps ? 0 : -root.corner)
+    readonly property real sourceRightCapY: root.lateral
+        ? root.sectionY + root.rightExtent
+        : root.sectionY
 
     // Left uses the same horizontal source as the visible mask. For a source
     // rectangle (u,v,w,h), CCW screen rotation maps it to
@@ -81,7 +93,7 @@ Region {
     Region {
         id: leftRightCap
         x: root.sectionX
-        y: root.sectionY
+        y: root.sourceRightCapY
         width: root.corner
         height: root.rightExtent
         Region {
@@ -155,7 +167,7 @@ Region {
     Region {
         id: rightLeftCapVertical
         x: root.sectionX + root.sectionWidth - root.corner
-        y: root.sectionY
+        y: root.sourceRightCapY
         width: root.corner
         height: root.rightExtent
         Region {

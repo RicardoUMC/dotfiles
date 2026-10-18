@@ -238,3 +238,22 @@ Ahora, lo único que quiero hacer con respecto a las geometrías es que en las b
 - `IslandGeometry.cornerSize()` now keeps the shared configured `Theme.barCurveRadius` on vertical sections instead of scaling it by the tall endpoint stack. The visible and native-blur paths consume the same `_cornerSize`; wraps, body width, reservations, and the outer frame contract were not changed.
 - Two post-fix top/bottom/left/right cycles on DP-1 and DP-2 kept every quickshell layer at `a:1`, preserved reservations `[0,42,0,0]`, `[0,0,0,42]`, `[42,0,0,0]`, and `[0,0,42,0]`, reached `Configuration Loaded`, left `configerrors` empty, and restored `config.json` to hash `f5ce1203345cfcd4466a0df6a434b12d032d7675a825d0ee3b2db2dbeeecb7c1`.
 - Qt 6.12 `qmllint` and `git diff --check` passed. The only runtime warnings observed were repeated QtWayland text-input focus warnings during reload; no QML `ERROR` or load failure appeared. The edge contact sheet and profiles show the lateral notch/cap curvature visibly present and symmetric on both monitors. Physical click, service activation, dashboard opening, outside-click, and Escape behavior remain unverified because this host has no pointer injector.
+
+### L36 — Invalidated lateral native-blur cap correction
+- The temporary source-right vertical-cap change in `IslandBlurRegion.qml` used `sectionY + rightExtent` and was intended to align the native QRegion with the rotated visible mask. The user-reported capture showed that it removed several notch curves that were present before the change, so this evidence and the corresponding runtime captures are invalidated.
+- `IslandBlurRegion.qml` was restored exactly to the checkpoint behavior. No visible mask, input, reservation, wrap, or top/bottom geometry change is retained from this attempt.
+
+### L37 — User correction (verbatim)
+"Tu solución no quedó, de hecho le quitó varias curvas del notch que antes sí estaban jaja.
+
+/tmp/pi-clipboard-2c36d345-d9d0-4f77-b51c-db2702997d10.png"
+
+### L38 — User correction (verbatim)
+"Los artefactos están solo en las superior e inferior.
+
+/tmp/pi-clipboard-8291cbbb-d0b5-4933-965a-ab5d93ee9ecc.png
+/tmp/pi-clipboard-8ed326c5-1c9d-454a-9c74-0ce589c59c0c.png"
+
+### L39 — Lateral endpoint native-blur correction evidence
+- Corrected only the lateral endpoint approximation in `IslandBlurRegion.qml`: the source-left lower cap's ellipse box now starts at its translated parent frame, while source-right upper cap parents enter the visible frame without moving their transformed ellipse away from `sectionY`. The correction is conditional on lateral orientation; horizontal top/bottom formulas remain unchanged.
+- Qt 6.12 `qmllint` and `git diff --check` passed. The focused DP-1/DP-2 left/right normal and debug matrix completed with empty textual `configerrors`, quickshell layers present, and `config.json` restored to hash `56a5374e8503e4ccfc3ba830597ea5fe682744f4388a680cf3b1c3f90b31df39`. Endpoint contacts were read for both monitors and both lateral edges; the visible red silhouette retains the upper/lower curves. This is bounded visual evidence only, not a pixel-perfect native-blur claim.

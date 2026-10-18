@@ -53,13 +53,14 @@ Region {
         ? root.sectionY + root.leftSourceWidth - root.leftExtent
         : root.sectionY + root.leftSourceWidth
             - (root.endpointCaps ? root.corner * 2 : root.corner)
-    // The source-right ellipse remains centered at sectionY after rotation;
-    // only its lateral parent rectangle needs to enter the visible frame.
-    readonly property real rightCapCutoutY: root.sectionY
-        + (root.endpointCaps ? 0 : -root.corner)
-    readonly property real sourceRightCapY: root.lateral
-        ? root.sectionY + root.rightExtent
-        : root.sectionY
+    // The canonical source-right cap is always topLeft, including endpoint
+    // sections. After rotation its ellipse is centered on the physical upper
+    // edge, so the bounding box starts one radius above sectionY.
+    readonly property real rightCapCutoutY: root.sectionY - root.corner
+    // The source-right cap begins at sectionY after rotation. Keeping the
+    // parent rectangle there preserves the upper curve in the blur region;
+    // shifting it by rightExtent leaves that visible curve unblurred.
+    readonly property real sourceRightCapY: root.sectionY
 
     // Left uses the same horizontal source as the visible mask. For a source
     // rectangle (u,v,w,h), CCW screen rotation maps it to

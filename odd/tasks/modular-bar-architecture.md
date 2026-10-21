@@ -262,3 +262,18 @@ Ahora, lo único que quiero hacer con respecto a las geometrías es que en las b
 - Aligned the lateral source-right native cap with the canonical `NotchIslandMask` source: every source-right cap is `topLeft`, including center and endpoint sections, so the blur parent starts at `sectionY` and its ellipse box starts at `sectionY - corner`; removed the `endpointCaps` Y branch that left the upper curve outside or straight in the native blur approximation.
 - Qt 6.12 `qmllint`, JSON validation, `git diff --check`, and a focused left/right native-blur on/off hard-reload matrix passed on DP-1/DP-2. `configerrors` remained empty, blur deltas were observable in all four monitor/edge captures, and the active source reload logged `Configuration Loaded` with zero hard errors. `config.json` was restored to the pre-test local state with hash `424902a4e84becf9c81293bfae361ec98656656e8e67ac9c3a8754c94e6d180a`.
 - Visual evidence is bounded to the inspected crops; pixel-perfect native-blur accuracy and physical pointer interaction remain unclaimed. The correction is intentionally uncommitted for review after checkpoint `c8b3ea9`.
+
+### L41 — User correction (verbatim)
+"Te digo que lo que veo es como si la base de, por ejemplo, el dashboard, en la parte superior tiene un radius en el blur, lo que provoca que ya no se vea homogéneo con la curva de notch. Te repito nuevamente, las curvas ya están bien, esas no necesitan modificarse"
+
+### L42 — Lateral native-blur body-radius correction
+- Removed only the upper corner radius from `leftBody` and `rightBody` in `IslandBlurRegion.qml`; lower body radii, visible notch curves, masks, input, reservations, and horizontal geometry remain unchanged.
+- Same-wallpaper A/B against `ee3ad11` produced no DP-1 delta and a DP-2 right-bar delta of 0.95% (1,645 pixels), matching the corrected native-blur body transition in the reviewed strip. This is bounded visual evidence, not a pixel-perfect blur claim.
+- Qt 6.12 `qmllint`, JSON validation, and `git diff --check` passed. Hard reload reached `Configuration Loaded` with zero QML errors; `configerrors` was empty; `config.json` retained hash `424902a4e84becf9c81293bfae361ec98656656e8e67ac9c3a8754c94e6d180a`. The source correction remains uncommitted.
+
+### L43 — User correction (verbatim)
+"No, ahora se nota el pico que está saliendo ahí.. y además, el artefacto del que te hablo, ahora sí no me gustó"
+
+### L44 — Rejected body-radius correction
+- Reverted both lateral upper body-radius removals after the user reported a visible peak and a worse artifact. `IslandBlurRegion.qml` now matches `ee3ad11` exactly; no candidate geometry change remains.
+- Qt 6.12 `qmllint`, JSON validation, and `git diff --check` passed. Hard reload reached `Configuration Loaded` with zero hard errors, `configerrors` remained empty, and `config.json` retained hash `424902a4e84becf9c81293bfae361ec98656656e8e67ac9c3a8754c94e6d180a`.

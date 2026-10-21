@@ -65,6 +65,11 @@ Item {
             height: notchIslandMask.targetItem.width
                 + (notchIslandMask.hasWrap ? notchIslandMask.wrapDepth : 0)
             anchors.centerIn: parent
+            layer.enabled: notchIslandMask.vertical
+                && notchIslandMask.edge === "right"
+                && (notchIslandMask.sectionId === "center"
+                    || notchIslandMask.sectionId === "right")
+            layer.smooth: true
             transform: Rotation { angle: -90; origin.x: rotatedHorizontalSource.width / 2; origin.y: rotatedHorizontalSource.height / 2 }
 
             // This is the canonical horizontal top grammar. The source is

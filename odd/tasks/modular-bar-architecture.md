@@ -300,3 +300,8 @@ Ahora, lo único que quiero hacer con respecto a las geometrías es que en las b
 
 ### L49 — T10 delivery
 - Committed the verified shared vertical-source refactor as `641459d refactor(bar): extract shared vertical notch source`. No push was requested.
+
+### L50 — Documentation synchronization
+- Reconciled the session-two implementation against the source: both lateral edges use the shared `VerticalNotchSource`, `IslandGeometry` remains the scalar contract, `IslandBlurRegion` remains the bounded native-blur approximation, and the legacy `MultiEffect` path is declared but disabled.
+- Updated `AGENTS.md`, `SPECS.md`, `specs/bar.md`, `specs/configurable-bar.md`, and `specs/multi-monitor.md` to remove stale right-placement/future claims and document the verified refactor boundary.
+- `quickshell/.config/quickshell/config.json` was intentionally excluded from this documentation sync.

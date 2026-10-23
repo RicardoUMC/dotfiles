@@ -9,6 +9,7 @@ IslandGpuPrototype 1.0 IslandGpuPrototype.qml
 IslandNativePrototype 1.0 IslandNativePrototype.qml
 singleton IslandGeometry 1.0 IslandGeometry.qml
 NotchIslandMask 1.0 NotchIslandMask.qml
+VerticalNotchSource 1.0 VerticalNotchSource.qml
 NotchCornerMask 1.0 NotchCornerMask.qml
 Workspaces 1.0 Workspaces.qml
 SystemStats 1.0 SystemStats.qml

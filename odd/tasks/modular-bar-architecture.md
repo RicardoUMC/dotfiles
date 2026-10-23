@@ -13,6 +13,7 @@ Implementation starts bottom-first; left/right remain unchanged until the shared
 - S8: "No quiero que empieces directo con el desarrollo, con la implementación, porque me gustaría que 1º investigaras el estado del arte"
 - S9: "cuando 2 monitores estén pegados en esos laterales que tengan los comportamientos que ya habíamos definido"
 - S10: "que al mismo tiempo sean coherentes con la imagen engión en la geometría"
+- S11: "A ver, intentemos con esto entonces por favor va? C:"
 
 ## Tasks
 - T1 (S1, S9, S10): Recover and freeze bottom against the last acceptable baseline; route: bottom mask/blur parity; commit: 5b1d1a0
@@ -24,6 +25,7 @@ Implementation starts bottom-first; left/right remain unchanged until the shared
 - T7 (S1, S2, S9, S10): Keep vertical dashboard expansion overlay-shaped, align the right-side catcher, and verify layer behavior separately from reservation; route: collapsed reservation plus output-local catcher geometry; commit: 7a20bfc
 - T8 (S1, S2, S9, S10): Analyze the latest user recording and distinguish persistent lateral geometry from open-state animation/content defects; route: extracted frame evidence and source mapping; commit: pending
 - T9 (S1, S2, S9, S10): Correct the recording-confirmed geometry and open-state defects without regressing the accepted top/bottom contract; route: bounded QML correction and runtime verification; commit: 341c071, 8d1cecf, a5c5156
+- T10 (S11): Replace the lateral transformed canonical source with a shared VerticalNotchSource while preserving the existing scalar geometry contract and accepted horizontal behavior; route: inline QML refactor with Qt 6.12/runtime orientation verification; commit: pending
 
 ## Log
 ### L1 — User request (verbatim)
@@ -277,3 +279,21 @@ Ahora, lo único que quiero hacer con respecto a las geometrías es que en las b
 ### L44 — Rejected body-radius correction
 - Reverted both lateral upper body-radius removals after the user reported a visible peak and a worse artifact. `IslandBlurRegion.qml` now matches `ee3ad11` exactly; no candidate geometry change remains.
 - Qt 6.12 `qmllint`, JSON validation, and `git diff --check` passed. Hard reload reached `Configuration Loaded` with zero hard errors, `configerrors` remained empty, and `config.json` retained hash `424902a4e84becf9c81293bfae361ec98656656e8e67ac9c3a8754c94e6d180a`.
+
+### L45 — User authorization (verbatim)
+"A ver, intentemos con esto entonces por favor va? C:"
+
+### L46 — Vertical source refactor plan
+- Keep `IslandGeometry.qml` as the shared scalar geometry contract and introduce one shared `VerticalNotchSource` for left/right rather than duplicating complete sources.
+- Preserve the accepted horizontal top/bottom source family, visible geometry, native-blur/input/reservation contracts, and logical content ordering while extracting the lateral renderer.
+- Runtime visual verification must precede any commit for this task.
+
+### L47 — T10 implementation evidence
+- Extracted the lateral transformed source into `quickshell/.config/quickshell/bar/VerticalNotchSource.qml`, delegated both left and right paths from `NotchIslandMask.qml`, and registered the module in `bar/qmldir`.
+- The horizontal top/bottom source remains in `NotchIslandMask.qml`; scalar bindings, section flags, wraps, colors, transforms, and the right center/right raster-layer behavior were preserved.
+- Focused Qt 6.12 `qmllint` and `git diff --check` passed. Runtime/compositor verification remains pending before any commit.
+
+### L48 — T10 differential verification
+- The first four-position DP-1 runtime matrix loaded top, bottom, left, and right after hard reloads, produced captures/layers, left `configerrors` empty, and restored `config.json` byte-for-byte.
+- Differential debug-silhouette captures against the pre-refactor `HEAD` source produced zero pixel differences for bottom, left, and right. Top differed only outside the bar due dynamic screen content; the bar strip itself had no structural change (two minor capture-color variations at the bar edge).
+- Qt 6.12 `qmllint`, JSON validation, and `git diff --check` passed. T10 is complete but remains uncommitted pending the user's delivery decision.

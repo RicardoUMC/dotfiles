@@ -45,116 +45,21 @@ Item {
         yScale: !notchIslandMask.vertical && notchIslandMask.edge === "bottom" ? -1 : 1
     }
 
-    // Both lateral edges use the canonical horizontal source. It rotates
-    // counter-clockwise once, then mirrors the final physical cross-axis for
-    // right. Source width/height are the swapped vertical target dimensions;
-    // the full visual section includes its wrap depth.
-    Item {
-        id: verticalMirror
-        visible: notchIslandMask.vertical
+    VerticalNotchSource {
         anchors.fill: parent
-        transform: Scale {
-            origin.x: verticalMirror.width / 2
-            origin.y: verticalMirror.height / 2
-            xScale: notchIslandMask.edge === "right" ? -1 : 1
-        }
-
-        Item {
-            id: rotatedHorizontalSource
-            width: notchIslandMask.height
-            height: notchIslandMask.targetItem.width
-                + (notchIslandMask.hasWrap ? notchIslandMask.wrapDepth : 0)
-            anchors.centerIn: parent
-            layer.enabled: notchIslandMask.vertical
-                && notchIslandMask.edge === "right"
-                && (notchIslandMask.sectionId === "center"
-                    || notchIslandMask.sectionId === "right")
-            layer.smooth: true
-            transform: Rotation { angle: -90; origin.x: rotatedHorizontalSource.width / 2; origin.y: rotatedHorizontalSource.height / 2 }
-
-            // This is the canonical horizontal top grammar. The source is
-            // rotated as one whole source (CCW): (u,v) -> (v,W-u), where W is
-            // this source's width. The outer mirror makes right the physical
-            // counterpart without changing section-specific endpoint flags.
-        NotchCornerMask {
-            id: leftSourceCap
-            x: 0
-            y: 0
-            width: notchIslandMask.leftCornerEnabled ? notchIslandMask.resolvedCornerSize : 0
-            height: width
-            // Match the canonical horizontal source: the source-left cap's
-            // rounded side faces the body attachment, not the remote tip.
-            corner: "topRight"
-            color: notchIslandMask.maskColor
-            visible: width > 0
-        }
-
-        Rectangle {
-            x: leftSourceCap.width
-            y: 0
-            width: notchIslandMask.targetItem.height
-            height: notchIslandMask.targetItem.width
-            color: notchIslandMask.maskColor
-            bottomLeftRadius: notchIslandMask.bottomLeftRounded ? notchIslandMask.resolvedCornerSize : 0
-            bottomRightRadius: notchIslandMask.bottomRightRounded ? notchIslandMask.resolvedCornerSize : 0
-        }
-
-        NotchCornerMask {
-            id: leftSourceEndCap
-            x: (notchIslandMask.leftCornerEnabled ? notchIslandMask.resolvedCornerSize : 0)
-                + notchIslandMask.targetItem.height
-            y: 0
-            width: notchIslandMask.rightCornerEnabled ? notchIslandMask.resolvedCornerSize : 0
-            height: width
-            // Match the canonical source-right cap; this also fixes the
-            // physical lower endpoint after the -90-degree rotation.
-            corner: "topLeft"
-            color: notchIslandMask.maskColor
-            visible: width > 0
-        }
-
-        NotchCornerMask {
-            x: leftSourceCap.width
-            y: notchIslandMask.targetItem.width
-            width: notchIslandMask.vertical
-                ? notchIslandMask.wrapRadius : notchIslandMask.resolvedCornerSize
-            height: notchIslandMask.vertical && notchIslandMask.hasWrap
-                ? notchIslandMask.wrapDepth : 0
-            radius: notchIslandMask.vertical
-                ? Math.max(notchIslandMask.resolvedCornerSize,
-                          notchIslandMask.wrapDepth,
-                          notchIslandMask.wrapRadius)
-                : notchIslandMask.resolvedCornerSize
-            // Keep the horizontal left-end corner in the checkpoint source;
-            // the remaining lower-end refinement is tracked separately.
-            corner: "topLeft"
-            color: notchIslandMask.maskColor
-            visible: notchIslandMask.hasWrap
-                && notchIslandMask.bottomLeftRounded === false
-                && width > 0 && height > 0
-        }
-
-        NotchCornerMask {
-            x: leftSourceCap.width + notchIslandMask.targetItem.height - width
-            y: notchIslandMask.targetItem.width
-            width: notchIslandMask.vertical
-                ? notchIslandMask.wrapRadius : notchIslandMask.resolvedCornerSize
-            height: notchIslandMask.vertical && notchIslandMask.hasWrap
-                ? notchIslandMask.wrapDepth : 0
-            radius: notchIslandMask.vertical
-                ? Math.max(notchIslandMask.resolvedCornerSize,
-                          notchIslandMask.wrapDepth,
-                          notchIslandMask.wrapRadius)
-                : notchIslandMask.resolvedCornerSize
-            // Source-right becomes the physical upper endpoint after the
-            // -90-degree mapping, so preserve the horizontal right-end cap.
-            corner: notchIslandMask.vertical ? "topRight" : "topLeft"
-            color: notchIslandMask.maskColor
-            visible: notchIslandMask.hasWrap
-                && notchIslandMask.bottomRightRounded === false
-                && width > 0 && height > 0
-        }
-        }
+        targetItem: notchIslandMask.targetItem
+        sectionId: notchIslandMask.sectionId
+        cornerSize: notchIslandMask.cornerSize
+        leftCornerEnabled: notchIslandMask.leftCornerEnabled
+        rightCornerEnabled: notchIslandMask.rightCornerEnabled
+        bottomLeftRounded: notchIslandMask.bottomLeftRounded
+        bottomRightRounded: notchIslandMask.bottomRightRounded
+        vertical: notchIslandMask.vertical
+        edge: notchIslandMask.edge
+        hasWrap: notchIslandMask.hasWrap
+        wrapDepth: notchIslandMask.wrapDepth
+        wrapRadius: notchIslandMask.wrapRadius
+        maskColor: notchIslandMask.maskColor
     }
 
     // The legacy top/bottom source remains unchanged. Both vertical paths use

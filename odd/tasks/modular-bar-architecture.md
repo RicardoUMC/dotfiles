@@ -25,7 +25,7 @@ Implementation starts bottom-first; left/right remain unchanged until the shared
 - T7 (S1, S2, S9, S10): Keep vertical dashboard expansion overlay-shaped, align the right-side catcher, and verify layer behavior separately from reservation; route: collapsed reservation plus output-local catcher geometry; commit: 7a20bfc
 - T8 (S1, S2, S9, S10): Analyze the latest user recording and distinguish persistent lateral geometry from open-state animation/content defects; route: extracted frame evidence and source mapping; commit: pending
 - T9 (S1, S2, S9, S10): Correct the recording-confirmed geometry and open-state defects without regressing the accepted top/bottom contract; route: bounded QML correction and runtime verification; commit: 341c071, 8d1cecf, a5c5156
-- T10 (S11): Replace the lateral transformed canonical source with a shared VerticalNotchSource while preserving the existing scalar geometry contract and accepted horizontal behavior; route: inline QML refactor with Qt 6.12/runtime orientation verification; commit: pending
+- T10 (S11): Replace the lateral transformed canonical source with a shared VerticalNotchSource while preserving the existing scalar geometry contract and accepted horizontal behavior; route: inline QML refactor with Qt 6.12/runtime orientation verification; commit: 641459d
 
 ## Log
 ### L1 — User request (verbatim)
@@ -296,4 +296,7 @@ Ahora, lo único que quiero hacer con respecto a las geometrías es que en las b
 ### L48 — T10 differential verification
 - The first four-position DP-1 runtime matrix loaded top, bottom, left, and right after hard reloads, produced captures/layers, left `configerrors` empty, and restored `config.json` byte-for-byte.
 - Differential debug-silhouette captures against the pre-refactor `HEAD` source produced zero pixel differences for bottom, left, and right. Top differed only outside the bar due dynamic screen content; the bar strip itself had no structural change (two minor capture-color variations at the bar edge).
-- Qt 6.12 `qmllint`, JSON validation, and `git diff --check` passed. T10 is complete but remains uncommitted pending the user's delivery decision.
+- Qt 6.12 `qmllint`, JSON validation, and `git diff --check` passed. T10 is complete and is held by commit `641459d`; the local config preference remains intentionally uncommitted.
+
+### L49 — T10 delivery
+- Committed the verified shared vertical-source refactor as `641459d refactor(bar): extract shared vertical notch source`. No push was requested.

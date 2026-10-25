@@ -1,5 +1,5 @@
 # Configurable Bar Visibility — Session 3
-Status: Implemented (source commit `c4c7eb6`; documentation commit pending; pointer simulation and physical hot-plug remain unverified)
+Status: Implemented (source commit `c4c7eb6`; documentation commit `ddb442f`; pointer simulation and physical hot-plug remain unverified)
 Scope: Apply `always`, `edge-reveal`, and `disabled` per monitor with external-edge-only reveal and overlay-safe lifecycle.
 
 ## Specs
@@ -151,8 +151,8 @@ Scope: Apply `always`, `edge-reveal`, and `disabled` per monitor with external-e
 - T2 [S2] Derive external-edge reveal eligibility from all connected `ShellScreen` rectangles and keep shared seams click-through. Route: `shell.qml` screen geometry helper + Bar inputs. Commit: `c4c7eb6`.
 - T3 [S4] Keep Bar-owned interactive context revealed and reconcile reveal state across overlay open/close, hot-plug, and disabled filtering without touching standalone launcher/wallpaper ownership. Commit: `c4c7eb6`.
 - T4 [S5,S6] Preserve masks, blur, input union, layer, screen pinning, and all existing four-edge geometry; add only required reveal gating. Commit: `c4c7eb6`.
-- T5 [S7] Synchronize the six requested documents with the implemented boundary and remaining limitations. Commit: documentation commit pending.
-- T6 [S8] Run structural, Qt 6 lint, reload, and available live matrix checks; record exact pass/fail/pending evidence. Commit: documentation commit pending.
+- T5 [S7] Synchronize the six requested documents with the implemented boundary and remaining limitations. Commit: `ddb442f`.
+- T6 [S8] Run structural, Qt 6 lint, reload, and available live matrix checks; record exact pass/fail/pending evidence. Commit: `ddb442f`.
 
 ## Log
 

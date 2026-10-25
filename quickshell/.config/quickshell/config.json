@@ -7,8 +7,8 @@
     "style": "silhouette",
     "screens": "all",
     "defaults": {
-      "position": "bottom",
-      "visibility": "always",
+      "position": "top",
+      "visibility": "edge-reveal",
       "style": "islands",
       "revealPolicy": "external-edges"
     },

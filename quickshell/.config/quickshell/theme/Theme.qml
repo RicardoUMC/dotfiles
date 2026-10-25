@@ -28,6 +28,10 @@ QtObject {
     property int barChipHeight: 30
     property int barCurveRadius: 14
     property int barWrapDepth: 14
+    // Edge-reveal structural controls. Safe defaults keep the hot-zone narrow
+    // and the hide delay long enough to move from the edge into the bar.
+    property int revealStripThickness: 4
+    property int revealHideDelay: 700
     property int centerCollapsedWidth: 360
     property int centerExpandedWidth: 520
     property int centerExpandedHeight: 260
@@ -387,6 +391,16 @@ QtObject {
             if (cfg.bar?.chipHeight         !== undefined) barChipHeight         = cfg.bar.chipHeight
             if (cfg.bar?.curveRadius        !== undefined) barCurveRadius        = cfg.bar.curveRadius
             if (cfg.bar?.wrapDepth          !== undefined) barWrapDepth          = cfg.bar.wrapDepth
+            if (cfg.bar?.revealStripThickness !== undefined) {
+                const stripThickness = Number(cfg.bar.revealStripThickness)
+                if (Number.isFinite(stripThickness))
+                    revealStripThickness = Math.min(32, Math.max(1, Math.round(stripThickness)))
+            }
+            if (cfg.bar?.revealHideDelay !== undefined) {
+                const hideDelay = Number(cfg.bar.revealHideDelay)
+                if (Number.isFinite(hideDelay))
+                    revealHideDelay = Math.min(10000, Math.max(100, Math.round(hideDelay)))
+            }
             if (cfg.bar?.centerCollapsedWidth !== undefined) centerCollapsedWidth = cfg.bar.centerCollapsedWidth
             if (cfg.bar?.centerExpandedWidth  !== undefined) centerExpandedWidth  = cfg.bar.centerExpandedWidth
             if (cfg.bar?.centerExpandedHeight !== undefined) centerExpandedHeight = cfg.bar.centerExpandedHeight

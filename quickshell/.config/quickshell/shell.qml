@@ -52,6 +52,17 @@ ShellRoot {
     }
 
     IpcHandler {
+        target: "bar"
+        // Exact-screen fallback for edge-reveal bars whose selected physical
+        // edge has no external segment. Never resolve this through the first
+        // Bar instance: the screen name is the routing identity.
+        function reveal(screenName: string): void {
+            const bar = root.barForScreen(screenName)
+            if (bar !== null) bar.revealExplicitly()
+        }
+    }
+
+    IpcHandler {
         target: "wallpaper"
         function toggle() { overlayManager.open("", "wallpaper") }
         function set(path: string): void { WallpaperService.setWallpaper(path) }
@@ -137,6 +148,44 @@ ShellRoot {
                 if (enabledScreens[i].name === name) return true
             }
             return false
+        }
+
+        // Return local [offset, length] intervals on the selected physical
+        // edge that are not covered by a positive-length opposing edge of any
+        // other connected screen. No ordering, adjacency, or monitor count is
+        // inferred; shared seams are simply subtracted from the edge.
+        function externalRevealSegments(screen, position) {
+            if (screen === null || position === "") return []
+            const horizontal = position === "top" || position === "bottom"
+            const start = horizontal ? screen.x : screen.y
+            const end = start + (horizontal ? screen.width : screen.height)
+            const seams = []
+            for (let i = 0; i < screens.length; i++) {
+                const other = screens[i]
+                if (other === null || other.name === screen.name) continue
+                let touches = false
+                if (position === "top") touches = other.y + other.height === screen.y
+                else if (position === "bottom") touches = other.y === screen.y + screen.height
+                else if (position === "left") touches = other.x + other.width === screen.x
+                else if (position === "right") touches = other.x === screen.x + screen.width
+                if (!touches) continue
+                const otherStart = horizontal ? other.x : other.y
+                const otherEnd = otherStart + (horizontal ? other.width : other.height)
+                const overlapStart = Math.max(start, otherStart)
+                const overlapEnd = Math.min(end, otherEnd)
+                if (overlapEnd > overlapStart) seams.push([overlapStart, overlapEnd])
+            }
+            seams.sort((a, b) => a[0] - b[0])
+            const result = []
+            let cursor = start
+            for (let i = 0; i < seams.length; i++) {
+                const seamStart = Math.max(start, seams[i][0])
+                const seamEnd = Math.min(end, seams[i][1])
+                if (seamStart > cursor) result.push([cursor - start, seamStart - cursor])
+                cursor = Math.max(cursor, seamEnd)
+            }
+            if (cursor < end) result.push([cursor - start, end - cursor])
+            return result
         }
 
     }
@@ -379,6 +428,8 @@ ShellRoot {
             screen: modelData
             screenName: modelData === null ? "" : modelData.name
             barConfig: Theme.effectiveBarConfig(modelData === null ? "" : modelData.name)
+            revealSegments: modelData === null ? []
+                : screenSelector.externalRevealSegments(modelData, barConfig.bar.position)
             // Hyprland monitor behind this bar's screen, injected so no
             // per-screen component resolves compositor identity itself.
             // Hyprland.monitorFor() is a plain invokable that emits nothing,

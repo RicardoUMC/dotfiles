@@ -33,7 +33,21 @@ PanelWindow {
         ? barConfig.bar.motion : "calm"
     readonly property bool barMotionEnabled: root.motionMode !== "reduced"
         && Theme.animationsEnabled
+    readonly property bool edgeReveal: barConfig && barConfig.bar
+        && barConfig.bar.visibility === "edge-reveal"
+    readonly property bool interactiveSurfaceOpen: centerPanel.isOpen
+        || rightControlCenter.isOpen || metricsDropdown.isOpen || mprisPopup.isOpen
+    readonly property bool visualBarVisible: !root.edgeReveal || root.revealed || root.interactiveSurfaceOpen
+    readonly property bool inputEnabled: root.visualBarVisible
+    property bool revealed: false
+    property real visualOpacity: root.visualBarVisible ? 1 : 0
+    property bool surfaceMapped: true
+    property var revealSegments: []
     WlrLayershell.layer: WlrLayer.Top
+    // Edge-reveal unmaps the full-output Bar once its Motion transition reaches
+    // zero; only the separate external-edge hot-zone surfaces remain mapped.
+    // This keeps hidden state from retaining an unnecessary fullscreen surface.
+    visible: root.surfaceMapped
     // The in-surface right control center uses non-modal focus: OnDemand lets
     // it receive keyboard input when requested, while Escape closes it without
     // taking exclusive focus from the rest of the session.
@@ -68,7 +82,12 @@ PanelWindow {
     // Reserve only the collapsed interactive bar height. Keep the underlying
     // PanelWindow surface sized for the largest center state so opening the
     // dashboard does not resize the layer-shell surface or shift tiled windows.
-    exclusiveZone: Math.ceil(vertical ? reservedBarContentWidth : reservedBarContentHeight)
+    exclusiveZone: root.visualBarVisible
+        ? Math.ceil(vertical ? reservedBarContentWidth : reservedBarContentHeight) : 0
+    Behavior on visualOpacity {
+        enabled: root.barMotionEnabled
+        Motion.Effects { }
+    }
     readonly property real reservedBarContentWidth: Math.max(
         leftSection.reservedWidth,
         centerSection.reservedWidth,
@@ -132,7 +151,10 @@ PanelWindow {
             bottomRightRadius: Theme.dashboardBodyRadius
         }
     }
-    mask: Region {
+    mask: root.inputEnabled ? barInputRegion : emptyInputRegion
+
+    Region {
+        id: barInputRegion
         regions: [
             // Reference the moving section items themselves. Region only
             // subscribes to the referenced item's geometry; using the old
@@ -148,6 +170,7 @@ PanelWindow {
             Region { item: rightControlCenter.backdropItem }
         ]
     }
+    Region { id: emptyInputRegion }
 
     property var notificationsState: null
     // Injected from shell.qml (single SystemStats engine instance). Null until wired.
@@ -158,9 +181,69 @@ PanelWindow {
     // per instance so the coordinator knows which screen emitted them.
     property string screenName: ""
     // Normalized configuration, resolved once by Theme for this screen.
-    // Visibility is consumed by shell.qml before this instance is created;
-    // placement, style, and dashboard attachment remain future work.
+    // `disabled` is consumed by shell.qml before this instance is created;
+    // `always` and `edge-reveal` remain per-instance runtime policies here.
     property var barConfig: ({})
+
+    Timer {
+        id: hideRevealTimer
+        interval: Theme.revealHideDelay
+        repeat: false
+        onTriggered: {
+            if (!root.interactiveSurfaceOpen && !barHoverHandler.hovered)
+                root.revealed = false
+        }
+    }
+
+    function reveal() {
+        if (!root.edgeReveal) return
+        root.surfaceMapped = true
+        root.revealed = true
+        hideRevealTimer.stop()
+    }
+    function scheduleHide() {
+        if (!root.edgeReveal || root.interactiveSurfaceOpen) return
+        hideRevealTimer.restart()
+    }
+    function revealExplicitly() {
+        root.reveal()
+        if (!root.interactiveSurfaceOpen)
+            hideRevealTimer.restart()
+    }
+
+    HoverHandler {
+        id: barHoverHandler
+        enabled: root.edgeReveal
+        onHoveredChanged: {
+            if (hovered) root.reveal()
+            else root.scheduleHide()
+        }
+    }
+
+    Component.onCompleted: {
+        if (root.edgeReveal && !root.visualBarVisible)
+            root.surfaceMapped = false
+    }
+    onVisualOpacityChanged: {
+        if (root.edgeReveal && !root.visualBarVisible && root.visualOpacity <= 0)
+            root.surfaceMapped = false
+    }
+    onVisualBarVisibleChanged: {
+        if (root.visualBarVisible)
+            root.surfaceMapped = true
+    }
+    onEdgeRevealChanged: {
+        if (!root.edgeReveal) {
+            root.surfaceMapped = true
+            root.revealed = false
+            hideRevealTimer.stop()
+        }
+    }
+    onInteractiveSurfaceOpenChanged: {
+        if (root.interactiveSurfaceOpen) root.reveal()
+        else root.scheduleHide()
+    }
+
     // Injected from shell.qml: the Hyprland monitor this bar's screen maps to,
     // or null during startup / hot-plug until the monitor appears. Resolved
     // once centrally so no per-screen component probes the compositor itself.
@@ -320,6 +403,7 @@ PanelWindow {
 
     BarSection {
         id: leftSection
+        opacity: root.visualOpacity
         z: 0
         targetItem: leftTab
         sectionId: "left"
@@ -360,6 +444,7 @@ PanelWindow {
 
     BarSection {
         id: centerSection
+        opacity: root.visualOpacity
         z: 0
         targetItem: centerTab
         sectionId: "center"
@@ -376,6 +461,7 @@ PanelWindow {
 
     BarSection {
         id: rightSection
+        opacity: root.visualOpacity
         z: 0
         targetItem: rightTab
         sectionId: "right"
@@ -397,6 +483,7 @@ PanelWindow {
     // Left tab — Workspaces
     BarTab {
         id: leftTab
+        opacity: root.visualOpacity
         z: 1
         compact: true
         vertical: root.vertical
@@ -418,6 +505,7 @@ PanelWindow {
     // Center tab — grows in place into the dashboard body.
     BarTab {
         id: centerTab
+        opacity: root.visualOpacity
         z: 2
         readonly property bool expanded: centerPanel.isOpen
 
@@ -534,6 +622,7 @@ PanelWindow {
     // Right tab — compact control-center entries + PowerMenu button
     BarTab {
         id: rightTab
+        opacity: root.visualOpacity
         z: 1
         compact: true
         vertical: root.vertical
@@ -601,5 +690,45 @@ PanelWindow {
         barPosition: root.barPosition
         vertical: root.vertical
         barWidth: root.reservedBarContentWidth
+    }
+
+    // Each delegate is pinned to this exact Bar screen. Multiple intervals
+    // are possible when other outputs split an edge; seams never receive a
+    // reveal surface because shell.qml subtracts them first.
+    Variants {
+        model: root.revealSegments
+        delegate: PanelWindow {
+            required property var modelData
+            readonly property bool horizontalEdge: root.barPosition === "top"
+                || root.barPosition === "bottom"
+            screen: root.screen
+            WlrLayershell.layer: WlrLayer.Top
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+            exclusionMode: ExclusionMode.Ignore
+            visible: root.edgeReveal && !root.visualBarVisible && root.screen !== null
+            color: "transparent"
+            anchors {
+                top: horizontalEdge && root.barPosition === "top"
+                    || !horizontalEdge
+                bottom: horizontalEdge && root.barPosition === "bottom"
+                left: horizontalEdge || root.barPosition === "left"
+                right: !horizontalEdge && root.barPosition === "right"
+            }
+            margins {
+                top: !horizontalEdge ? modelData[0] : 0
+                bottom: 0
+                left: horizontalEdge ? modelData[0] : 0
+                right: 0
+            }
+            implicitWidth: horizontalEdge ? modelData[1] : Theme.revealStripThickness
+            implicitHeight: horizontalEdge ? Theme.revealStripThickness : modelData[1]
+
+            MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                onEntered: root.reveal()
+                onExited: root.scheduleHide()
+            }
+        }
     }
 }

@@ -171,7 +171,9 @@ There is no descendant registry; the cascade is achieved by two mechanisms that 
 
 ### Open sequencing rules
 
-- Overlays open only on explicit user interaction (click, keybinding, IPC request). No `hovered` handler opens, closes, or replaces an overlay anywhere in the managed set; hover only changes selection or tint inside the already-open surface.
+- Overlays open only on explicit user interaction (click, keybinding, IPC request). Edge-reveal hover changes only the owning Bar's visibility; it never calls `overlayManager` or opens, closes, or replaces an overlay. Hover inside an already-open surface remains local selection/tint behavior.
+- A Bar-owned surface keeps its owning Bar revealed for the lifetime of the open surface, including the `CenterPanel` catcher, `RightControlCenter`/power section, `MprisPopup`, and dormant `MetricsDropdown`. If a monitor is disabled or disconnected, the existing exact-screen reconciliation removes the Bar-owned surface state; launcher and wallpaper remain independent.
+
 - For `"right-control-center"`, `_doOpen()` consumes `_pendingRightControlCenterSection` and clears it; an empty section string opens the plain landing state. Same-screen section requests route through `openRightControlCenter(screenName, section)` and follow the logical-tree transitions above — a same-path toggle or a sibling switch never tears the root down and never touches the 50 ms timer; only a different root or screen goes through the timer.
 
 ## Verified at runtime

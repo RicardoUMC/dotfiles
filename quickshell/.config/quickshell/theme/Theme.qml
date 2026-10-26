@@ -28,10 +28,13 @@ QtObject {
     property int barChipHeight: 30
     property int barCurveRadius: 14
     property int barWrapDepth: 14
-    // Edge-reveal structural controls. Safe defaults keep the hot-zone narrow
-    // and the hide delay long enough to move from the edge into the bar.
+    // Reveal structural controls. Edge-reveal keeps a longer delay for moving
+    // from the output edge into the full bar; island-reveal uses a short,
+    // independently configurable delay so focus changes feel immediate.
     property int revealStripThickness: 4
     property int revealHideDelay: 700
+    property int islandRevealHideDelay: 140
+    property int islandRevealAxisStagger: 24
     property int centerCollapsedWidth: 360
     property int centerExpandedWidth: 520
     property int centerExpandedHeight: 260
@@ -175,7 +178,7 @@ QtObject {
         const source = _isConfigObject(value) ? value : ({})
         return {
             position: _validConfigEnum(source.position, ["top", "bottom", "left", "right"], "top"),
-            visibility: _validConfigEnum(source.visibility, ["always", "edge-reveal", "disabled"], "always"),
+            visibility: _validConfigEnum(source.visibility, ["always", "edge-reveal", "island-reveal", "disabled"], "always"),
             style: _validConfigEnum(source.style, ["islands", "continuous"], "islands"),
             revealPolicy: _validConfigEnum(source.revealPolicy, ["external-edges"], "external-edges"),
             order: _normalizedEndpointOrder(source.order),
@@ -190,7 +193,7 @@ QtObject {
         const normalized = ({})
         if (typeof value.position === "string" && ["top", "bottom", "left", "right"].indexOf(value.position) >= 0)
             normalized.position = value.position
-        if (typeof value.visibility === "string" && ["always", "edge-reveal", "disabled"].indexOf(value.visibility) >= 0)
+        if (typeof value.visibility === "string" && ["always", "edge-reveal", "island-reveal", "disabled"].indexOf(value.visibility) >= 0)
             normalized.visibility = value.visibility
         if (typeof value.style === "string" && ["islands", "continuous"].indexOf(value.style) >= 0)
             normalized.style = value.style
@@ -400,6 +403,16 @@ QtObject {
                 const hideDelay = Number(cfg.bar.revealHideDelay)
                 if (Number.isFinite(hideDelay))
                     revealHideDelay = Math.min(10000, Math.max(100, Math.round(hideDelay)))
+            }
+            if (cfg.bar?.islandRevealHideDelay !== undefined) {
+                const islandHideDelay = Number(cfg.bar.islandRevealHideDelay)
+                if (Number.isFinite(islandHideDelay))
+                    islandRevealHideDelay = Math.min(2000, Math.max(40, Math.round(islandHideDelay)))
+            }
+            if (cfg.bar?.islandRevealAxisStagger !== undefined) {
+                const axisStagger = Number(cfg.bar.islandRevealAxisStagger)
+                if (Number.isFinite(axisStagger))
+                    islandRevealAxisStagger = Math.min(200, Math.max(0, Math.round(axisStagger)))
             }
             if (cfg.bar?.centerCollapsedWidth !== undefined) centerCollapsedWidth = cfg.bar.centerCollapsedWidth
             if (cfg.bar?.centerExpandedWidth  !== undefined) centerExpandedWidth  = cfg.bar.centerExpandedWidth

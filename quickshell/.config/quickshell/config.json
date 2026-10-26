@@ -8,7 +8,7 @@
     "screens": "all",
     "defaults": {
       "position": "top",
-      "visibility": "edge-reveal",
+      "visibility": "island-reveal",
       "style": "islands",
       "revealPolicy": "external-edges"
     },

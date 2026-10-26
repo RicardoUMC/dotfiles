@@ -26,6 +26,22 @@ Item {
     property bool outerBottomRounded: true
     property bool vertical: false
     property string edge: "top"
+    property bool hoverEnabled: false
+    property bool motionEnabled: true
+    property real visualScaleX: 1
+    property real visualScaleY: 1
+    property real visualOriginX: width / 2
+    property real visualOriginY: height / 2
+    property int visualScaleXDelay: 0
+    property int visualScaleYDelay: 0
+    readonly property bool hovered: sectionHoverHandler.hovered
+    readonly property bool visualSettled: Math.abs(sectionVisualScale.xScale - 1) < 0.001
+        && Math.abs(sectionVisualScale.yScale - 1) < 0.001
+
+    HoverHandler {
+        id: sectionHoverHandler
+        enabled: root.hoverEnabled
+    }
 
     function sectionMetric(name) {
         return IslandGeometry.sectionValue(
@@ -128,6 +144,21 @@ Item {
         layer.enabled: true
         layer.smooth: true
         opacity: Theme.debugBarSilhouette ? 0.65 : 1.0
+        transform: Scale {
+            id: sectionVisualScale
+            origin.x: root.visualOriginX
+            origin.y: root.visualOriginY
+            xScale: root.visualScaleX
+            yScale: root.visualScaleY
+            Behavior on xScale {
+                enabled: root.motionEnabled
+                Motion.RevealSpatial { axisDelay: root.visualScaleXDelay }
+            }
+            Behavior on yScale {
+                enabled: root.motionEnabled
+                Motion.RevealSpatial { axisDelay: root.visualScaleYDelay }
+            }
+        }
 
         NotchIslandMask {
             targetItem: targetProxy

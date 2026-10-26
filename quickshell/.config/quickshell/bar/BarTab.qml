@@ -10,6 +10,25 @@ Item {
     // the output edge instead of rotating the finished bar.
     property bool vertical: false
     property string edge: "top"
+    property bool motionEnabled: true
+    property bool hoverEnabled: false
+    readonly property bool hovered: tabHoverHandler.hovered
+    property real visualScaleX: 1
+    property real visualScaleY: 1
+    property real visualOriginX: width / 2
+    property real visualOriginY: height / 2
+    property int visualScaleXDelay: 0
+    property int visualScaleYDelay: 0
+    // Interactive descendants stay untransformed so nested MouseAreas keep
+    // their native hit coordinates during island reveal. The owning
+    // BarSection mask supplies the bounded visual growth; BarTab opacity
+    // supplies the independent content fade.
+    readonly property bool visualSettled: true
+
+    HoverHandler {
+        id: tabHoverHandler
+        enabled: root.hoverEnabled
+    }
 
     property int paddingH: vertical ? (compact ? Theme.tabPaddingV : Theme.tabPaddingV * 2) : Theme.tabPaddingH
     property int paddingV: vertical ? Theme.tabPaddingH : (compact ? Theme.tabPaddingV : Theme.tabPaddingV * 2)

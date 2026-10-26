@@ -55,6 +55,11 @@ QtObject {
     // Spatial intent: the slowest family, for geometry that travels.
     readonly property int spatialDuration: Math.max(1, Math.round(Theme.animSlow * root.durationScale))
 
+    // Small axis stagger for island-reveal's anisotropic presentation growth.
+    // It follows the global motion multiplier but remains independently tuned.
+    readonly property int revealAxisStagger: Math.max(0,
+        Math.round(Theme.islandRevealAxisStagger * root.durationScale))
+
     // Curve control points, or empty when unsupported (the fallback types
     // below then take over, and an empty list keeps Qt from parsing a bad curve).
     readonly property var effectsCurve: root.curveUsable ? [0.31, 0.94, 0.34, 1.0, 1, 1] : []
@@ -92,6 +97,19 @@ QtObject {
         duration: Theme.animationsEnabled ? Motion.spatialDuration : 0
         easing.type: Motion.spatialEasing
         easing.bezierCurve: Motion.spatialCurve
+    }
+
+    // Same spatial intent with an explicit axis stagger for reveal growth.
+    // QML NumberAnimation has no delay property, so compose a pause and the
+    // shared spatial animation rather than relying on an invalid assignment.
+    component RevealSpatial : SequentialAnimation {
+        property int axisDelay: 0
+        PauseAnimation { duration: axisDelay }
+        NumberAnimation {
+            duration: Theme.animationsEnabled ? Motion.spatialDuration : 0
+            easing.type: Motion.spatialEasing
+            easing.bezierCurve: Motion.spatialCurve
+        }
     }
 
     // One-shot capability probe. Declared as a real child object, not a

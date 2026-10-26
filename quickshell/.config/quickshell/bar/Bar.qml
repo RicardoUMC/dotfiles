@@ -35,14 +35,60 @@ PanelWindow {
         && Theme.animationsEnabled
     readonly property bool edgeReveal: barConfig && barConfig.bar
         && barConfig.bar.visibility === "edge-reveal"
+    readonly property bool islandReveal: barConfig && barConfig.bar
+        && barConfig.bar.visibility === "island-reveal"
     readonly property bool interactiveSurfaceOpen: centerPanel.isOpen
         || rightControlCenter.isOpen || metricsDropdown.isOpen || mprisPopup.isOpen
+    readonly property bool centerIslandOverlayOpen: centerPanel.isOpen || mprisPopup.isOpen
+    readonly property bool rightIslandOverlayOpen: rightControlCenter.isOpen || metricsDropdown.isOpen
     readonly property bool visualBarVisible: !root.edgeReveal || root.revealed || root.interactiveSurfaceOpen
-    readonly property bool inputEnabled: root.visualBarVisible
+    readonly property bool leftIslandVisible: !root.islandReveal || root.leftIslandRevealed
+    readonly property bool centerIslandVisible: !root.islandReveal
+        || root.centerIslandRevealed || root.centerIslandOverlayOpen
+    readonly property bool rightIslandVisible: !root.islandReveal
+        || root.rightIslandRevealed || root.rightIslandOverlayOpen
+    readonly property real leftIslandOpacity: root.islandReveal
+        ? (root.leftIslandVisible ? 1 : 0) : root.visualOpacity
+    readonly property real centerIslandOpacity: root.islandReveal
+        ? (root.centerIslandVisible ? 1 : 0) : root.visualOpacity
+    readonly property real rightIslandOpacity: root.islandReveal
+        ? (root.rightIslandVisible ? 1 : 0) : root.visualOpacity
+    readonly property bool leftIslandBlurEnabled: root.leftIslandVisible
+        && leftSection.visualSettled && leftTab.visualSettled
+    readonly property bool centerIslandBlurEnabled: root.centerIslandVisible
+        && centerSection.visualSettled && centerTab.visualSettled
+    readonly property bool rightIslandBlurEnabled: root.rightIslandVisible
+        && rightSection.visualSettled && rightTab.visualSettled
+    readonly property bool inputEnabled: !root.edgeReveal || root.visualBarVisible
     property bool revealed: false
+    property bool leftIslandRevealed: false
+    property bool centerIslandRevealed: false
+    property bool rightIslandRevealed: false
     property real visualOpacity: root.visualBarVisible ? 1 : 0
     property bool surfaceMapped: true
     property var revealSegments: []
+    function _islandRevealSegments(sectionName, targetItem) {
+        if (!root.islandReveal || targetItem === null) return []
+        const horizontal = root.barPosition === "top" || root.barPosition === "bottom"
+        const start = horizontal ? targetItem.x : targetItem.y
+        const end = start + (horizontal ? targetItem.width : targetItem.height)
+        const result = []
+        for (let i = 0; i < root.revealSegments.length; i++) {
+            const segment = root.revealSegments[i]
+            const segmentStart = segment[0]
+            const segmentEnd = segmentStart + segment[1]
+            const overlapStart = Math.max(start, segmentStart)
+            const overlapEnd = Math.min(end, segmentEnd)
+            if (overlapEnd > overlapStart)
+                result.push([sectionName, overlapStart, overlapEnd - overlapStart])
+        }
+        return result
+    }
+    readonly property var leftIslandRevealSegments: root._islandRevealSegments("left", leftTab)
+    readonly property var centerIslandRevealSegments: root._islandRevealSegments("center", centerTab)
+    readonly property var rightIslandRevealSegments: root._islandRevealSegments("right", rightTab)
+    readonly property var islandRevealSegments: root.leftIslandRevealSegments
+        .concat(root.centerIslandRevealSegments, root.rightIslandRevealSegments)
     WlrLayershell.layer: WlrLayer.Top
     // Edge-reveal unmaps the full-output Bar once its Motion transition reaches
     // zero; only the separate external-edge hot-zone surfaces remain mapped.
@@ -82,8 +128,10 @@ PanelWindow {
     // Reserve only the collapsed interactive bar height. Keep the underlying
     // PanelWindow surface sized for the largest center state so opening the
     // dashboard does not resize the layer-shell surface or shift tiled windows.
-    exclusiveZone: root.visualBarVisible
-        ? Math.ceil(vertical ? reservedBarContentWidth : reservedBarContentHeight) : 0
+    exclusiveZone: root.islandReveal
+        ? 0
+        : root.visualBarVisible
+            ? Math.ceil(vertical ? reservedBarContentWidth : reservedBarContentHeight) : 0
     Behavior on visualOpacity {
         enabled: root.barMotionEnabled
         Motion.Effects { }
@@ -125,18 +173,21 @@ PanelWindow {
         Region {
             IslandBlurRegion {
                 targetItem: leftSection
-                nativeBlurEnabled: root.islandNativeBlurEnabled
-                intersection: root.islandNativeBlurEnabled ? Intersection.Combine : Intersection.Subtract
+                nativeBlurEnabled: root.islandNativeBlurEnabled && root.leftIslandBlurEnabled
+                intersection: root.islandNativeBlurEnabled && root.leftIslandBlurEnabled
+                    ? Intersection.Combine : Intersection.Subtract
             }
             IslandBlurRegion {
                 targetItem: centerSection
-                nativeBlurEnabled: root.islandNativeBlurEnabled
-                intersection: root.islandNativeBlurEnabled ? Intersection.Combine : Intersection.Subtract
+                nativeBlurEnabled: root.islandNativeBlurEnabled && root.centerIslandBlurEnabled
+                intersection: root.islandNativeBlurEnabled && root.centerIslandBlurEnabled
+                    ? Intersection.Combine : Intersection.Subtract
             }
             IslandBlurRegion {
                 targetItem: rightSection
-                nativeBlurEnabled: root.islandNativeBlurEnabled
-                intersection: root.islandNativeBlurEnabled ? Intersection.Combine : Intersection.Subtract
+                nativeBlurEnabled: root.islandNativeBlurEnabled && root.rightIslandBlurEnabled
+                intersection: root.islandNativeBlurEnabled && root.rightIslandBlurEnabled
+                    ? Intersection.Combine : Intersection.Subtract
             }
         }
 
@@ -153,16 +204,40 @@ PanelWindow {
     }
     mask: root.inputEnabled ? barInputRegion : emptyInputRegion
 
+    // Keep one stable Region item per island. Changing a PendingRegion.item
+    // between null and a QQuickItem during hover is not reliable for a live
+    // layer-shell input mask; these untransformed proxies update geometry
+    // instead, so the mask remains attached while visibility changes.
+    Item {
+        id: leftIslandInputProxy
+        x: leftSection.x
+        y: leftSection.y
+        width: root.leftIslandVisible ? leftSection.width : 0
+        height: root.leftIslandVisible ? leftSection.height : 0
+    }
+    Item {
+        id: centerIslandInputProxy
+        x: centerSection.x
+        y: centerSection.y
+        width: root.centerIslandVisible ? centerSection.width : 0
+        height: root.centerIslandVisible ? centerSection.height : 0
+    }
+    Item {
+        id: rightIslandInputProxy
+        x: rightSection.x
+        y: rightSection.y
+        width: root.rightIslandVisible ? rightSection.width : 0
+        height: root.rightIslandVisible ? rightSection.height : 0
+    }
+
     Region {
         id: barInputRegion
         regions: [
-            // Reference the moving section items themselves. Region only
-            // subscribes to the referenced item's geometry; using the old
-            // local hitBox left its scene position stale when a hot position
-            // change moved the BarSection ancestor.
-            Region { item: leftSection },
-            Region { item: centerSection },
-            Region { item: rightSection },
+            // Proxies remain untransformed and track section geometry; visual
+            // Scale transforms on BarSection/BarTab never alter hit geometry.
+            Region { item: leftIslandInputProxy },
+            Region { item: centerIslandInputProxy },
+            Region { item: rightIslandInputProxy },
             // Fourth region: the right-control-center backdrop. Region{item}
             // reacts to the item's geometry only, so the backdrop reports 0x0
             // while closed and contributes an empty rect; while open it fills
@@ -193,6 +268,71 @@ PanelWindow {
             if (!root.interactiveSurfaceOpen && !barHoverHandler.hovered)
                 root.revealed = false
         }
+    }
+
+    Timer {
+        id: leftIslandHideTimer
+        interval: Theme.islandRevealHideDelay
+        repeat: false
+        onTriggered: {
+            if (!leftSection.hovered && !leftTab.hovered) root.leftIslandRevealed = false
+        }
+    }
+
+    Timer {
+        id: centerIslandHideTimer
+        interval: Theme.islandRevealHideDelay
+        repeat: false
+        onTriggered: {
+            if (!centerSection.hovered && !centerTab.hovered && !root.centerIslandOverlayOpen)
+                root.centerIslandRevealed = false
+        }
+    }
+
+    Timer {
+        id: rightIslandHideTimer
+        interval: Theme.islandRevealHideDelay
+        repeat: false
+        onTriggered: {
+            if (!rightSection.hovered && !rightTab.hovered && !root.rightIslandOverlayOpen)
+                root.rightIslandRevealed = false
+        }
+    }
+
+    function revealIsland(name) {
+        if (!root.islandReveal) return
+        if (root.centerIslandOverlayOpen && name !== "center") return
+        if (root.rightIslandOverlayOpen && name !== "right") return
+        root.leftIslandRevealed = name === "left"
+        root.centerIslandRevealed = name === "center"
+        root.rightIslandRevealed = name === "right"
+        leftIslandHideTimer.stop()
+        centerIslandHideTimer.stop()
+        rightIslandHideTimer.stop()
+    }
+
+    function scheduleIslandHide(name) {
+        if (!root.islandReveal) return
+        if (name === "left") {
+            if (!leftSection.hovered && !leftTab.hovered) leftIslandHideTimer.restart()
+        } else if (name === "center") {
+            if (!centerSection.hovered && !centerTab.hovered && !root.centerIslandOverlayOpen)
+                centerIslandHideTimer.restart()
+        } else if (name === "right") {
+            if (!rightSection.hovered && !rightTab.hovered && !root.rightIslandOverlayOpen)
+                rightIslandHideTimer.restart()
+        }
+    }
+
+    function handleIslandHover(name, hovered) {
+        if (hovered) root.revealIsland(name)
+        else root.scheduleIslandHide(name)
+    }
+
+    function islandVisibleFor(name) {
+        if (name === "left") return root.leftIslandVisible
+        if (name === "center") return root.centerIslandVisible
+        return root.rightIslandVisible
     }
 
     function reveal() {
@@ -242,6 +382,24 @@ PanelWindow {
     onInteractiveSurfaceOpenChanged: {
         if (root.interactiveSurfaceOpen) root.reveal()
         else root.scheduleHide()
+    }
+    onCenterIslandOverlayOpenChanged: {
+        if (root.centerIslandOverlayOpen) root.revealIsland("center")
+        else root.scheduleIslandHide("center")
+    }
+    onRightIslandOverlayOpenChanged: {
+        if (root.rightIslandOverlayOpen) root.revealIsland("right")
+        else root.scheduleIslandHide("right")
+    }
+    onIslandRevealChanged: {
+        if (!root.islandReveal) {
+            root.leftIslandRevealed = false
+            root.centerIslandRevealed = false
+            root.rightIslandRevealed = false
+            leftIslandHideTimer.stop()
+            centerIslandHideTimer.stop()
+            rightIslandHideTimer.stop()
+        }
     }
 
     // Injected from shell.qml: the Hyprland monitor this bar's screen maps to,
@@ -403,7 +561,20 @@ PanelWindow {
 
     BarSection {
         id: leftSection
-        opacity: root.visualOpacity
+        opacity: root.leftIslandOpacity
+        hoverEnabled: root.islandReveal
+        onHoveredChanged: root.handleIslandHover("left", hovered)
+        Behavior on opacity {
+            enabled: root.barMotionEnabled
+            Motion.Effects { }
+        }
+        motionEnabled: root.barMotionEnabled
+        visualScaleX: root.leftIslandVisible ? 1 : 0
+        visualScaleY: root.leftIslandVisible ? 1 : 0
+        visualOriginX: root.vertical && root.barPosition === "right" ? width : 0
+        visualOriginY: root.barPosition === "bottom" ? height : 0
+        visualScaleXDelay: root.vertical ? 0 : Motion.revealAxisStagger
+        visualScaleYDelay: root.vertical ? Motion.revealAxisStagger : 0
         z: 0
         targetItem: leftTab
         sectionId: "left"
@@ -444,7 +615,22 @@ PanelWindow {
 
     BarSection {
         id: centerSection
-        opacity: root.visualOpacity
+        opacity: root.centerIslandOpacity
+        hoverEnabled: root.islandReveal
+        onHoveredChanged: root.handleIslandHover("center", hovered)
+        Behavior on opacity {
+            enabled: root.barMotionEnabled
+            Motion.Effects { }
+        }
+        motionEnabled: root.barMotionEnabled
+        visualScaleX: root.vertical ? (root.centerIslandVisible ? 1 : 0) : 1
+        visualScaleY: root.vertical ? 1 : (root.centerIslandVisible ? 1 : 0)
+        visualOriginX: root.vertical
+            ? (root.barPosition === "right" ? width : 0) : width / 2
+        visualOriginY: root.vertical
+            ? height / 2 : (root.barPosition === "bottom" ? height : 0)
+        visualScaleXDelay: 0
+        visualScaleYDelay: 0
         z: 0
         targetItem: centerTab
         sectionId: "center"
@@ -461,7 +647,22 @@ PanelWindow {
 
     BarSection {
         id: rightSection
-        opacity: root.visualOpacity
+        opacity: root.rightIslandOpacity
+        hoverEnabled: root.islandReveal
+        onHoveredChanged: root.handleIslandHover("right", hovered)
+        Behavior on opacity {
+            enabled: root.barMotionEnabled
+            Motion.Effects { }
+        }
+        motionEnabled: root.barMotionEnabled
+        visualScaleX: root.rightIslandVisible ? 1 : 0
+        visualScaleY: root.rightIslandVisible ? 1 : 0
+        visualOriginX: root.vertical
+            ? (root.barPosition === "right" ? width : 0) : width
+        visualOriginY: root.vertical
+            ? height : (root.barPosition === "bottom" ? height : 0)
+        visualScaleXDelay: root.vertical ? 0 : Motion.revealAxisStagger
+        visualScaleYDelay: root.vertical ? Motion.revealAxisStagger : 0
         z: 0
         targetItem: rightTab
         sectionId: "right"
@@ -483,7 +684,20 @@ PanelWindow {
     // Left tab — Workspaces
     BarTab {
         id: leftTab
-        opacity: root.visualOpacity
+        hoverEnabled: root.islandReveal
+        onHoveredChanged: root.handleIslandHover("left", hovered)
+        opacity: root.leftIslandOpacity
+        Behavior on opacity {
+            enabled: root.barMotionEnabled
+            Motion.Effects { }
+        }
+        motionEnabled: root.barMotionEnabled
+        visualScaleX: root.leftIslandVisible ? 1 : 0
+        visualScaleY: root.leftIslandVisible ? 1 : 0
+        visualOriginX: root.vertical && root.barPosition === "right" ? width : 0
+        visualOriginY: root.barPosition === "bottom" ? height : 0
+        visualScaleXDelay: root.vertical ? 0 : Motion.revealAxisStagger
+        visualScaleYDelay: root.vertical ? Motion.revealAxisStagger : 0
         z: 1
         compact: true
         vertical: root.vertical
@@ -505,7 +719,22 @@ PanelWindow {
     // Center tab — grows in place into the dashboard body.
     BarTab {
         id: centerTab
-        opacity: root.visualOpacity
+        hoverEnabled: root.islandReveal
+        onHoveredChanged: root.handleIslandHover("center", hovered)
+        opacity: root.centerIslandOpacity
+        Behavior on opacity {
+            enabled: root.barMotionEnabled
+            Motion.Effects { }
+        }
+        motionEnabled: root.barMotionEnabled
+        visualScaleX: root.vertical ? (root.centerIslandVisible ? 1 : 0) : 1
+        visualScaleY: root.vertical ? 1 : (root.centerIslandVisible ? 1 : 0)
+        visualOriginX: root.vertical
+            ? (root.barPosition === "right" ? width : 0) : width / 2
+        visualOriginY: root.vertical
+            ? height / 2 : (root.barPosition === "bottom" ? height : 0)
+        visualScaleXDelay: 0
+        visualScaleYDelay: 0
         z: 2
         readonly property bool expanded: centerPanel.isOpen
 
@@ -622,7 +851,22 @@ PanelWindow {
     // Right tab — compact control-center entries + PowerMenu button
     BarTab {
         id: rightTab
-        opacity: root.visualOpacity
+        hoverEnabled: root.islandReveal
+        onHoveredChanged: root.handleIslandHover("right", hovered)
+        opacity: root.rightIslandOpacity
+        Behavior on opacity {
+            enabled: root.barMotionEnabled
+            Motion.Effects { }
+        }
+        motionEnabled: root.barMotionEnabled
+        visualScaleX: root.rightIslandVisible ? 1 : 0
+        visualScaleY: root.rightIslandVisible ? 1 : 0
+        visualOriginX: root.vertical
+            ? (root.barPosition === "right" ? width : 0) : width
+        visualOriginY: root.vertical
+            ? height : (root.barPosition === "bottom" ? height : 0)
+        visualScaleXDelay: root.vertical ? 0 : Motion.revealAxisStagger
+        visualScaleYDelay: root.vertical ? Motion.revealAxisStagger : 0
         z: 1
         compact: true
         vertical: root.vertical
@@ -690,6 +934,49 @@ PanelWindow {
         barPosition: root.barPosition
         vertical: root.vertical
         barWidth: root.reservedBarContentWidth
+    }
+
+    // Each island trigger is a thin, screen-pinned Top surface. Its model is
+    // intersected with the already seam-safe external intervals, so a shared
+    // monitor seam never becomes a hover target in island-reveal mode.
+    Variants {
+        model: root.islandRevealSegments
+        delegate: PanelWindow {
+            required property var modelData
+            readonly property string islandName: modelData[0]
+            readonly property bool horizontalEdge: root.barPosition === "top"
+                || root.barPosition === "bottom"
+            screen: root.screen
+            WlrLayershell.layer: WlrLayer.Top
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+            exclusionMode: ExclusionMode.Ignore
+            visible: root.islandReveal
+                && !root.islandVisibleFor(islandName)
+                && root.screen !== null
+            color: "transparent"
+            anchors {
+                top: horizontalEdge && root.barPosition === "top"
+                    || !horizontalEdge
+                bottom: horizontalEdge && root.barPosition === "bottom"
+                left: horizontalEdge || root.barPosition === "left"
+                right: !horizontalEdge && root.barPosition === "right"
+            }
+            margins {
+                top: !horizontalEdge ? modelData[1] : 0
+                bottom: 0
+                left: horizontalEdge ? modelData[1] : 0
+                right: 0
+            }
+            implicitWidth: horizontalEdge ? modelData[2] : Theme.revealStripThickness
+            implicitHeight: horizontalEdge ? Theme.revealStripThickness : modelData[2]
+
+            MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                onEntered: root.revealIsland(islandName)
+                onExited: root.scheduleIslandHide(islandName)
+            }
+        }
     }
 
     // Each delegate is pinned to this exact Bar screen. Multiple intervals

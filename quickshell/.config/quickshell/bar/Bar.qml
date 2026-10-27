@@ -934,6 +934,7 @@ PanelWindow {
         barPosition: root.barPosition
         vertical: root.vertical
         barWidth: root.reservedBarContentWidth
+        barHeight: root.reservedBarContentHeight
     }
 
     // Each island trigger is a thin, screen-pinned Top surface. Its model is

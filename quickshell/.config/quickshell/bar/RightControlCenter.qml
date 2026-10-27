@@ -25,6 +25,7 @@ Item {
     property string barPosition: "top"
     property bool vertical: false
     property real barWidth: 0
+    property real barHeight: 0
 
     signal opened()
     signal closed()
@@ -172,12 +173,14 @@ Item {
         id: panelBody
         x: root.vertical
             ? (root.barPosition === "right"
-               ? root.width - width - Theme.rightPanelRightMargin
+               ? root.width - root.barWidth - Theme.rightPanelRightMargin - width
                : root.barWidth + Theme.rightPanelRightMargin)
             : root.width - width - Theme.rightPanelRightMargin
         y: root.vertical
-            ? (root.barPosition === "bottom" ? root.height - height - Theme.rightPanelTopMargin : Theme.rightPanelTopMargin)
-            : (root.barPosition === "bottom" ? root.height - height - Theme.rightPanelTopMargin : Theme.barHeight + Theme.rightPanelTopMargin)
+            ? Theme.rightPanelTopMargin
+            : (root.barPosition === "bottom"
+                ? root.height - root.barHeight - Theme.rightPanelTopMargin - height
+                : root.barHeight + Theme.rightPanelTopMargin)
         // Above the backdrop so the body consumes its own clicks instead of
         // the outside-click dismiss.
         z: 1

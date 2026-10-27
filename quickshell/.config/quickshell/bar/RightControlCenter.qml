@@ -26,6 +26,7 @@ Item {
     property bool vertical: false
     property real barWidth: 0
     property real barHeight: 0
+    property Item serviceIsland: null
 
     signal opened()
     signal closed()
@@ -173,11 +174,18 @@ Item {
         id: panelBody
         x: root.vertical
             ? (root.barPosition === "right"
-               ? root.width - root.barWidth - Theme.rightPanelRightMargin - width
-               : root.barWidth + Theme.rightPanelRightMargin)
+               ? (root.serviceIsland
+                   ? root.serviceIsland.x - Theme.rightPanelRightMargin - width
+                   : root.width - root.barWidth - Theme.rightPanelRightMargin - width)
+               : (root.serviceIsland
+                   ? root.serviceIsland.x + root.serviceIsland.width + Theme.rightPanelRightMargin
+                   : root.barWidth + Theme.rightPanelRightMargin))
             : root.width - width - Theme.rightPanelRightMargin
         y: root.vertical
-            ? Theme.rightPanelTopMargin
+            ? Math.max(Theme.rightPanelTopMargin,
+                root.serviceIsland
+                    ? root.serviceIsland.y + root.serviceIsland.height - height
+                    : root.height - root.barHeight - Theme.rightPanelTopMargin - height)
             : (root.barPosition === "bottom"
                 ? root.height - root.barHeight - Theme.rightPanelTopMargin - height
                 : root.barHeight + Theme.rightPanelTopMargin)

@@ -175,16 +175,16 @@ Item {
         x: root.vertical
             ? (root.barPosition === "right"
                ? (root.serviceIsland
-                   ? root.serviceIsland.x - Theme.rightPanelRightMargin - width
+                   ? root.serviceIsland.x - Theme.spacingXs - width
                    : root.width - root.barWidth - Theme.rightPanelRightMargin - width)
                : (root.serviceIsland
-                   ? root.serviceIsland.x + root.serviceIsland.width + Theme.rightPanelRightMargin
+                   ? root.serviceIsland.x + root.serviceIsland.width + Theme.spacingXs
                    : root.barWidth + Theme.rightPanelRightMargin))
             : root.width - width - Theme.rightPanelRightMargin
         y: root.vertical
             ? Math.max(Theme.rightPanelTopMargin,
                 root.serviceIsland
-                    ? root.serviceIsland.y + root.serviceIsland.height - height
+                    ? root.serviceIsland.y + root.serviceIsland.height - height - Theme.rightPanelTopMargin
                     : root.height - root.barHeight - Theme.rightPanelTopMargin - height)
             : (root.barPosition === "bottom"
                 ? root.height - root.barHeight - Theme.rightPanelTopMargin - height
